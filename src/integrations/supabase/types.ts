@@ -99,6 +99,201 @@ export type Database = {
           },
         ]
       }
+      document_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          document_id: string
+          id: string
+          metadata: Json
+          method: string
+          paid_at: string | null
+          provider_ref: string | null
+          recorded_by: string | null
+          share_link_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          document_id: string
+          id?: string
+          metadata?: Json
+          method?: string
+          paid_at?: string | null
+          provider_ref?: string | null
+          recorded_by?: string | null
+          share_link_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          document_id?: string
+          id?: string
+          metadata?: Json
+          method?: string
+          paid_at?: string | null
+          provider_ref?: string | null
+          recorded_by?: string | null
+          share_link_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      document_share_links: {
+        Row: {
+          allow_pay: boolean
+          allow_sign: boolean
+          created_at: string
+          created_by: string
+          document_id: string
+          expires_at: string | null
+          id: string
+          max_views: number | null
+          recipient_email: string | null
+          recipient_name: string | null
+          revoked_at: string | null
+          token: string
+          view_count: number
+        }
+        Insert: {
+          allow_pay?: boolean
+          allow_sign?: boolean
+          created_at?: string
+          created_by: string
+          document_id: string
+          expires_at?: string | null
+          id?: string
+          max_views?: number | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          revoked_at?: string | null
+          token?: string
+          view_count?: number
+        }
+        Update: {
+          allow_pay?: boolean
+          allow_sign?: boolean
+          created_at?: string
+          created_by?: string
+          document_id?: string
+          expires_at?: string | null
+          id?: string
+          max_views?: number | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          revoked_at?: string | null
+          token?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
+      document_signatures: {
+        Row: {
+          document_id: string
+          id: string
+          ip: string | null
+          pdf_hash_sha256: string | null
+          pdf_storage_path: string | null
+          share_link_id: string | null
+          signature_image_b64: string
+          signed_at: string
+          signer_email: string | null
+          signer_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          document_id: string
+          id?: string
+          ip?: string | null
+          pdf_hash_sha256?: string | null
+          pdf_storage_path?: string | null
+          share_link_id?: string | null
+          signature_image_b64: string
+          signed_at?: string
+          signer_email?: string | null
+          signer_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          document_id?: string
+          id?: string
+          ip?: string | null
+          pdf_hash_sha256?: string | null
+          pdf_storage_path?: string | null
+          share_link_id?: string | null
+          signature_image_b64?: string
+          signed_at?: string
+          signer_email?: string | null
+          signer_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      document_templates: {
+        Row: {
+          active: boolean
+          bic: string | null
+          created_at: string
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          footer_html: string | null
+          header_html: string | null
+          iban: string | null
+          id: string
+          is_default: boolean
+          legal_mentions: string | null
+          logo_url: string | null
+          name: string
+          organization_id: string
+          payment_terms: string | null
+          primary_color: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          active?: boolean
+          bic?: string | null
+          created_at?: string
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          footer_html?: string | null
+          header_html?: string | null
+          iban?: string | null
+          id?: string
+          is_default?: boolean
+          legal_mentions?: string | null
+          logo_url?: string | null
+          name: string
+          organization_id: string
+          payment_terms?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          active?: boolean
+          bic?: string | null
+          created_at?: string
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          footer_html?: string | null
+          header_html?: string | null
+          iban?: string | null
+          id?: string
+          is_default?: boolean
+          legal_mentions?: string | null
+          logo_url?: string | null
+          name?: string
+          organization_id?: string
+          payment_terms?: string | null
+          primary_color?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       document_workflow_steps: {
         Row: {
           approver_role: Database["public"]["Enums"]["app_role"] | null
