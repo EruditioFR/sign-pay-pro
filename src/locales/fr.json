@@ -93,5 +93,51 @@
     "loading": "Chargement…",
     "error": "Erreur",
     "language": "Langue"
+  },
+  "documents": {
+    "title": "Documents",
+    "subtitle": "Gérez vos documents commerciaux.",
+    "new": "Nouveau document",
+    "created": "Document créé.",
+    "empty": "Aucun document.",
+    "search_placeholder": "Rechercher par titre…",
+    "filter": { "all_types": "Tous les types", "all_statuses": "Tous les statuts" },
+    "field": {
+      "title": "Titre", "type": "Type", "reference": "Référence",
+      "third_party": "Tiers", "third_party_email": "Email du tiers",
+      "amount": "Montant TTC", "amount_ht": "Montant HT", "amount_ttc": "Montant TTC",
+      "currency": "Devise", "issue_date": "Date d'émission", "due_date": "Échéance",
+      "description": "Description", "status": "Statut"
+    },
+    "types": {
+      "purchase_order": "Bon de commande", "quote": "Devis",
+      "invoice": "Facture", "contract": "Contrat", "other": "Autre"
+    },
+    "status": {
+      "draft": "Brouillon", "pending_validation": "À valider",
+      "validated": "Validé", "rejected": "Rejeté", "archived": "Archivé"
+    },
+    "upload": {
+      "label": "Glissez un fichier ou cliquez", "choose": "Choisir",
+      "uploading": "Envoi…", "success": "Fichier ajouté.",
+      "too_large": "Fichier trop volumineux (max 20 Mo)."
+    }
+  },
+  "workflows": {
+    "title": "Workflows",
+    "subtitle": "Modèles de validation de votre organisation.",
+    "no_steps": "Aucune étape.",
+    "optional": "facultative",
+    "step_status": {
+      "pending": "En attente", "approved": "Approuvée",
+      "rejected": "Rejetée", "skipped": "Sautée"
+    }
+  },
+  "approvals": {
+    "title": "À valider",
+    "subtitle": "Vos étapes de validation en attente."
+  },
+  "nav_extra": {
+    "documents": "Documents", "approvals": "À valider", "workflows": "Workflows"
   }
 }
