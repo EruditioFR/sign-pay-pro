@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "DocFlow Pro",
+    "tagline": "Plateforme B2B de gestion documentaire"
+  },
+  "nav": {
+    "home": "Accueil",
+    "login": "Connexion",
+    "signup": "Créer un compte",
+    "logout": "Déconnexion",
+    "dashboard": "Tableau de bord",
+    "users": "Utilisateurs",
+    "roles": "Rôles",
+    "settings": "Paramètres",
+    "tenants": "Organisations",
+    "clients": "Clients",
+    "profile": "Mon profil"
+  },
+  "landing": {
+    "hero_title": "Gérez vos documents commerciaux de bout en bout.",
+    "hero_subtitle": "Création, validation, signature électronique et paiement — sur une seule plateforme multi-tenant et conforme.",
+    "cta_start": "Démarrer gratuitement",
+    "cta_login": "J'ai déjà un compte",
+    "feat1_title": "Workflows de validation",
+    "feat1_text": "Circuits configurables, multi-étapes, multi-rôles.",
+    "feat2_title": "Signature & paiement",
+    "feat2_text": "Signature électronique conforme et liens de paiement intégrés.",
+    "feat3_title": "Multi-tenant sécurisé",
+    "feat3_text": "Isolation des données par organisation, RLS et audit complet."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Mot de passe",
+    "full_name": "Nom complet",
+    "organization_name": "Nom de l'organisation",
+    "country": "Pays",
+    "login_title": "Connexion à votre compte",
+    "signup_title": "Créer votre organisation",
+    "login_submit": "Se connecter",
+    "signup_submit": "Créer mon compte",
+    "no_account": "Pas encore de compte ?",
+    "have_account": "Vous avez déjà un compte ?",
+    "error_invalid": "Identifiants invalides.",
+    "error_generic": "Une erreur est survenue. Réessayez.",
+    "signup_success": "Compte créé. Vérifiez votre email pour confirmer.",
+    "check_email": "Vérifiez votre boîte mail pour confirmer votre adresse."
+  },
+  "dashboard": {
+    "welcome": "Bienvenue, {{name}}",
+    "your_role": "Votre rôle",
+    "your_org": "Votre organisation",
+    "quick_actions": "Actions rapides",
+    "documents_in_progress": "Documents en cours",
+    "documents_signed": "Documents signés",
+    "documents_pending": "En attente",
+    "coming_soon": "Bientôt disponible"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "reseller": "Revendeur",
+    "admin_client": "Admin Client",
+    "manager": "Manager",
+    "user": "Utilisateur"
+  },
+  "users": {
+    "title": "Gestion des utilisateurs",
+    "subtitle": "Invitez et gérez les membres de votre organisation.",
+    "invite": "Inviter un utilisateur",
+    "name": "Nom",
+    "email": "Email",
+    "role": "Rôle",
+    "status": "Statut",
+    "active": "Actif",
+    "inactive": "Désactivé",
+    "actions": "Actions",
+    "change_role": "Changer le rôle",
+    "deactivate": "Désactiver",
+    "activate": "Réactiver",
+    "no_users": "Aucun utilisateur."
+  },
+  "tenants": {
+    "title": "Toutes les organisations",
+    "subtitle": "Vue globale du parc clients.",
+    "name": "Nom",
+    "country": "Pays",
+    "plan": "Plan",
+    "status": "Statut",
+    "created": "Créée le"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement…",
+    "error": "Erreur",
+    "language": "Langue"
+  }
+}
