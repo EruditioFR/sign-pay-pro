@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "DocFlow Pro",
+    "tagline": "B2B document management platform"
+  },
+  "nav": {
+    "home": "Home",
+    "login": "Sign in",
+    "signup": "Create account",
+    "logout": "Sign out",
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "roles": "Roles",
+    "settings": "Settings",
+    "tenants": "Organizations",
+    "clients": "Clients",
+    "profile": "My profile"
+  },
+  "landing": {
+    "hero_title": "Manage your business documents end-to-end.",
+    "hero_subtitle": "Creation, validation, e-signature and payment — on a single multi-tenant, compliant platform.",
+    "cta_start": "Start for free",
+    "cta_login": "I already have an account",
+    "feat1_title": "Validation workflows",
+    "feat1_text": "Configurable, multi-step, multi-role circuits.",
+    "feat2_title": "Signature & payment",
+    "feat2_text": "Compliant e-signature and built-in payment links.",
+    "feat3_title": "Secure multi-tenant",
+    "feat3_text": "Per-organization data isolation, RLS and full audit."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "full_name": "Full name",
+    "organization_name": "Organization name",
+    "country": "Country",
+    "login_title": "Sign in to your account",
+    "signup_title": "Create your organization",
+    "login_submit": "Sign in",
+    "signup_submit": "Create account",
+    "no_account": "No account yet?",
+    "have_account": "Already have an account?",
+    "error_invalid": "Invalid credentials.",
+    "error_generic": "Something went wrong. Try again.",
+    "signup_success": "Account created. Check your email to confirm.",
+    "check_email": "Check your inbox to confirm your email."
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "your_role": "Your role",
+    "your_org": "Your organization",
+    "quick_actions": "Quick actions",
+    "documents_in_progress": "Documents in progress",
+    "documents_signed": "Signed documents",
+    "documents_pending": "Pending",
+    "coming_soon": "Coming soon"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "reseller": "Reseller",
+    "admin_client": "Client Admin",
+    "manager": "Manager",
+    "user": "User"
+  },
+  "users": {
+    "title": "User management",
+    "subtitle": "Invite and manage members of your organization.",
+    "invite": "Invite user",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Disabled",
+    "actions": "Actions",
+    "change_role": "Change role",
+    "deactivate": "Disable",
+    "activate": "Re-enable",
+    "no_users": "No users."
+  },
+  "tenants": {
+    "title": "All organizations",
+    "subtitle": "Global view of the client portfolio.",
+    "name": "Name",
+    "country": "Country",
+    "plan": "Plan",
+    "status": "Status",
+    "created": "Created"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Error",
+    "language": "Language"
+  }
+}
