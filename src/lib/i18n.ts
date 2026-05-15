@@ -14,14 +14,19 @@ if (!i18n.isInitialized) {
         fr: { translation: fr },
         en: { translation: en },
       },
+      lng: "fr",
       fallbackLng: "fr",
       supportedLngs: ["fr", "en"],
       interpolation: { escapeValue: false },
       detection: {
-        order: ["localStorage", "navigator"],
+        // localStorage only — navigator-based detection causes SSR/client
+        // hydration mismatches because the server can't read window.navigator.
+        order: ["localStorage"],
         caches: ["localStorage"],
       },
+      react: { useSuspense: false },
     });
 }
 
 export default i18n;
+

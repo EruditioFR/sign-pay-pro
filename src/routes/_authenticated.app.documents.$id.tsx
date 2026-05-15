@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getDocument, getDocumentFileSignedUrl } from "@/lib/documents.functions";
+import { listDocumentSignatures, listDocumentPayments } from "@/lib/sharing.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,9 @@ import { DocumentStatusBadge } from "@/components/status-badge";
 import { DocumentUploader } from "@/components/document-uploader";
 import { WorkflowTimeline } from "@/components/workflow-timeline";
 import { SubmitDocumentButton } from "@/components/submit-document-button";
+import { GeneratePdfButton } from "@/components/generate-pdf-button";
+import { ShareLinkDialog } from "@/components/share-link-dialog";
+import { PaymentDialog } from "@/components/payment-dialog";
 import { ArrowLeft, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
@@ -55,10 +59,17 @@ function DocumentDetailPage() {
                 {doc.reference && ` · ${doc.reference}`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <DocumentStatusBadge status={doc.status} />
               {doc.status === "draft" && (
                 <SubmitDocumentButton documentId={doc.id} documentType={doc.type} />
+              )}
+              {["validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
+                <>
+                  <GeneratePdfButton documentId={doc.id} />
+                  <ShareLinkDialog documentId={doc.id} />
+                  <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
+                </>
               )}
             </div>
           </div>

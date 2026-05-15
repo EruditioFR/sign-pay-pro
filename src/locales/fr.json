@@ -138,6 +138,37 @@
     "subtitle": "Vos étapes de validation en attente."
   },
   "nav_extra": {
-    "documents": "Documents", "approvals": "À valider", "workflows": "Workflows"
+    "documents": "Documents", "approvals": "À valider", "workflows": "Workflows", "templates": "Modèles PDF"
+  },
+  "pdf": { "generate": "Générer le PDF", "generated": "PDF généré." },
+  "sharing": {
+    "title": "Envoyer au tiers", "send": "Envoyer",
+    "recipient_name": "Nom du destinataire", "recipient_email": "Email",
+    "expires_in_days": "Expire dans (jours)",
+    "allow_sign": "Autoriser la signature", "allow_pay": "Autoriser le paiement",
+    "create_link": "Créer le lien", "link_created_copied": "Lien créé et copié.",
+    "link_revoked": "Lien révoqué.", "copied": "Lien copié.",
+    "existing_links": "Liens existants", "views": "vues",
+    "active": "actif", "inactive": "expiré"
+  },
+  "payments": {
+    "record": "Encaisser", "record_title": "Enregistrer un paiement",
+    "amount": "Montant", "method": "Méthode", "reference": "Référence",
+    "bank_transfer": "Virement", "cash": "Espèces", "check": "Chèque", "other": "Autre",
+    "recorded": "Paiement enregistré."
+  },
+  "public": {
+    "invalid_title": "Lien invalide", "invalid_text": "Ce lien est expiré ou a été révoqué.",
+    "shared_with_you": "Document partagé avec vous",
+    "no_pdf": "Aucun PDF disponible.", "actions": "Actions",
+    "sign": "Signer", "pay": "Payer",
+    "signer_name": "Nom du signataire", "signer_email": "Email",
+    "draw_signature": "Signez ci-dessous", "clear": "Effacer",
+    "sign_now": "Signer maintenant", "signed_ok": "Document signé. Merci !",
+    "need_name": "Renseignez votre nom.", "need_signature": "Veuillez signer.",
+    "amount": "Montant", "payer_name": "Nom du payeur",
+    "payment_ref": "Référence du paiement", "payment_ref_hint": "Ex: référence du virement",
+    "declare_payment": "Déclarer le paiement", "declare_payment_hint": "Renseignez les informations de votre virement.",
+    "paid_ok": "Paiement enregistré. Merci !", "need_amount": "Montant invalide."
   }
 }
