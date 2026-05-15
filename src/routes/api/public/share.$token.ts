@@ -1,0 +1,228 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { PDFDocument } from "pdf-lib";
+import { z } from "zod";
+import { buildDocumentPdf } from "@/lib/pdf.functions";
+
+const json = (body: unknown, init?: ResponseInit) =>
+  new Response(JSON.stringify(body), {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+  });
+
+async function loadByToken(token: string) {
+  const { data: link } = await supabaseAdmin
+    .from("document_share_links")
+    .select("*")
+    .eq("token", token)
+    .maybeSingle();
+  if (!link) return null;
+  if (link.revoked_at) return null;
+  if (link.expires_at && new Date(link.expires_at) < new Date()) return null;
+  if (link.max_views && link.view_count >= link.max_views) return null;
+  return link;
+}
+
+const SignBody = z.object({
+  action: z.literal("sign"),
+  signer_name: z.string().min(1).max(150),
+  signer_email: z.string().email().optional().nullable().or(z.literal("")),
+  signature_image_b64: z.string().min(50).max(2_000_000),
+});
+const PayBody = z.object({
+  action: z.literal("pay"),
+  amount: z.number().positive(),
+  method: z.enum(["bank_transfer", "manual", "cash", "check"]).default("manual"),
+  payer_name: z.string().max(150).optional().nullable(),
+  provider_ref: z.string().max(200).optional().nullable(),
+});
+const PostBody = z.discriminatedUnion("action", [SignBody, PayBody]);
+
+export const Route = createFileRoute("/api/public/share/$token")({
+  server: {
+    handlers: {
+      GET: async ({ params, request }) => {
+        const link = await loadByToken(params.token);
+        if (!link) return json({ error: "invalid_or_expired" }, { status: 404 });
+
+        const { data: doc } = await supabaseAdmin
+          .from("documents")
+          .select("id, organization_id, type, title, reference, amount_ttc, currency, third_party_name, issue_date, due_date")
+          .eq("id", link.document_id)
+          .maybeSingle();
+        if (!doc) return json({ error: "not_found" }, { status: 404 });
+
+        const { data: file } = await supabaseAdmin
+          .from("document_files")
+          .select("storage_path, file_name")
+          .eq("document_id", link.document_id)
+          .eq("is_current", true)
+          .maybeSingle();
+
+        let pdfUrl: string | null = null;
+        if (file) {
+          const { data: signed } = await supabaseAdmin.storage
+            .from("documents")
+            .createSignedUrl(file.storage_path, 600);
+          pdfUrl = signed?.signedUrl ?? null;
+        }
+
+        const { data: org } = await supabaseAdmin
+          .from("organizations")
+          .select("name, country")
+          .eq("id", doc.organization_id)
+          .maybeSingle();
+
+        // increment view count
+        await supabaseAdmin
+          .from("document_share_links")
+          .update({ view_count: (link.view_count ?? 0) + 1 })
+          .eq("id", link.id);
+
+        await supabaseAdmin.from("audit_logs").insert({
+          organization_id: doc.organization_id,
+          action: "share.viewed",
+          resource: `document:${doc.id}`,
+          metadata: {
+            link_id: link.id,
+            ip: request.headers.get("x-forwarded-for") ?? null,
+            ua: request.headers.get("user-agent") ?? null,
+          },
+        });
+
+        return json({
+          document: doc,
+          organization: org,
+          pdfUrl,
+          allow_sign: link.allow_sign,
+          allow_pay: link.allow_pay,
+          recipient_name: link.recipient_name,
+          recipient_email: link.recipient_email,
+        });
+      },
+
+      POST: async ({ params, request }) => {
+        const link = await loadByToken(params.token);
+        if (!link) return json({ error: "invalid_or_expired" }, { status: 404 });
+
+        const raw = await request.json().catch(() => null);
+        const parsed = PostBody.safeParse(raw);
+        if (!parsed.success) return json({ error: "invalid_input" }, { status: 400 });
+        const body = parsed.data;
+
+        const ip = request.headers.get("x-forwarded-for") ?? null;
+        const ua = request.headers.get("user-agent") ?? null;
+
+        const { data: doc } = await supabaseAdmin
+          .from("documents")
+          .select("*")
+          .eq("id", link.document_id)
+          .maybeSingle();
+        if (!doc) return json({ error: "not_found" }, { status: 404 });
+
+        if (body.action === "sign") {
+          if (!link.allow_sign) return json({ error: "signing_disabled" }, { status: 403 });
+
+          // Build / fetch current PDF and append signature page
+          const { data: org } = await supabaseAdmin
+            .from("organizations")
+            .select("name, country")
+            .eq("id", doc.organization_id)
+            .maybeSingle();
+
+          const { data: currentFile } = await supabaseAdmin
+            .from("document_files")
+            .select("storage_path")
+            .eq("document_id", doc.id)
+            .eq("is_current", true)
+            .maybeSingle();
+
+          let basePdfBytes: Uint8Array;
+          if (currentFile) {
+            const { data: blob } = await supabaseAdmin.storage
+              .from("documents")
+              .download(currentFile.storage_path);
+            basePdfBytes = blob ? new Uint8Array(await blob.arrayBuffer()) : await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+          } else {
+            basePdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+          }
+
+          const pdf = await PDFDocument.load(basePdfBytes);
+          const signaturePage = pdf.addPage([595.28, 400]);
+          const signedAt = new Date();
+
+          const pngB64 = body.signature_image_b64.replace(/^data:image\/png;base64,/, "");
+          let sigImg;
+          try {
+            sigImg = await pdf.embedPng(Uint8Array.from(atob(pngB64), (c) => c.charCodeAt(0)));
+          } catch {
+            return json({ error: "invalid_signature_image" }, { status: 400 });
+          }
+          const dims = sigImg.scale(0.4);
+          signaturePage.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
+          signaturePage.drawText(`Signé par : ${body.signer_name}`, { x: 50, y: 310, size: 11 });
+          if (body.signer_email) signaturePage.drawText(`Email : ${body.signer_email}`, { x: 50, y: 294, size: 10 });
+          signaturePage.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
+          if (ip) signaturePage.drawText(`IP : ${ip}`, { x: 50, y: 262, size: 9 });
+          signaturePage.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+
+          const signedBytes = await pdf.save();
+
+          // Hash
+          const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes);
+          const hashHex = Array.from(new Uint8Array(hashBuf))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+
+          const path = `${doc.organization_id}/${doc.id}/signed-${signedAt.getTime()}.pdf`;
+          const { error: upErr } = await supabaseAdmin.storage
+            .from("signed-documents")
+            .upload(path, signedBytes, { contentType: "application/pdf" });
+          if (upErr) return json({ error: upErr.message }, { status: 500 });
+
+          const { data: sig, error: sigErr } = await supabaseAdmin
+            .from("document_signatures")
+            .insert({
+              document_id: doc.id,
+              share_link_id: link.id,
+              signer_name: body.signer_name,
+              signer_email: body.signer_email || null,
+              signature_image_b64: body.signature_image_b64.slice(0, 500_000),
+              ip,
+              user_agent: ua,
+              pdf_hash_sha256: hashHex,
+              pdf_storage_path: path,
+            })
+            .select()
+            .single();
+          if (sigErr) return json({ error: sigErr.message }, { status: 500 });
+
+          return json({ ok: true, signature_id: sig.id, hash: hashHex });
+        }
+
+        if (body.action === "pay") {
+          if (!link.allow_pay) return json({ error: "payment_disabled" }, { status: 403 });
+          const { data: payment, error: payErr } = await supabaseAdmin
+            .from("document_payments")
+            .insert({
+              document_id: doc.id,
+              share_link_id: link.id,
+              amount: body.amount,
+              currency: doc.currency || "EUR",
+              method: body.method,
+              status: "succeeded",
+              provider_ref: body.provider_ref || null,
+              paid_at: new Date().toISOString(),
+              metadata: { payer_name: body.payer_name ?? null, ip, ua },
+            })
+            .select()
+            .single();
+          if (payErr) return json({ error: payErr.message }, { status: 500 });
+          return json({ ok: true, payment_id: payment.id });
+        }
+
+        return json({ error: "unknown_action" }, { status: 400 });
+      },
+    },
+  },
+});
