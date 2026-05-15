@@ -88,10 +88,45 @@
     "created": "Created"
   },
   "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "loading": "Loading…",
-    "error": "Error",
-    "language": "Language"
+    "save": "Save", "cancel": "Cancel", "loading": "Loading…", "error": "Error", "language": "Language"
+  },
+  "documents": {
+    "title": "Documents", "subtitle": "Manage your business documents.",
+    "new": "New document", "created": "Document created.", "empty": "No documents.",
+    "search_placeholder": "Search by title…",
+    "filter": { "all_types": "All types", "all_statuses": "All statuses" },
+    "field": {
+      "title": "Title", "type": "Type", "reference": "Reference",
+      "third_party": "Third party", "third_party_email": "Third-party email",
+      "amount": "Amount (incl.)", "amount_ht": "Amount (excl.)", "amount_ttc": "Amount (incl.)",
+      "currency": "Currency", "issue_date": "Issue date", "due_date": "Due date",
+      "description": "Description", "status": "Status"
+    },
+    "types": {
+      "purchase_order": "Purchase order", "quote": "Quote",
+      "invoice": "Invoice", "contract": "Contract", "other": "Other"
+    },
+    "status": {
+      "draft": "Draft", "pending_validation": "Pending", "validated": "Validated",
+      "rejected": "Rejected", "archived": "Archived"
+    },
+    "upload": {
+      "label": "Drop a file or click", "choose": "Choose",
+      "uploading": "Uploading…", "success": "File added.",
+      "too_large": "File too large (max 20 MB)."
+    }
+  },
+  "workflows": {
+    "title": "Workflows", "subtitle": "Validation templates for your organization.",
+    "no_steps": "No steps.", "optional": "optional",
+    "step_status": {
+      "pending": "Pending", "approved": "Approved", "rejected": "Rejected", "skipped": "Skipped"
+    }
+  },
+  "approvals": {
+    "title": "To approve", "subtitle": "Your pending validation steps."
+  },
+  "nav_extra": {
+    "documents": "Documents", "approvals": "To approve", "workflows": "Workflows"
   }
 }
