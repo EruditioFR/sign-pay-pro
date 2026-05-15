@@ -158,7 +158,7 @@ export const submitDocumentForValidation = createServerFn({ method: "POST" })
     const tplSteps = (tpl.workflow_template_steps ?? []) as Array<{
       position: number;
       name: string;
-      approver_role: string | null;
+      approver_role: "super_admin" | "reseller" | "admin_client" | "manager" | "user" | null;
       approver_user_id: string | null;
       required: boolean;
     }>;
@@ -171,7 +171,7 @@ export const submitDocumentForValidation = createServerFn({ method: "POST" })
         approver_role: s.approver_role,
         approver_user_id: s.approver_user_id,
         required: s.required,
-        status: "pending",
+        status: "pending" as const,
       }));
     if (stepRows.length) {
       const { error: sErr } = await supabase.from("document_workflow_steps").insert(stepRows);
@@ -199,41 +199,20 @@ const DecideSchema = z.object({
   comment: z.string().max(2000).optional(),
 });
 
-async function decideStep(
-  supabase: ReturnType<typeof createSupabaseStub>,
-  userId: string,
-  stepId: string,
-  decision: "approved" | "rejected",
-  comment?: string
-) {
-  const { error } = await supabase
-    .from("document_workflow_steps")
-    .update({
-      status: decision,
-      decided_at: new Date().toISOString(),
-      decided_by: userId,
-      comment: comment ?? null,
-    })
-    .eq("id", stepId);
-  if (error) throw new Error(error.message);
-}
-// Type helper for the supabase client passed through middleware context.
-type SupabaseClientLike = Awaited<
-  ReturnType<typeof requireSupabaseAuth.context>
-> extends infer T
-  ? T extends { supabase: infer S }
-    ? S
-    : never
-  : never;
-function createSupabaseStub(): SupabaseClientLike {
-  return undefined as unknown as SupabaseClientLike;
-}
-
 export const approveStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => DecideSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await decideStep(context.supabase as never, context.userId, data.stepId, "approved", data.comment);
+    const { error } = await context.supabase
+      .from("document_workflow_steps")
+      .update({
+        status: "approved",
+        decided_at: new Date().toISOString(),
+        decided_by: context.userId,
+        comment: data.comment ?? null,
+      })
+      .eq("id", data.stepId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
@@ -241,7 +220,16 @@ export const rejectStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => DecideSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await decideStep(context.supabase as never, context.userId, data.stepId, "rejected", data.comment);
+    const { error } = await context.supabase
+      .from("document_workflow_steps")
+      .update({
+        status: "rejected",
+        decided_at: new Date().toISOString(),
+        decided_by: context.userId,
+        comment: data.comment ?? null,
+      })
+      .eq("id", data.stepId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
