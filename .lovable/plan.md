@@ -1,148 +1,167 @@
-# Bloc 1 — Fondations DocFlow Pro
+# Bloc 2 — Documents, Upload & Workflows de validation
 
-## Réponse sur le déploiement on-premise
+## Périmètre
 
-**Lovable Cloud = Supabase managé par Lovable.** L'instance elle-même n'est pas exportable vers un serveur client. **Mais** :
+Couvre la création, le stockage, la circulation et la validation des documents commerciaux (bons de commande, devis, factures, contrats). Tout le reste (signature électronique, paiement, OCR, notifications email, PDF généré) reste hors-scope et fera partie des Blocs 3+.
 
-- Supabase est open-source → un client peut héberger sa propre instance (Docker Compose officiel) et obtenir exactement les mêmes APIs.
-- Tout ce qu'on construit (schéma SQL, RLS, policies, edge functions, code React) est **100% portable**.
-- Pour livrer en on-premise il suffira de : (1) exporter les migrations SQL, (2) déployer le front (Docker/Vercel chez le client), (3) brancher les variables d'env sur le Supabase self-hosted du client.
+### Inclus
+1. Modèle de données documents multi-tenant (types, statuts, versions)
+2. Upload de fichiers (PDF, images, Office) vers Lovable Cloud Storage
+3. CRUD documents avec RLS strict par organisation
+4. Métadonnées : type, n° pièce, montant HT/TTC, devise, tiers, dates, tags
+5. Workflows de validation configurables (étapes séquentielles)
+6. Tâches d'approbation par utilisateur (file d'attente "À valider")
+7. Historique complet (versions + audit_logs enrichis)
+8. Recherche & filtres (type, statut, période, tiers, montant)
+9. UI : liste, détail, création, upload, viewer PDF/image, timeline workflow
+10. i18n FR/EN sur toutes les nouvelles chaînes
 
-**Recommandation :** activer Lovable Cloud pour ce projet (rapide, zéro config). On garde une discipline stricte : toutes les modifs DB passent par des migrations versionnées, jamais de dépendance à un service Lovable-spécifique côté code. Le jour du on-prem, on rejoue les migrations sur le Supabase du client.
-
-Si tu refuses cette approche, l'alternative est de connecter dès maintenant un Supabase externe que tu héberges toi-même (plus de friction, mais identique en contenu).
-
----
-
-## Périmètre du Bloc 1
-
-1. Authentification Supabase (email/password + magic link, MFA optionnel pour Admin)
-2. Modèle de données multi-tenant avec RLS strict
-3. Système de rôles hiérarchiques (5 niveaux)
-4. Layout + navigation des 4 dashboards (Super Admin, Revendeur, Admin Client, Manager+Utilisateur)
-5. i18n FR/EN (structure prête, pas de RTL pour l'instant)
-6. Page d'accueil publique simple + pages /login, /signup
-7. Création du premier tenant à l'inscription (l'inscrit devient Admin Client de son organisation)
-
-**Hors périmètre Bloc 1 :** documents, workflows, signature, paiement, OCR, chatbot, conformité, dashboards analytiques détaillés, intégrations.
+### Hors-scope (Blocs ultérieurs)
+- Signature électronique qualifiée
+- Génération PDF (devis/facture depuis template)
+- Paiement par lien public
+- OCR / extraction automatique
+- Notifications email/push
+- Chatbot, conformité avancée, intégrations comptables
 
 ---
 
-## Architecture
-
-### Structure des routes (TanStack Start)
+## Schéma DB
 
 ```
-src/routes/
-  __root.tsx                          shell + providers (i18n, auth, query)
-  index.tsx                           landing publique
-  login.tsx                           connexion
-  signup.tsx                          inscription (crée organisation)
-  _authenticated.tsx                  garde d'auth + chargement profil
-  _authenticated/
-    index.tsx                         redirige vers le dashboard du rôle
-    super-admin/
-      index.tsx                       dashboard super admin (placeholder)
-      tenants.tsx                     liste tenants
-    reseller/
-      index.tsx                       portefeuille clients (placeholder)
-    admin/
-      index.tsx                       dashboard admin client
-      users.tsx                       gestion utilisateurs
-      roles.tsx                       gestion rôles personnalisés
-      settings.tsx                    paramètres organisation
-    app/
-      index.tsx                       dashboard utilisateur/manager
-      profile.tsx                     profil utilisateur
-```
+-- enums
+document_type   : purchase_order | quote | invoice | contract | other
+document_status : draft | pending_validation | validated | rejected | archived
+workflow_step_status : pending | approved | rejected | skipped
 
-### Schéma DB (migrations SQL Bloc 1 uniquement)
-
-```
--- enum rôles système
-create type app_role as enum ('super_admin', 'reseller', 'admin_client', 'manager', 'user');
-
-organizations (
-  id uuid pk, name text, country text default 'FR',
-  reseller_id uuid null references organizations(id),
-  is_reseller bool default false,
-  plan text default 'trial', active bool default true,
-  created_at timestamptz
+-- table principale
+documents (
+  id, organization_id, type, status, title, reference, description,
+  amount_ht numeric, amount_ttc numeric, currency text default 'EUR',
+  third_party_name, third_party_email,
+  issue_date date, due_date date,
+  tags text[],
+  created_by uuid, current_workflow_id uuid null,
+  created_at, updated_at
 )
 
-profiles (
-  id uuid pk references auth.users(id) on delete cascade,
-  organization_id uuid references organizations(id),
-  email text, full_name text, lang text default 'fr',
-  created_at timestamptz
+-- fichiers (versionnés)
+document_files (
+  id, document_id, version int, storage_path text, file_name,
+  mime_type, size_bytes, uploaded_by, uploaded_at,
+  is_current bool
 )
 
-user_roles (
-  id uuid pk, user_id uuid references auth.users(id) on delete cascade,
-  organization_id uuid references organizations(id),
-  role app_role not null,
-  unique(user_id, organization_id, role)
+-- définitions de workflow par organisation
+workflow_templates (
+  id, organization_id, name, document_type, active,
+  created_at, updated_at
 )
 
-audit_logs (
-  id uuid pk, organization_id uuid, user_id uuid,
-  action text, resource text, metadata jsonb, created_at timestamptz
+workflow_template_steps (
+  id, template_id, position int, name,
+  approver_role app_role null, approver_user_id uuid null,
+  required bool default true
+)
+
+-- instance de workflow attachée à un document
+document_workflows (
+  id, document_id, template_id, status, current_step int,
+  started_at, completed_at
+)
+
+document_workflow_steps (
+  id, workflow_id, position int, name,
+  approver_user_id uuid, status workflow_step_status,
+  decided_at, comment text
 )
 ```
 
-### Sécurité (security definer functions)
+### Sécurité
+- RLS sur toutes les tables : isolation par `organization_id` via `get_user_org()`.
+- Storage bucket `documents` privé : path `{org_id}/{document_id}/{filename}`. Policies RLS : SELECT/INSERT/UPDATE/DELETE uniquement si l'utilisateur appartient à l'org du dossier.
+- Functions security definer ajoutées : `can_approve_step(_user_id, _step_id)`, `is_org_member(_user_id, _org_id)`.
+- Triggers : `updated_at` auto, `audit_logs` à chaque changement de statut document/workflow, avancement automatique du workflow quand toutes les étapes obligatoires sont approuvées.
+
+---
+
+## Server Functions (TanStack)
+
+`src/lib/documents.functions.ts`
+- `listDocuments({ filters })` — liste filtrée de l'org courante
+- `getDocument({ id })` — détail + fichiers + workflow
+- `createDocument({ ... })` — crée + log audit
+- `updateDocument({ id, patch })`
+- `deleteDocument({ id })` — admin uniquement
+- `getDocumentFileSignedUrl({ fileId })` — URL signée 5 min
+
+`src/lib/workflows.functions.ts`
+- `listWorkflowTemplates()`
+- `createWorkflowTemplate({ ... })`, `updateWorkflowTemplate`, `deleteWorkflowTemplate`
+- `submitDocumentForValidation({ documentId, templateId })`
+- `approveStep({ stepId, comment })`
+- `rejectStep({ stepId, comment })`
+- `listMyPendingApprovals()`
+
+Toutes protégées par `requireSupabaseAuth`. Vérifications de rôles + appartenance org dans le handler.
+
+---
+
+## Routes ajoutées
 
 ```
-has_role(_user_id uuid, _role app_role) → bool
-get_user_org(_user_id uuid) → uuid
-is_super_admin(_user_id uuid) → bool
+src/routes/_authenticated/
+  app.documents.tsx              liste + filtres (manager/user)
+  app.documents.new.tsx          création (upload + métadonnées)
+  app.documents.$id.tsx          détail (viewer + timeline workflow + actions)
+  app.approvals.tsx              "À valider" (file utilisateur)
+  admin.workflows.tsx            liste templates de workflow
+  admin.workflows.new.tsx        création template
+  admin.workflows.$id.tsx        édition template (étapes)
 ```
 
-Toutes les RLS utilisent ces fonctions (pattern obligatoire — aucune sous-requête sur `user_roles` directement dans une policy pour éviter la récursion).
+Sidebar mise à jour : ajout "Documents", "À valider" (badge compteur), "Workflows" (admin).
 
-### RLS résumées
+---
 
-- `organizations` : SELECT si super_admin OR reseller propriétaire OR membre du tenant
-- `profiles` : SELECT/UPDATE soi-même ; SELECT pour admin_client du même tenant
-- `user_roles` : SELECT membres du même tenant ; INSERT/DELETE par admin_client+
-- `audit_logs` : SELECT super_admin (tout) / admin_client (son tenant uniquement)
+## Composants UI (Shadcn)
 
-### Trigger d'inscription
-
-`handle_new_user()` (security definer) : à la création d'un `auth.users`, crée `organizations` + `profiles` + `user_roles` (rôle `admin_client`). Le premier utilisateur d'un tenant en est automatiquement l'admin.
-
-### Flow super_admin et reseller
-
-- Pas de signup public pour ces rôles. Un compte super_admin de seed est créé manuellement (script SQL après mise en place).
-- Un super_admin peut promouvoir un user en reseller, ou créer une organisation et y rattacher un admin_client.
+- `DocumentList` (table avec tri/pagination)
+- `DocumentFilters` (type, statut, période, tiers, montant min/max)
+- `DocumentForm` (création/édition)
+- `DocumentUploader` (drag & drop, multi-fichiers, progress)
+- `DocumentViewer` (PDF via `<iframe>` URL signée, images natives)
+- `WorkflowTimeline` (étapes verticales avec statut, validateur, date, commentaire)
+- `WorkflowTemplateEditor` (drag & drop des étapes)
+- `ApprovalActionBar` (boutons Approuver/Rejeter + commentaire)
+- `StatusBadge`, `DocumentTypeIcon`
 
 ---
 
 ## Détails techniques
 
-- **Auth :** `supabase.auth.onAuthStateChange` câblé au root, invalidation queries + router.
-- **Garde de routes :** `_authenticated.tsx` lit la session via `supabase.auth.getUser()` dans `beforeLoad`, charge profile + roles via server fn protégée par `requireSupabaseAuth`. Redirige `/login` sinon. Sous-gardes `super-admin/`, `reseller/`, `admin/` vérifient le rôle.
-- **i18n :** `i18next` + `react-i18next`, JSON par langue dans `src/locales/{fr,en}.json`, sélecteur dans le header, langue persistée dans `profiles.lang`.
-- **Design system :** Shadcn déjà installé. On définit dès maintenant les tokens (palette sobre B2B, Inter/JetBrains Mono évité, on prendra une paire pro). Je proposerai 3 directions design avant le build si tu valides.
-- **Multi-tenant côté client :** un user peut n'appartenir qu'à une seule organisation pour le Bloc 1 (multi-org reporté).
+- **Upload :** côté client → `supabase.storage.from('documents').upload(...)` puis server fn `registerDocumentFile` qui insère la ligne `document_files`. Limite 20 Mo/fichier.
+- **Versioning :** chaque nouvel upload sur un document existant crée une nouvelle ligne `document_files` (`version = max+1`, `is_current = true`, ancien repassé à false).
+- **Workflow auto :** trigger Postgres après update sur `document_workflow_steps` ; quand toutes les étapes obligatoires sont approuvées → `documents.status = 'validated'`. Si une étape est rejetée → `status = 'rejected'` et workflow stoppé.
+- **i18n :** ajout des clés `documents.*`, `workflows.*`, `approvals.*` dans `fr.json` et `en.json`.
+- **Audit :** chaque action (create/update/submit/approve/reject/delete) logge dans `audit_logs` avec `resource = 'document:{id}'` et `metadata` contextuelle.
+- **Portabilité on-premise :** tout reste en migrations SQL standard + APIs Supabase, aucune dépendance Lovable-spécifique.
 
 ---
 
-## Livrables Bloc 1
+## Plan d'exécution (ordre)
 
-- Migrations SQL complètes (organizations, profiles, user_roles, audit_logs, enum, fonctions, RLS, trigger)
-- Pages : landing, login, signup, 4 dashboards squelettes avec navigation par rôle
-- Composants : Header avec switch langue + menu user, Sidebar par rôle, Guard d'auth
-- Page admin de gestion des utilisateurs (inviter, lister, changer rôle, désactiver) — fonctionnelle
-- i18n FR/EN câblé sur toutes les chaînes UI
-- Seed SQL pour créer un super_admin de test
-
-## Hors-scope explicites (Bloc 2+)
-
-Documents, upload, workflows, PDF, signature, paiement, notifications, OCR, chatbot, conformité, intégrations, RTL arabe, analytics, dashboards Revendeur/Super Admin riches.
+1. Migration SQL : enums + tables + RLS + functions + triggers + bucket storage
+2. Server functions documents + workflows
+3. Routes & composants admin (workflow templates)
+4. Routes & composants documents (liste, création, détail, upload, viewer)
+5. Route "À valider" + actions approve/reject
+6. i18n FR/EN
+7. Mise à jour sidebar + redirections par rôle
+8. Vérifications : compilation, lint Supabase, parcours bout-en-bout
 
 ---
 
-## Question avant de lancer
+## Question
 
-Active-t-on **Lovable Cloud** dès le début du build (recommandé), ou préfères-tu connecter ton propre Supabase ?
+Tu valides ce périmètre et je lance la migration + l'implémentation, ou tu veux ajuster (ex. retirer le versioning, réduire les filtres, intégrer dès maintenant la génération PDF) ?

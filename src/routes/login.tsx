@@ -28,7 +28,7 @@ function LoginPage() {
       toast.error(t("auth.error_invalid"));
       return;
     }
-    navigate({ to: "/app" });
+    navigate({ to: "/dashboard" });
   };
 
   return (

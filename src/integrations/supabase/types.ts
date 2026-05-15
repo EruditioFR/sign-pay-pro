@@ -52,6 +52,225 @@ export type Database = {
           },
         ]
       }
+      document_files: {
+        Row: {
+          document_id: string
+          file_name: string
+          id: string
+          is_current: boolean
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+          version: number
+        }
+        Insert: {
+          document_id: string
+          file_name: string
+          id?: string
+          is_current?: boolean
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+          version?: number
+        }
+        Update: {
+          document_id?: string
+          file_name?: string
+          id?: string
+          is_current?: boolean
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_files_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_workflow_steps: {
+        Row: {
+          approver_role: Database["public"]["Enums"]["app_role"] | null
+          approver_user_id: string | null
+          comment: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          name: string
+          position: number
+          required: boolean
+          status: Database["public"]["Enums"]["workflow_step_status"]
+          workflow_id: string
+        }
+        Insert: {
+          approver_role?: Database["public"]["Enums"]["app_role"] | null
+          approver_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          name: string
+          position: number
+          required?: boolean
+          status?: Database["public"]["Enums"]["workflow_step_status"]
+          workflow_id: string
+        }
+        Update: {
+          approver_role?: Database["public"]["Enums"]["app_role"] | null
+          approver_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          name?: string
+          position?: number
+          required?: boolean
+          status?: Database["public"]["Enums"]["workflow_step_status"]
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_workflow_steps_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "document_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_workflows: {
+        Row: {
+          completed_at: string | null
+          current_step: number
+          document_id: string
+          id: string
+          started_at: string
+          status: Database["public"]["Enums"]["document_status"]
+          template_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          current_step?: number
+          document_id: string
+          id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["document_status"]
+          template_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          current_step?: number
+          document_id?: string
+          id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["document_status"]
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_workflows_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_workflows_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          amount_ht: number | null
+          amount_ttc: number | null
+          created_at: string
+          created_by: string
+          currency: string
+          current_workflow_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          issue_date: string | null
+          organization_id: string
+          reference: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          tags: string[]
+          third_party_email: string | null
+          third_party_name: string | null
+          title: string
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount_ht?: number | null
+          amount_ttc?: number | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          current_workflow_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          issue_date?: string | null
+          organization_id: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          tags?: string[]
+          third_party_email?: string | null
+          third_party_name?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount_ht?: number | null
+          amount_ttc?: number | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          current_workflow_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          issue_date?: string | null
+          organization_id?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          tags?: string[]
+          third_party_email?: string | null
+          third_party_name?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           active: boolean
@@ -169,6 +388,85 @@ export type Database = {
           },
         ]
       }
+      workflow_template_steps: {
+        Row: {
+          approver_role: Database["public"]["Enums"]["app_role"] | null
+          approver_user_id: string | null
+          created_at: string
+          id: string
+          name: string
+          position: number
+          required: boolean
+          template_id: string
+        }
+        Insert: {
+          approver_role?: Database["public"]["Enums"]["app_role"] | null
+          approver_user_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          position: number
+          required?: boolean
+          template_id: string
+        }
+        Update: {
+          approver_role?: Database["public"]["Enums"]["app_role"] | null
+          approver_user_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          required?: boolean
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_template_steps_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -186,10 +484,27 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "super_admin" | "reseller" | "admin_client" | "manager" | "user"
+      document_status:
+        | "draft"
+        | "pending_validation"
+        | "validated"
+        | "rejected"
+        | "archived"
+      document_type:
+        | "purchase_order"
+        | "quote"
+        | "invoice"
+        | "contract"
+        | "other"
+      workflow_step_status: "pending" | "approved" | "rejected" | "skipped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -318,6 +633,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["super_admin", "reseller", "admin_client", "manager", "user"],
+      document_status: [
+        "draft",
+        "pending_validation",
+        "validated",
+        "rejected",
+        "archived",
+      ],
+      document_type: [
+        "purchase_order",
+        "quote",
+        "invoice",
+        "contract",
+        "other",
+      ],
+      workflow_step_status: ["pending", "approved", "rejected", "skipped"],
     },
   },
 } as const
