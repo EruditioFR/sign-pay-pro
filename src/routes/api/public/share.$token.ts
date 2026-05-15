@@ -169,7 +169,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
           const signedBytes = await pdf.save();
 
           // Hash
-          const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes);
+          const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes as BufferSource);
           const hashHex = Array.from(new Uint8Array(hashBuf))
             .map((b) => b.toString(16).padStart(2, "0"))
             .join("");
