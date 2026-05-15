@@ -498,6 +498,10 @@ export type Database = {
         | "validated"
         | "rejected"
         | "archived"
+        | "sent"
+        | "signed"
+        | "paid"
+        | "partially_paid"
       document_type:
         | "purchase_order"
         | "quote"
@@ -639,6 +643,10 @@ export const Constants = {
         "validated",
         "rejected",
         "archived",
+        "sent",
+        "signed",
+        "paid",
+        "partially_paid",
       ],
       document_type: [
         "purchase_order",
