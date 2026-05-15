@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCurrentUser, type AppRole } from "@/lib/auth.functions";
+import { listMyPendingApprovals } from "@/lib/workflows.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,7 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Building2,
+  CheckSquare,
   FileText,
+  GitBranch,
   Home,
   LogOut,
   Settings,
@@ -32,6 +36,7 @@ interface NavItem {
   to: string;
   label: string;
   icon: typeof Home;
+  badgeKey?: "approvals";
 }
 
 function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
@@ -47,6 +52,8 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/admin", label: t("nav.dashboard"), icon: Home },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
+        { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
+        { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
         { to: "/admin/users", label: t("nav.users"), icon: Users },
         { to: "/admin/roles", label: t("nav.roles"), icon: ShieldCheck },
         { to: "/admin/settings", label: t("nav.settings"), icon: Settings },
@@ -57,6 +64,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/app", label: t("nav.dashboard"), icon: Home },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
+        { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
         { to: "/app/profile", label: t("nav.profile"), icon: UserIcon },
       ];
   }
@@ -67,7 +75,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const fetchMe = useServerFn(getCurrentUser);
+  const fetchApprovals = useServerFn(listMyPendingApprovals);
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => fetchMe() });
+  const { data: approvals } = useQuery({
+    queryKey: ["my_approvals"],
+    queryFn: () => fetchApprovals(),
+    enabled: !!me,
+    refetchInterval: 60_000,
+  });
+  const approvalsCount = approvals?.steps.length ?? 0;
 
   const items = me ? navForRole(me.primaryRole, t) : [];
 
@@ -100,7 +116,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               >
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.badgeKey === "approvals" && approvalsCount > 0 && (
+                  <Badge variant="default" className="h-5 px-1.5 text-[10px]">
+                    {approvalsCount}
+                  </Badge>
+                )}
               </Link>
             );
           })}

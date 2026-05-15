@@ -20,12 +20,16 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
 import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated.super-admin.tenants'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated.app.profile'
+import { Route as AuthenticatedAppApprovalsRouteImport } from './routes/_authenticated.app.approvals'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated.admin.settings'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
+import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
+import { Route as AuthenticatedAdminWorkflowsNewRouteImport } from './routes/_authenticated.admin.workflows.new'
+import { Route as AuthenticatedAdminWorkflowsIdRouteImport } from './routes/_authenticated.admin.workflows.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -84,6 +88,12 @@ const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
   path: '/app/profile',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAppApprovalsRoute =
+  AuthenticatedAppApprovalsRouteImport.update({
+    id: '/app/approvals',
+    path: '/app/approvals',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -106,6 +116,12 @@ const AuthenticatedAppDocumentsIndexRoute =
     path: '/app/documents/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminWorkflowsIndexRoute =
+  AuthenticatedAdminWorkflowsIndexRouteImport.update({
+    id: '/admin/workflows/',
+    path: '/admin/workflows/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsNewRoute =
   AuthenticatedAppDocumentsNewRouteImport.update({
     id: '/app/documents/new',
@@ -118,6 +134,18 @@ const AuthenticatedAppDocumentsIdRoute =
     path: '/app/documents/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminWorkflowsNewRoute =
+  AuthenticatedAdminWorkflowsNewRouteImport.update({
+    id: '/admin/workflows/new',
+    path: '/admin/workflows/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminWorkflowsIdRoute =
+  AuthenticatedAdminWorkflowsIdRouteImport.update({
+    id: '/admin/workflows/$id',
+    path: '/admin/workflows/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -127,14 +155,18 @@ export interface FileRoutesByFullPath {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/reseller/': typeof AuthenticatedResellerIndexRoute
   '/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
+  '/admin/workflows/$id': typeof AuthenticatedAdminWorkflowsIdRoute
+  '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -145,14 +177,18 @@ export interface FileRoutesByTo {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/reseller': typeof AuthenticatedResellerIndexRoute
   '/super-admin': typeof AuthenticatedSuperAdminIndexRoute
+  '/admin/workflows/$id': typeof AuthenticatedAdminWorkflowsIdRoute
+  '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
 }
 export interface FileRoutesById {
@@ -165,14 +201,18 @@ export interface FileRoutesById {
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/reseller/': typeof AuthenticatedResellerIndexRoute
   '/_authenticated/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
+  '/_authenticated/admin/workflows/$id': typeof AuthenticatedAdminWorkflowsIdRoute
+  '/_authenticated/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
 }
 export interface FileRouteTypes {
@@ -185,14 +225,18 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
+    | '/app/approvals'
     | '/app/profile'
     | '/super-admin/tenants'
     | '/admin/'
     | '/app/'
     | '/reseller/'
     | '/super-admin/'
+    | '/admin/workflows/$id'
+    | '/admin/workflows/new'
     | '/app/documents/$id'
     | '/app/documents/new'
+    | '/admin/workflows/'
     | '/app/documents/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -203,14 +247,18 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
+    | '/app/approvals'
     | '/app/profile'
     | '/super-admin/tenants'
     | '/admin'
     | '/app'
     | '/reseller'
     | '/super-admin'
+    | '/admin/workflows/$id'
+    | '/admin/workflows/new'
     | '/app/documents/$id'
     | '/app/documents/new'
+    | '/admin/workflows'
     | '/app/documents'
   id:
     | '__root__'
@@ -222,14 +270,18 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
+    | '/_authenticated/app/approvals'
     | '/_authenticated/app/profile'
     | '/_authenticated/super-admin/tenants'
     | '/_authenticated/admin/'
     | '/_authenticated/app/'
     | '/_authenticated/reseller/'
     | '/_authenticated/super-admin/'
+    | '/_authenticated/admin/workflows/$id'
+    | '/_authenticated/admin/workflows/new'
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
+    | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
   fileRoutesById: FileRoutesById
 }
@@ -319,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/approvals': {
+      id: '/_authenticated/app/approvals'
+      path: '/app/approvals'
+      fullPath: '/app/approvals'
+      preLoaderRoute: typeof AuthenticatedAppApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -347,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDocumentsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/workflows/': {
+      id: '/_authenticated/admin/workflows/'
+      path: '/admin/workflows'
+      fullPath: '/admin/workflows/'
+      preLoaderRoute: typeof AuthenticatedAdminWorkflowsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/new': {
       id: '/_authenticated/app/documents/new'
       path: '/app/documents/new'
@@ -361,6 +427,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDocumentsIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/workflows/new': {
+      id: '/_authenticated/admin/workflows/new'
+      path: '/admin/workflows/new'
+      fullPath: '/admin/workflows/new'
+      preLoaderRoute: typeof AuthenticatedAdminWorkflowsNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/workflows/$id': {
+      id: '/_authenticated/admin/workflows/$id'
+      path: '/admin/workflows/$id'
+      fullPath: '/admin/workflows/$id'
+      preLoaderRoute: typeof AuthenticatedAdminWorkflowsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -369,14 +449,18 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAppApprovalsRoute: typeof AuthenticatedAppApprovalsRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedResellerIndexRoute: typeof AuthenticatedResellerIndexRoute
   AuthenticatedSuperAdminIndexRoute: typeof AuthenticatedSuperAdminIndexRoute
+  AuthenticatedAdminWorkflowsIdRoute: typeof AuthenticatedAdminWorkflowsIdRoute
+  AuthenticatedAdminWorkflowsNewRoute: typeof AuthenticatedAdminWorkflowsNewRoute
   AuthenticatedAppDocumentsIdRoute: typeof AuthenticatedAppDocumentsIdRoute
   AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
+  AuthenticatedAdminWorkflowsIndexRoute: typeof AuthenticatedAdminWorkflowsIndexRoute
   AuthenticatedAppDocumentsIndexRoute: typeof AuthenticatedAppDocumentsIndexRoute
 }
 
@@ -385,14 +469,18 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAppApprovalsRoute: AuthenticatedAppApprovalsRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedSuperAdminTenantsRoute: AuthenticatedSuperAdminTenantsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedResellerIndexRoute: AuthenticatedResellerIndexRoute,
   AuthenticatedSuperAdminIndexRoute: AuthenticatedSuperAdminIndexRoute,
+  AuthenticatedAdminWorkflowsIdRoute: AuthenticatedAdminWorkflowsIdRoute,
+  AuthenticatedAdminWorkflowsNewRoute: AuthenticatedAdminWorkflowsNewRoute,
   AuthenticatedAppDocumentsIdRoute: AuthenticatedAppDocumentsIdRoute,
   AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
+  AuthenticatedAdminWorkflowsIndexRoute: AuthenticatedAdminWorkflowsIndexRoute,
   AuthenticatedAppDocumentsIndexRoute: AuthenticatedAppDocumentsIndexRoute,
 }
 
