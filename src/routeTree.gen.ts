@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated.super-admin.index'
 import { Route as AuthenticatedResellerIndexRouteImport } from './routes/_authenticated.reseller.index'
@@ -26,6 +27,7 @@ import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
 import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
+import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
 import { Route as AuthenticatedAdminWorkflowsNewRouteImport } from './routes/_authenticated.admin.workflows.new'
@@ -48,6 +50,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -122,6 +129,11 @@ const AuthenticatedAdminWorkflowsIndexRoute =
     path: '/admin/workflows/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
+  id: '/api/public/share/$token',
+  path: '/api/public/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppDocumentsNewRoute =
   AuthenticatedAppDocumentsNewRouteImport.update({
     id: '/app/documents/new',
@@ -152,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/p/$token': typeof PTokenRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -166,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
 }
@@ -174,6 +188,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/p/$token': typeof PTokenRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -188,6 +203,7 @@ export interface FileRoutesByTo {
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
 }
@@ -198,6 +214,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/p/$token': typeof PTokenRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -212,6 +229,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
 }
@@ -222,6 +240,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/p/$token'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -236,6 +255,7 @@ export interface FileRouteTypes {
     | '/admin/workflows/new'
     | '/app/documents/$id'
     | '/app/documents/new'
+    | '/api/public/share/$token'
     | '/admin/workflows/'
     | '/app/documents/'
   fileRoutesByTo: FileRoutesByTo
@@ -244,6 +264,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/p/$token'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -258,6 +279,7 @@ export interface FileRouteTypes {
     | '/admin/workflows/new'
     | '/app/documents/$id'
     | '/app/documents/new'
+    | '/api/public/share/$token'
     | '/admin/workflows'
     | '/app/documents'
   id:
@@ -267,6 +289,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_authenticated/dashboard'
+    | '/p/$token'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
@@ -281,6 +304,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workflows/new'
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
+    | '/api/public/share/$token'
     | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
   fileRoutesById: FileRoutesById
@@ -290,6 +314,8 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  PTokenRoute: typeof PTokenRoute
+  ApiPublicShareTokenRoute: typeof ApiPublicShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -320,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -413,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkflowsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/share/$token': {
+      id: '/api/public/share/$token'
+      path: '/api/public/share/$token'
+      fullPath: '/api/public/share/$token'
+      preLoaderRoute: typeof ApiPublicShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/documents/new': {
       id: '/_authenticated/app/documents/new'
       path: '/app/documents/new'
@@ -493,17 +533,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  PTokenRoute: PTokenRoute,
+  ApiPublicShareTokenRoute: ApiPublicShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
