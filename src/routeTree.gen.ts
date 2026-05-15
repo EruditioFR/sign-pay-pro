@@ -23,6 +23,8 @@ import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated.admin.settings'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
+import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
+import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -97,6 +99,18 @@ const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
   path: '/admin/roles',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAppDocumentsIndexRoute =
+  AuthenticatedAppDocumentsIndexRouteImport.update({
+    id: '/app/documents/',
+    path: '/app/documents/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAppDocumentsNewRoute =
+  AuthenticatedAppDocumentsNewRouteImport.update({
+    id: '/app/documents/new',
+    path: '/app/documents/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -112,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/reseller/': typeof AuthenticatedResellerIndexRoute
   '/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
+  '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -127,6 +143,8 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/reseller': typeof AuthenticatedResellerIndexRoute
   '/super-admin': typeof AuthenticatedSuperAdminIndexRoute
+  '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -144,6 +162,8 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/reseller/': typeof AuthenticatedResellerIndexRoute
   '/_authenticated/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
+  '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +181,8 @@ export interface FileRouteTypes {
     | '/app/'
     | '/reseller/'
     | '/super-admin/'
+    | '/app/documents/new'
+    | '/app/documents/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -176,6 +198,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/reseller'
     | '/super-admin'
+    | '/app/documents/new'
+    | '/app/documents'
   id:
     | '__root__'
     | '/'
@@ -192,6 +216,8 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/reseller/'
     | '/_authenticated/super-admin/'
+    | '/_authenticated/app/documents/new'
+    | '/_authenticated/app/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +327,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/documents/': {
+      id: '/_authenticated/app/documents/'
+      path: '/app/documents'
+      fullPath: '/app/documents/'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/app/documents/new': {
+      id: '/_authenticated/app/documents/new'
+      path: '/app/documents/new'
+      fullPath: '/app/documents/new'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -315,6 +355,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedResellerIndexRoute: typeof AuthenticatedResellerIndexRoute
   AuthenticatedSuperAdminIndexRoute: typeof AuthenticatedSuperAdminIndexRoute
+  AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
+  AuthenticatedAppDocumentsIndexRoute: typeof AuthenticatedAppDocumentsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -328,6 +370,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedResellerIndexRoute: AuthenticatedResellerIndexRoute,
   AuthenticatedSuperAdminIndexRoute: AuthenticatedSuperAdminIndexRoute,
+  AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
+  AuthenticatedAppDocumentsIndexRoute: AuthenticatedAppDocumentsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -343,3 +387,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
