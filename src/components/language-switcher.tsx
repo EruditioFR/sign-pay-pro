@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,8 @@ import { Languages } from "lucide-react";
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const change = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -20,7 +23,9 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2">
           <Languages className="h-4 w-4" />
-          {i18n.language?.toUpperCase().slice(0, 2)}
+          <span suppressHydrationWarning>
+            {mounted ? i18n.language?.toUpperCase().slice(0, 2) : ""}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -30,3 +35,4 @@ export function LanguageSwitcher() {
     </DropdownMenu>
   );
 }
+
