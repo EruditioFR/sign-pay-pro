@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DocumentStatusBadge } from "@/components/status-badge";
 import { DocumentUploader } from "@/components/document-uploader";
 import { WorkflowTimeline } from "@/components/workflow-timeline";
+import { SubmitDocumentButton } from "@/components/submit-document-button";
 import { ArrowLeft, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
@@ -54,7 +55,12 @@ function DocumentDetailPage() {
                 {doc.reference && ` · ${doc.reference}`}
               </p>
             </div>
-            <DocumentStatusBadge status={doc.status} />
+            <div className="flex items-center gap-2">
+              <DocumentStatusBadge status={doc.status} />
+              {doc.status === "draft" && (
+                <SubmitDocumentButton documentId={doc.id} documentType={doc.type} />
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 text-sm">
