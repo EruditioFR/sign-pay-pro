@@ -766,6 +766,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_log_event: {
+        Args: {
+          _action: string
+          _metadata?: Json
+          _organization_id: string
+          _resource: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       get_user_org: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -783,6 +793,32 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_audit_logs: {
+        Args: {
+          p_action?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_org?: string
+          p_q?: string
+          p_resource?: string
+          p_to?: string
+          p_user?: string
+        }
+        Returns: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json
+          organization_id: string
+          organization_name: string
+          resource: string
+          total_count: number
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       list_pending_signature_documents: {
         Args: {
           p_dir?: string
