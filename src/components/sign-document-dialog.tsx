@@ -54,6 +54,9 @@ export function SignDocumentDialog({
   const qc = useQueryClient();
   const fn = useServerFn(signDocumentInternal);
   const fetchUrl = useServerFn(getCurrentDocumentPdfUrl);
+  const fetchDraft = useServerFn(getSignatureDraft);
+  const saveDraft = useServerFn(saveSignatureDraft);
+  const removeDraft = useServerFn(clearSignatureDraft);
 
   const [pageIndex, setPageIndex] = useState(0);
   const [pageCount, setPageCount] = useState(0);
