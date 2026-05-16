@@ -783,6 +783,49 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_pending_signature_documents: {
+        Args: {
+          p_dir?: string
+          p_limit?: number
+          p_offset?: number
+          p_org?: string
+          p_q?: string
+          p_sort?: string
+        }
+        Returns: {
+          declined_signers: number
+          document_id: string
+          document_reference: string
+          document_title: string
+          document_type: string
+          earliest_expires_at: string
+          next_signer_email: string
+          next_signer_name: string
+          oldest_pending_at: string
+          organization_id: string
+          organization_name: string
+          pending_signers: number
+          signed_signers: number
+          total_count: number
+          total_signers: number
+        }[]
+      }
+      pending_signatures_orgs: {
+        Args: never
+        Returns: {
+          organization_id: string
+          organization_name: string
+        }[]
+      }
+      pending_signatures_totals: {
+        Args: never
+        Returns: {
+          documents: number
+          organizations: number
+          overdue: number
+          pending_signers: number
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "reseller" | "admin_client" | "manager" | "user"
