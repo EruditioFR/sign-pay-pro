@@ -355,7 +355,10 @@ export function SignDocumentDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <Label>Page</Label>
+              <div className="flex items-center gap-2">
+                <Label>Page</Label>
+                <SaveIndicator state={saveState} />
+              </div>
               {pageCount > 0 ? (
                 <Select
                   value={String(pageIndex)}
