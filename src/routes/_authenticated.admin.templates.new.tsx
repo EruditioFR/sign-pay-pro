@@ -19,7 +19,7 @@ function NewTemplatePage() {
   const create = useServerFn(createDocumentTemplate);
 
   const mut = useMutation({
-    mutationFn: (data: Parameters<typeof create>[0]["data"]) => create({ data }),
+    mutationFn: (data: Record<string, unknown>) => create({ data: data as never }),
     onSuccess: () => {
       toast.success(t("templates.saved"));
       navigate({ to: "/admin/templates" });

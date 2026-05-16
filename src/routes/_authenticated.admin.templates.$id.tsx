@@ -26,7 +26,7 @@ function EditTemplatePage() {
   });
 
   const mut = useMutation({
-    mutationFn: (patch: Parameters<typeof update>[0]["data"]) => update({ data: patch }),
+    mutationFn: (patch: Record<string, unknown>) => update({ data: patch as never }),
     onSuccess: () => {
       toast.success(t("templates.saved"));
       qc.invalidateQueries({ queryKey: ["doc_template", id] });
