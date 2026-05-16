@@ -241,7 +241,6 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
     }
 
     const pdf = await PDFDocument.load(basePdfBytes);
-    const page = pdf.addPage([595.28, 400]);
     const signedAt = new Date();
 
     const pngB64 = data.signature_image_b64.replace(/^data:image\/png;base64,/, "");
@@ -251,13 +250,34 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
     } catch {
       throw new Error("Signature invalide");
     }
-    const dims = sigImg.scale(0.4);
-    page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
-    page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
-    if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
-    page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
-    page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
-    page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+
+    const pages = pdf.getPages();
+    if (data.placement) {
+      const idx = Math.min(data.placement.page_index, pages.length - 1);
+      const page = pages[idx];
+      const pageH = page.getHeight();
+      const ratio = sigImg.height / sigImg.width;
+      const w = data.placement.width;
+      const h = w * ratio;
+      // Convert from top-left origin (UI) to bottom-left (PDF).
+      const xPdf = data.placement.x;
+      const yPdf = pageH - data.placement.y - h;
+      page.drawImage(sigImg, { x: xPdf, y: yPdf, width: w, height: h });
+      page.drawText(
+        `Signé par ${data.signer_name} — ${signedAt.toISOString()}`,
+        { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
+      );
+    } else {
+      // Fallback: append a dedicated signature page (legacy behaviour).
+      const page = pdf.addPage([595.28, 400]);
+      const dims = sigImg.scale(0.4);
+      page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
+      page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
+      if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
+      page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
+      page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
+      page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+    }
 
     const signedBytes = await pdf.save();
 
