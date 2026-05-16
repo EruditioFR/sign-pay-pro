@@ -111,18 +111,71 @@ export function SignDocumentDialog({
     };
   }, [pageIndex, pageCount]);
 
+  const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+
+  const clampPlacement = (p: Placement): Placement => {
+    const h = p.width * 0.4;
+    return {
+      ...p,
+      x: Math.min(Math.max(0, p.x), Math.max(0, pagePoints.w - p.width)),
+      y: Math.min(Math.max(0, p.y), Math.max(0, pagePoints.h - h)),
+    };
+  };
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Ignore clicks that originated from a drag on the existing box.
+    if (dragRef.current) return;
     const rect = (overlayRef.current ?? e.currentTarget).getBoundingClientRect();
     const xPx = e.clientX - rect.left;
     const yPx = e.clientY - rect.top;
     const xPt = xPx / renderScale;
     const yPt = yPx / renderScale;
-    setPlacement({
-      page_index: pageIndex,
-      x: Math.max(0, xPt - sigWidthPt / 2),
-      y: Math.max(0, yPt - (sigWidthPt * 0.4) / 2),
-      width: sigWidthPt,
-    });
+    setPlacement(
+      clampPlacement({
+        page_index: pageIndex,
+        x: xPt - sigWidthPt / 2,
+        y: yPt - (sigWidthPt * 0.4) / 2,
+        width: sigWidthPt,
+      }),
+    );
+  };
+
+  const startDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!placement) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = overlayRef.current!.getBoundingClientRect();
+    const pointerXPt = (e.clientX - rect.left) / renderScale;
+    const pointerYPt = (e.clientY - rect.top) / renderScale;
+    dragRef.current = {
+      offsetX: pointerXPt - placement.x,
+      offsetY: pointerYPt - placement.y,
+    };
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+
+  const moveDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current || !placement) return;
+    const rect = overlayRef.current!.getBoundingClientRect();
+    const pointerXPt = (e.clientX - rect.left) / renderScale;
+    const pointerYPt = (e.clientY - rect.top) / renderScale;
+    setPlacement(
+      clampPlacement({
+        ...placement,
+        x: pointerXPt - dragRef.current.offsetX,
+        y: pointerYPt - dragRef.current.offsetY,
+      }),
+    );
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.currentTarget as HTMLDivElement).hasPointerCapture(e.pointerId)) {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    }
+    // Defer clearing so the synthesized click event sees the drag flag.
+    setTimeout(() => {
+      dragRef.current = null;
+    }, 0);
   };
 
   const mut = useMutation({
@@ -253,8 +306,12 @@ export function SignDocumentDialog({
                 >
                   {sigBoxStyle && (
                     <div
-                      className="absolute rounded border-2 border-dashed border-primary bg-primary/10"
+                      className="absolute rounded border-2 border-dashed border-primary bg-primary/10 cursor-move touch-none select-none"
                       style={sigBoxStyle}
+                      onPointerDown={startDrag}
+                      onPointerMove={moveDrag}
+                      onPointerUp={endDrag}
+                      onPointerCancel={endDrag}
                     />
                   )}
                 </div>
