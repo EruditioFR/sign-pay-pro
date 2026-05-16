@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { PenLine, Eraser } from "lucide-react";
+import { PenLine, Eraser, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import {
   signDocumentInternal,
@@ -55,6 +55,7 @@ export function SignDocumentDialog({
   const [pagePoints, setPagePoints] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [renderScale, setRenderScale] = useState(1);
   const [placement, setPlacement] = useState<Placement | null>(null);
+  const [locked, setLocked] = useState(false);
   const [sigWidthPt, setSigWidthPt] = useState(140);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -182,6 +183,9 @@ export function SignDocumentDialog({
     mutationFn: async () => {
       if (!name.trim()) throw new Error(t("public.need_name"));
       if (!sigRef.current || sigRef.current.isEmpty()) throw new Error(t("public.need_signature"));
+      if (placement && !locked) {
+        throw new Error("Veuillez confirmer le placement de la signature.");
+      }
       const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
       return fn({
         data: {
@@ -200,6 +204,7 @@ export function SignDocumentDialog({
       setOpen(false);
       sigRef.current?.clear();
       setPlacement(null);
+      setLocked(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -258,6 +263,7 @@ export function SignDocumentDialog({
                 max={300}
                 step={5}
                 value={[sigWidthPt]}
+                disabled={locked}
                 onValueChange={(v) => {
                   setSigWidthPt(v[0]);
                   if (placement) setPlacement({ ...placement, width: v[0] });
@@ -272,9 +278,11 @@ export function SignDocumentDialog({
               {pageCount > 0 ? (
                 <Select
                   value={String(pageIndex)}
+                  disabled={locked}
                   onValueChange={(v) => {
                     setPageIndex(Number(v));
                     setPlacement(null);
+                    setLocked(false);
                   }}
                 >
                   <SelectTrigger className="w-32">
@@ -300,18 +308,22 @@ export function SignDocumentDialog({
               {pageCount > 0 && (
                 <div
                   ref={overlayRef}
-                  onClick={handleClick}
-                  className="absolute inset-0 cursor-crosshair"
-                  title="Cliquez pour placer la signature"
+                  onClick={locked ? undefined : handleClick}
+                  className={`absolute inset-0 ${locked ? "cursor-default" : "cursor-crosshair"}`}
+                  title={locked ? "Position verrouillée" : "Cliquez pour placer la signature"}
                 >
                   {sigBoxStyle && (
                     <div
-                      className="absolute rounded border-2 border-dashed border-primary bg-primary/10 cursor-move touch-none select-none"
+                      className={`absolute rounded border-2 bg-primary/10 select-none ${
+                        locked
+                          ? "border-solid border-emerald-500 cursor-not-allowed"
+                          : "border-dashed border-primary cursor-move touch-none"
+                      }`}
                       style={sigBoxStyle}
-                      onPointerDown={startDrag}
-                      onPointerMove={moveDrag}
-                      onPointerUp={endDrag}
-                      onPointerCancel={endDrag}
+                      onPointerDown={locked ? undefined : startDrag}
+                      onPointerMove={locked ? undefined : moveDrag}
+                      onPointerUp={locked ? undefined : endDrag}
+                      onPointerCancel={locked ? undefined : endDrag}
                     />
                   )}
                 </div>
@@ -319,7 +331,7 @@ export function SignDocumentDialog({
             </div>
             <p className="text-xs text-muted-foreground">
               {placement
-                ? `Position : page ${placement.page_index + 1}, x=${Math.round(placement.x)}pt, y=${Math.round(placement.y)}pt`
+                ? `Position : page ${placement.page_index + 1}, x=${Math.round(placement.x)}pt, y=${Math.round(placement.y)}pt${locked ? " — verrouillée" : ""}`
                 : pageCount > 0
                   ? "Cliquez sur la page à l’endroit où placer la signature."
                   : "Aucun PDF actuel — la signature sera ajoutée sur une page dédiée."}
@@ -329,12 +341,37 @@ export function SignDocumentDialog({
                 Page {pageIndex + 1} : {Math.round(pagePoints.w)}×{Math.round(pagePoints.h)} pt
               </p>
             )}
+            {placement && (
+              <Button
+                type="button"
+                variant={locked ? "outline" : "secondary"}
+                size="sm"
+                className="w-full"
+                onClick={() => setLocked((v) => !v)}
+              >
+                {locked ? (
+                  <>
+                    <Unlock className="mr-1 h-4 w-4" />
+                    Déverrouiller pour ajuster
+                  </>
+                ) : (
+                  <>
+                    <Lock className="mr-1 h-4 w-4" />
+                    Confirmer le placement
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+          <Button
+            onClick={() => mut.mutate()}
+            disabled={mut.isPending || (!!placement && !locked)}
+            title={!!placement && !locked ? "Confirmez le placement avant d’enregistrer" : undefined}
+          >
             {mut.isPending ? t("common.loading") : t("public.sign_now")}
           </Button>
         </DialogFooter>
