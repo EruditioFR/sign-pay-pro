@@ -65,6 +65,8 @@ export function SignDocumentDialog({
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [locked, setLocked] = useState(false);
   const [sigWidthPt, setSigWidthPt] = useState(140);
+  const [applyInitials, setApplyInitials] = useState(false);
+  const initialsRef = useRef<SignatureCanvas | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -264,6 +266,13 @@ export function SignDocumentDialog({
         throw new Error("Veuillez confirmer le placement de la signature.");
       }
       const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
+      let initialsDataUrl: string | null = null;
+      if (applyInitials) {
+        if (!initialsRef.current || initialsRef.current.isEmpty()) {
+          throw new Error("Veuillez dessiner vos initiales pour les paraphes.");
+        }
+        initialsDataUrl = initialsRef.current.getCanvas().toDataURL("image/png");
+      }
       return fn({
         data: {
           document_id: documentId,
@@ -271,6 +280,8 @@ export function SignDocumentDialog({
           signer_email: email.trim() || null,
           signature_image_b64: dataUrl,
           placement,
+          initials_image_b64: initialsDataUrl,
+          apply_initials_each_page: applyInitials,
         },
       });
     },
@@ -280,6 +291,8 @@ export function SignDocumentDialog({
       qc.invalidateQueries({ queryKey: ["document", documentId] });
       setOpen(false);
       sigRef.current?.clear();
+      initialsRef.current?.clear();
+      setApplyInitials(false);
       setPlacement(null);
       setLocked(false);
       removeDraft({ data: { document_id: documentId } }).catch(() => {
@@ -335,6 +348,39 @@ export function SignDocumentDialog({
                 <Eraser className="mr-1 h-4 w-4" />
                 {t("public.clear")}
               </Button>
+            </div>
+
+            <div className="space-y-2 rounded-md border border-dashed border-border p-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={applyInitials}
+                  onChange={(e) => setApplyInitials(e.target.checked)}
+                />
+                Apposer un paraphe sur chaque page
+              </label>
+              {applyInitials && (
+                <>
+                  <Label className="text-xs">Vos initiales (paraphe)</Label>
+                  <div className="rounded-md border border-border bg-background">
+                    <SignatureCanvas
+                      ref={initialsRef}
+                      canvasProps={{ className: "w-full h-20 touch-none" }}
+                      penColor="black"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => initialsRef.current?.clear()}
+                  >
+                    <Eraser className="mr-1 h-4 w-4" />
+                    Effacer le paraphe
+                  </Button>
+                </>
+              )}
             </div>
 
             <div className="space-y-1">
