@@ -168,6 +168,8 @@ const SignInternalSchema = z.object({
     })
     .optional()
     .nullable(),
+  initials_image_b64: z.string().min(50).max(1_000_000).optional().nullable(),
+  apply_initials_each_page: z.boolean().optional().default(false),
 });
 
 export const getCurrentDocumentPdfUrl = createServerFn({ method: "POST" })
