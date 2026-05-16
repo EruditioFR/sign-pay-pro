@@ -306,8 +306,12 @@ export function SignDocumentDialog({
                 >
                   {sigBoxStyle && (
                     <div
-                      className="absolute rounded border-2 border-dashed border-primary bg-primary/10"
+                      className="absolute rounded border-2 border-dashed border-primary bg-primary/10 cursor-move touch-none select-none"
                       style={sigBoxStyle}
+                      onPointerDown={startDrag}
+                      onPointerMove={moveDrag}
+                      onPointerUp={endDrag}
+                      onPointerCancel={endDrag}
                     />
                   )}
                 </div>
