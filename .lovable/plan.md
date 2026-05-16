@@ -1,174 +1,136 @@
-# Bloc 3 — Édition, signature, envoi & paiement
+# Phase E — Conformité & i18n
 
-## Périmètre
+Objectif : amener DocFlow Pro au niveau « prêt pour audit conformité » (RGPD, eIDAS, Maroc 53-05, FR Factur-X) et utilisable en FR/EN/AR.
 
-Transformer un document validé en pièce officielle : génération PDF depuis template, envoi au tiers, signature électronique (signature dessinée + horodatage + preuve), et collecte de paiement via un lien public sécurisé (sans compte).
-
-### Inclus
-1. **Templates PDF** par organisation et par type (header/footer, logo, mentions légales, IBAN, CGV)
-2. **Génération PDF** d'un document validé (devis, facture, bon de commande, contrat)
-3. **Envoi au tiers** : génération d'un lien public signé (token UUID + expiration)
-4. **Page publique** `/p/{token}` : visualisation du PDF, signature, paiement — sans compte
-5. **Signature électronique simple** : canvas, IP, user-agent, horodatage, hash du PDF signé → stocké comme nouvelle version + entrée `signatures`
-6. **Paiement** : enregistrement d'un paiement (montant, devise, méthode, statut) — provider abstrait, MVP avec marquage manuel "payé" + intégration Stripe Checkout en option
-7. **Statuts étendus** : `sent`, `signed`, `paid`, `partially_paid`
-8. **Notifications email** au tiers (envoi du lien) — via Lovable Cloud (Resend) si dispo, sinon log
-9. **Audit complet** de chaque action publique (vue, signature, paiement)
-10. **i18n FR/EN** sur toutes les nouvelles chaînes + page publique localisée
-
-### Hors-scope (Blocs ultérieurs)
-- Signature qualifiée eIDAS (DocuSign, Yousign)
-- OCR / extraction automatique de factures reçues
-- Comptabilité, exports SAGE/FEC
-- Chatbot, intégrations CRM
-- Multi-signataires séquentiels (MVP = 1 signataire = le tiers du document)
+Ordre proposé (du moins risqué au plus structurant) :
+**12 → 15 → 14 → 16 → 13**
 
 ---
 
-## Schéma DB (migration)
+## 12. Audit logs systématiques + page de consultation
 
-```
--- enums étendus
-alter type document_status add value 'sent';
-alter type document_status add value 'signed';
-alter type document_status add value 'paid';
-alter type document_status add value 'partially_paid';
+**État actuel** : table `audit_logs` existe (RLS OK : admin org + super-admin). Quelques triggers écrivent déjà (`document.signed`, `document.rejected`, `document.validated`, `document.payment_recorded`, `document.multi_signed`). Beaucoup d'actions ne sont **pas** loggées : création/modification de document, upload de fichier, génération de lien de partage, création de demande de signature, changement de rôle, modifications de template/workflow, login/logout.
 
--- templates PDF par organisation
-document_templates (
-  id, organization_id, name, document_type,
-  logo_url text, primary_color text,
-  header_html text, footer_html text,
-  legal_mentions text, payment_terms text,
-  iban text, bic text, vat_number text,
-  active bool, created_at, updated_at
-)
+**Travaux** :
+- Migration SQL : triggers `AFTER INSERT/UPDATE/DELETE` sur `documents`, `document_files`, `document_share_links`, `document_signature_requests`, `user_roles`, `workflow_templates`, `document_templates`. Helper `log_event(action, resource, metadata)`.
+- Server fn `logAuthEvent` appelé depuis `auth-context` sur `SIGNED_IN`/`SIGNED_OUT`/`PASSWORD_RECOVERY` (IP + user-agent via `getRequest()`).
+- Capture systématique IP + user-agent côté server fn pour toutes mutations sensibles (signature, partage, paiement).
+- Nouvelle route `/_authenticated/app/audit` (admin org) et `/_authenticated/super-admin/audit` (global) avec :
+  - Filtres : période, utilisateur, action, ressource, organisation
+  - Recherche full-text sur `metadata`
+  - Pagination serveur (RPC `list_audit_logs`)
+  - Export CSV
+- Lien dans `app-shell` (visible si `is_org_admin` ou `is_super_admin`).
 
--- liens publics signés (envoi tiers)
-document_share_links (
-  id, document_id, token uuid unique,
-  recipient_email text, recipient_name text,
-  expires_at timestamptz, max_views int,
-  view_count int default 0,
-  allow_sign bool, allow_pay bool,
-  revoked_at timestamptz null,
-  created_by uuid, created_at
-)
-
--- signatures
-document_signatures (
-  id, document_id, share_link_id,
-  signer_name text, signer_email text,
-  signature_image_b64 text,  -- PNG canvas
-  signed_at timestamptz, ip text, user_agent text,
-  pdf_hash_sha256 text,       -- hash du PDF signé
-  pdf_storage_path text       -- nouvelle version stockée
-)
-
--- paiements
-document_payments (
-  id, document_id, share_link_id null,
-  amount numeric, currency text,
-  method text,                -- 'manual' | 'stripe' | 'bank_transfer'
-  status text,                -- 'pending' | 'succeeded' | 'failed' | 'refunded'
-  provider_ref text,          -- id Stripe etc.
-  paid_at timestamptz, recorded_by uuid null,
-  metadata jsonb
-)
-```
-
-### Sécurité
-- RLS standard sur tables internes (isolation org).
-- `document_share_links` : SELECT public via `token` UNIQUEMENT (policy `using (true)` filtrée par token côté server fn `getPublicDocument`), INSERT/UPDATE org-scoped.
-- Vérif `expires_at > now()` et `revoked_at is null` et `view_count < max_views` dans la server fn publique.
-- Bucket storage `signed-documents` privé, accès via URL signée 5 min même côté public (le server fn génère).
-- Trigger : MAJ `documents.status` automatique sur insert signature → `signed`, sur insert payment succeeded → `paid` ou `partially_paid` selon somme.
-- Toutes les actions publiques (view/sign/pay) loggées dans `audit_logs` avec `user_id = null` et metadata IP/UA.
+**Livrable** : toute action sensible traçable + 1 page consultable.
 
 ---
 
-## Server Functions (TanStack)
+## 15. i18n complète FR/EN/AR (RTL)
 
-`src/lib/templates.functions.ts`
-- `listDocumentTemplates`, `getDocumentTemplate`, `createDocumentTemplate`, `updateDocumentTemplate`, `deleteDocumentTemplate`
+**État actuel** : `src/lib/i18n.ts` + `language-switcher.tsx` existent (bootstrap). À vérifier : couverture des clés, support RTL.
 
-`src/lib/pdf.functions.ts`
-- `generateDocumentPdf({ documentId, templateId? })` — render HTML → PDF, upload comme nouvelle `document_files` version, retourne signedUrl
-  - Stack PDF : `@react-pdf/renderer` (pure JS, compatible Workers) — composants React → PDF directement (pas de chrome/puppeteer interdits sur Workers)
+**Travaux** :
+- Audit des chaînes en dur dans `src/routes/**` et `src/components/**` (script ripgrep). Extraction vers les fichiers de langue (`fr.json`, `en.json`, `ar.json`).
+- Ajout des traductions EN et AR pour toutes les clés.
+- Support RTL :
+  - `<html dir="rtl">` quand `lang === 'ar'` (via `useEffect` au root)
+  - Audit des classes Tailwind directionnelles : remplacer `ml-/mr-/pl-/pr-/left-/right-` par leurs équivalents logiques `ms-/me-/ps-/pe-/start-/end-`
+  - Vérifier les composants shadcn (Sheet, Dropdown, Toast) pour RTL
+- Stockage de la langue dans `profiles.lang` (déjà présent) + cookie pour SSR.
+- Format dates/nombres via `Intl.DateTimeFormat` + `Intl.NumberFormat` avec la locale active.
+- Switcher accessible dans le header app.
 
-`src/lib/sharing.functions.ts`
-- `createShareLink({ documentId, recipient, expiresInDays, allowSign, allowPay })` — protégée
-- `revokeShareLink({ id })`
-- `sendShareLinkEmail({ shareLinkId })` — envoi via Resend (si secret dispo) sinon retourne URL à copier
-
-## Server Routes publiques (pas d'auth)
-
-`src/routes/api/public/share/$token.ts`
-- GET → métadonnées document (titre, montant, tiers, PDF signedUrl), incrémente `view_count`
-- POST (action=sign) → enregistre signature + génère PDF signé
-- POST (action=pay) → crée un `document_payments` pending + (option) Stripe Checkout session
-
-`src/routes/p.$token.tsx` (route publique React)
-- Page mobile-first : viewer PDF + bouton "Signer" + bouton "Payer"
-- Pas de sidebar, pas d'auth, layout dédié
+**Livrable** : UI complète en FR/EN/AR, basculement RTL fonctionnel.
 
 ---
 
-## Routes ajoutées
+## 14. Country packs (FR Factur-X + MA loi 53-05) + vérif mentions légales
 
-```
-src/routes/
-  _authenticated.admin.templates.index.tsx     liste templates PDF
-  _authenticated.admin.templates.new.tsx
-  _authenticated.admin.templates.$id.tsx
-  _authenticated.app.documents.$id.tsx         + bouton "Générer PDF", "Envoyer", liste signatures/paiements
-  p.$token.tsx                                  page publique (signature + paiement)
-  api/public/share.$token.ts                    endpoint REST public
-```
+**État actuel** : `organizations.country` existe. `document_templates` a `legal_mentions`, `vat_number`, `iban`. Aucune vérif automatique.
 
-Sidebar admin : ajout "Modèles PDF".
-Page document : 3 nouvelles actions selon statut → Générer PDF (validated) → Envoyer (avec PDF) → suivi signature/paiement.
+**Travaux** :
+- Nouvelle table `country_packs` (code pays, nom, rules JSONB) + seed FR / MA / DZ / TN.
+- Nouvelle table `document_compliance_checks` (document_id, rule_code, status pass/fail/warn, message). Re-générée à chaque update de document.
+- Moteur de règles côté server fn (`runComplianceChecks(documentId)`):
+  - **FR** : pour `invoice` → SIRET émetteur (numéro 14 chiffres), TVA intracom valide, mentions légales obligatoires (date émission, date échéance, numéro, taux TVA, total HT/TTC), CGV présentes.
+  - **MA** : pour `invoice` → ICE émetteur (15 chiffres), IF, RC, mention « facture libellée en dirhams », loi 53-05 pour signatures (vérif certificat).
+  - **Universel** : montant > 0, devise valide.
+- **Factur-X (FR)** : génération d'un PDF/A-3 avec XML CII embarqué via une librairie pure-JS compatible Worker (à valider — sinon fallback : générer le XML CII en pièce jointe et marquer le doc « Factur-X ready »).
+- UI :
+  - Sur `/app/documents/$id` : panneau « Conformité » avec checks ✅/⚠️/❌ et bouton « Re-vérifier ».
+  - Sur `/admin/settings` : sélecteur de country pack actif + édition des champs légaux (SIRET/ICE/etc.).
+  - Bloquer l'envoi en signature si un check critique est ❌ (toggle « strict mode » par org).
 
----
+**Livrable** : factures conformes FR/MA, vérif automatique, génération Factur-X (ou XML attaché).
 
-## Composants UI
-
-- `DocumentTemplateEditor` : form + preview live (logo, couleurs, mentions)
-- `PdfPreview` : iframe URL signée
-- `ShareLinkDialog` : email destinataire, options, copie du lien généré
-- `SignaturePad` : `react-signature-canvas` (compatible web + mobile, pure JS)
-- `PaymentDialog` : montant, méthode, marquage manuel (MVP) ou Stripe
-- `PublicDocumentPage` : layout dédié mobile-first, viewer + actions
-- `DocumentActionBar` mis à jour avec génération PDF + envoi
+**Risque** : Factur-X complet (PDF/A-3 + ZUGFeRD) est complexe sans dépendance native. À discuter : fallback acceptable ou besoin strict ?
 
 ---
 
-## Choix techniques
+## 16. RGPD — Export données + droit à l'oubli
 
-- **PDF** : `@react-pdf/renderer` (works in Cloudflare Workers, pure JS, ~600 ko)
-- **Signature** : canvas HTML5 (`react-signature-canvas`), PNG base64 incrusté dans le PDF
-- **Paiement MVP** : marquage manuel "payé" par l'org + champ pour ref bancaire. Si secret `STRIPE_SECRET_KEY` présent → bouton "Payer par carte" qui crée une Checkout Session ; webhook `/api/public/webhooks/stripe` met à jour le paiement. Demander la clé seulement si l'utilisateur veut activer Stripe (sinon mode manuel).
-- **Email** : si Resend configuré (Lovable Cloud Email) → envoi auto ; sinon affichage du lien à copier
-- **Page publique RTL-ready** : déjà préparée pour l'arabe via locale URL
+**État actuel** : aucun mécanisme.
+
+**Travaux** :
+- **Export** : server fn `exportUserData(userId)` (auth = soi-même OU admin org) qui produit un ZIP contenant :
+  - `profile.json` (profil + rôles)
+  - `documents.json` + fichiers du bucket `documents` que l'utilisateur a créés
+  - `signatures.json` (signatures apposées par l'utilisateur)
+  - `audit_logs.json` (logs liés à l'utilisateur)
+  - `README.md` expliquant le format
+  - Téléchargement via URL signée Supabase Storage (bucket `gdpr-exports` créé, expiration 24h).
+- **Droit à l'oubli** : server fn `requestAccountDeletion(userId)` :
+  - Crée une demande `account_deletion_requests` (statut `pending`, `confirmed`, `executed`)
+  - Email de confirmation (token signé)
+  - Après confirmation : anonymisation (pas de DELETE direct pour préserver l'audit légal) :
+    - `profiles.full_name` → `"Utilisateur supprimé"`, `email` → `deleted-{id}@redacted.local`
+    - `document_signatures.signer_name/email` → `"Redacted"`
+    - `document_signature_requests.signer_name/email` → idem
+    - Suppression des fichiers du bucket `documents` créés par l'utilisateur (sauf si liés à un document signé/archivé légalement — règle de rétention 10 ans à confirmer)
+    - Logout forcé + `auth.users.delete()` via service role
+  - Trace `audit_logs.action = 'user.deleted'` (anonymisée).
+- **Consentement** : à l'inscription, checkbox CGU + politique de confidentialité (table `consent_logs` : user_id, version, accepted_at, ip).
+- UI :
+  - `/app/profile` : section « Mes données » avec 2 boutons « Exporter mes données » et « Supprimer mon compte » (confirmation 2 étapes).
+  - Admin : `/admin/users` page « Demandes de suppression » pour traiter.
+
+**Livrable** : conformité RGPD articles 15 (accès), 17 (oubli), 20 (portabilité).
 
 ---
 
-## Plan d'exécution
+## 13. MFA pour Super Admin / Admin Client
 
-1. Migration SQL : enums étendus, 4 nouvelles tables, RLS, triggers, bucket `signed-documents`
-2. `bun add @react-pdf/renderer react-signature-canvas`
-3. Server fns templates + PDF + sharing
-4. Route publique `/p/$token` + endpoint `/api/public/share/$token`
-5. UI admin templates + actions document (générer/envoyer/suivre)
-6. SignaturePad + flux signature complet (hash, audit, nouvelle version)
-7. PaymentDialog mode manuel ; Stripe optionnel derrière secret
-8. i18n FR/EN
-9. Vérifications : compilation, lint Supabase, parcours bout-en-bout (créer → valider → générer PDF → envoyer → signer côté public → payer)
+**État actuel** : auth Supabase email/password (+ Google). Pas de MFA.
+
+**Travaux** :
+- Activer MFA TOTP côté Supabase (`supabase--configure_auth`).
+- Server fn pour vérifier `aal2` (Authenticator Assurance Level 2) sur les routes sensibles.
+- Nouvelle route `/_authenticated/app/profile/security` :
+  - Si MFA non configuré : QR code (via `supabase.auth.mfa.enroll`) + saisie code 6 chiffres pour activer
+  - Liste des facteurs MFA actifs + bouton « Supprimer »
+  - Codes de récupération générés à l'activation (10 codes one-shot, stockés hashés dans `mfa_recovery_codes`)
+- **Enforcement** :
+  - Server fn `requireAAL2` middleware → si user a rôle `super_admin` ou `admin_client` et `aal !== 'aal2'` → throw 403
+  - Sur login : si l'utilisateur a un facteur MFA configuré, page intermédiaire `/login/mfa` qui demande le code
+  - Si admin sans MFA configuré : bandeau de rappel + bloqueur au bout de N jours (configurable par super-admin)
+- Audit log dédié : `mfa.enrolled`, `mfa.disabled`, `mfa.challenge_succeeded`, `mfa.challenge_failed`.
+
+**Livrable** : MFA TOTP obligatoire pour admins.
+
+**Risque** : impacte le flow de login existant — à tester finement.
 
 ---
 
-## Questions
+## Découpage en livraisons
 
-1. **Paiement** : on part en MVP **manuel** (marquage "payé" + ref bancaire) avec Stripe en option si tu fournis la clé plus tard, OK ?
-2. **Email** : tu as déjà un domaine vérifié pour Resend ou on log juste le lien à copier au départ ?
-3. **Templates PDF** : un template "par défaut" auto-créé par organisation, ou laisser l'admin créer le sien ?
+Je propose **5 commits/lots séparés** dans l'ordre 12 → 15 → 14 → 16 → 13. Chaque lot est testable indépendamment.
+
+## Questions avant de lancer
+
+1. **Factur-X** : version complète PDF/A-3 obligatoire, ou XML CII attaché suffit pour un MVP ?
+2. **Rétention RGPD** : durée légale de conservation des documents signés que vous voulez appliquer (5 ans, 10 ans) ?
+3. **MFA** : obligatoire dès le premier login admin, ou délai de grâce de X jours ?
+4. **Ordre** : OK pour 12 → 15 → 14 → 16 → 13, ou vous voulez prioriser autrement (ex : MFA en premier pour la sécurité immédiate) ?
+
+Confirmez et je commence par le **lot 12 (audit logs)**.
