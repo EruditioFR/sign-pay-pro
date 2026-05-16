@@ -1,10 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { listPendingSignaturesOverview } from "@/lib/signatures-overview.functions";
+import {
+  listPendingSignaturesPage,
+  getPendingSignaturesTotals,
+  listPendingSignaturesOrgs,
+} from "@/lib/signatures-overview.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -62,17 +65,15 @@ function fmtDate(iso: string | null) {
     return iso;
   }
 }
-function daysBetween(iso: string) {
+function daysBetween(iso: string | null) {
+  if (!iso) return 0;
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
 
 function PendingSignaturesPage() {
-  const fetchOverview = useServerFn(listPendingSignaturesOverview);
-  const { data, isLoading } = useQuery({
-    queryKey: ["pending_signatures_overview"],
-    queryFn: () => fetchOverview(),
-    refetchInterval: 60_000,
-  });
+  const fetchPage = useServerFn(listPendingSignaturesPage);
+  const fetchTotals = useServerFn(getPendingSignaturesTotals);
+  const fetchOrgs = useServerFn(listPendingSignaturesOrgs);
 
   const { q, org, sort, dir, page, limit } = Route.useSearch();
   const navigate = useNavigate({ from: "/app/pending-signatures" });
@@ -96,64 +97,45 @@ function PendingSignaturesPage() {
     });
   };
 
-  const orgs = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const g of data?.groups ?? []) {
-      m.set(g.organization_id, g.organization_name ?? "—");
-    }
-    return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [data]);
+  const totalsQuery = useQuery({
+    queryKey: ["pending_signatures_totals"],
+    queryFn: () => fetchTotals(),
+    refetchInterval: 60_000,
+  });
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return (data?.groups ?? []).filter((g) => {
-      if (org && g.organization_id !== org) return false;
-      if (!term) return true;
-      return (
-        g.document_title.toLowerCase().includes(term) ||
-        (g.document_reference ?? "").toLowerCase().includes(term) ||
-        (g.organization_name ?? "").toLowerCase().includes(term) ||
-        g.signers.some(
-          (s) =>
-            s.signer_email.toLowerCase().includes(term) ||
-            s.signer_name.toLowerCase().includes(term),
-        )
-      );
-    });
-  }, [data, q, org]);
+  const orgsQuery = useQuery({
+    queryKey: ["pending_signatures_orgs"],
+    queryFn: () => fetchOrgs(),
+    staleTime: 60_000,
+  });
 
-  const sorted = useMemo(() => {
-    const arr = [...filtered];
-    const mult = dir === "asc" ? 1 : -1;
-    arr.sort((a, b) => {
-      switch (sort) {
-        case "waiting":
-          return a.oldest_pending_at.localeCompare(b.oldest_pending_at) * mult;
-        case "expires": {
-          const av = a.earliest_expires_at ?? "\uffff";
-          const bv = b.earliest_expires_at ?? "\uffff";
-          return av.localeCompare(bv) * mult;
-        }
-        case "organization":
-          return (
-            (a.organization_name ?? "").localeCompare(b.organization_name ?? "") *
-            mult
-          );
-        case "document":
-          return a.document_title.localeCompare(b.document_title) * mult;
-      }
-      return 0;
-    });
-    return arr;
-  }, [filtered, sort, dir]);
+  const pageQuery = useQuery({
+    queryKey: ["pending_signatures_page", { q, org, sort, dir, page, limit }],
+    queryFn: () =>
+      fetchPage({
+        data: {
+          q,
+          org: org ? org : null,
+          sort,
+          dir,
+          page,
+          limit,
+        },
+      }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+  });
 
-  const total = sorted.length;
+  const data = pageQuery.data;
+  const totals = totalsQuery.data;
+  const orgs = orgsQuery.data ?? [];
+  const showOrgCol = orgs.length > 1;
+
+  const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const safePage = Math.min(page, totalPages);
-  const start = (safePage - 1) * limit;
-  const pageRows = sorted.slice(start, start + limit);
-
-  const showOrgCol = orgs.length > 1;
+  const start = total === 0 ? 0 : (safePage - 1) * limit;
+  const rows = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -167,26 +149,14 @@ function PendingSignaturesPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={FileText}
-          label="Documents en attente"
-          value={String(data?.totals.documents ?? 0)}
-        />
-        <StatCard
-          icon={Users}
-          label="Signataires à relancer"
-          value={String(data?.totals.pending_signers ?? 0)}
-        />
-        <StatCard
-          icon={Building2}
-          label="Organisations"
-          value={String(data?.totals.organizations ?? 0)}
-        />
+        <StatCard icon={FileText} label="Documents en attente" value={String(totals?.documents ?? 0)} />
+        <StatCard icon={Users} label="Signataires à relancer" value={String(totals?.pending_signers ?? 0)} />
+        <StatCard icon={Building2} label="Organisations" value={String(totals?.organizations ?? 0)} />
         <StatCard
           icon={AlertTriangle}
           label="Documents expirés"
-          value={String(data?.totals.overdue ?? 0)}
-          tone={data && data.totals.overdue > 0 ? "warn" : "default"}
+          value={String(totals?.overdue ?? 0)}
+          tone={totals && totals.overdue > 0 ? "warn" : "default"}
         />
       </div>
 
@@ -196,7 +166,7 @@ function PendingSignaturesPage() {
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="Recherche titre, référence, signataire…"
-              value={q}
+              defaultValue={q}
               onChange={(e) => setSearch({ q: e.target.value })}
               className="sm:w-72"
             />
@@ -207,9 +177,9 @@ function PendingSignaturesPage() {
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               >
                 <option value="">Toutes les organisations</option>
-                {orgs.map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
+                {orgs.map((o) => (
+                  <option key={o.organization_id} value={o.organization_id}>
+                    {o.organization_name ?? "—"}
                   </option>
                 ))}
               </select>
@@ -229,7 +199,7 @@ function PendingSignaturesPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
+          {pageQuery.isLoading && !data ? (
             <div className="p-6 text-sm text-muted-foreground">Chargement…</div>
           ) : total === 0 ? (
             <div className="p-10 text-center text-sm text-muted-foreground">
@@ -277,7 +247,7 @@ function PendingSignaturesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pageRows.map((g) => {
+                    {rows.map((g) => {
                       const overdue =
                         g.earliest_expires_at &&
                         g.earliest_expires_at < new Date().toISOString();
@@ -314,13 +284,13 @@ function PendingSignaturesPage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-sm">
-                            {g.next_signer ? (
+                            {g.next_signer_email ? (
                               <div>
                                 <div className="font-medium">
-                                  {g.next_signer.name}
+                                  {g.next_signer_name}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {g.next_signer.email}
+                                  {g.next_signer_email}
                                 </div>
                               </div>
                             ) : (
@@ -369,6 +339,7 @@ function PendingSignaturesPage() {
               <div className="flex flex-col items-center justify-between gap-2 border-t border-border px-4 py-3 sm:flex-row">
                 <div className="text-xs text-muted-foreground">
                   {start + 1}–{Math.min(start + limit, total)} sur {total}
+                  {pageQuery.isFetching && " · …"}
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -443,9 +414,7 @@ function SortableHead({
       <button
         type="button"
         className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground"
-        onClick={() =>
-          onSort(sortKey, active && dir === "asc" ? "desc" : "asc")
-        }
+        onClick={() => onSort(sortKey, active && dir === "asc" ? "desc" : "asc")}
       >
         {label}
         {active &&
