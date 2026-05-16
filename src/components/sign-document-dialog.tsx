@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { PenLine, Eraser, Lock, Unlock } from "lucide-react";
+import { PenLine, Eraser, Lock, Unlock, Loader2, Check, AlertCircle, CloudUpload } from "lucide-react";
 import { toast } from "sonner";
 import {
   signDocumentInternal,
@@ -126,10 +126,15 @@ export function SignDocumentDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, urlQ.data?.url, documentId]);
 
+  const [saveState, setSaveState] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
+  const savedTimerRef = useRef<number | null>(null);
+
   // Debounced server-side auto-save.
   useEffect(() => {
     if (!open || !draftLoadedRef.current) return;
+    setSaveState("pending");
     const handle = window.setTimeout(() => {
+      setSaveState("saving");
       saveDraft({
         data: {
           document_id: documentId,
@@ -138,9 +143,13 @@ export function SignDocumentDialog({
           sig_width_pt: sigWidthPt,
           page_index: pageIndex,
         },
-      }).catch(() => {
-        /* silent — draft save is best-effort */
-      });
+      })
+        .then(() => {
+          setSaveState("saved");
+          if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+          savedTimerRef.current = window.setTimeout(() => setSaveState("idle"), 2000);
+        })
+        .catch(() => setSaveState("error"));
     }, 500);
     return () => window.clearTimeout(handle);
   }, [open, placement, locked, sigWidthPt, pageIndex, documentId, saveDraft]);
@@ -346,7 +355,10 @@ export function SignDocumentDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <Label>Page</Label>
+              <div className="flex items-center gap-2">
+                <Label>Page</Label>
+                <SaveIndicator state={saveState} />
+              </div>
               {pageCount > 0 ? (
                 <Select
                   value={String(pageIndex)}
@@ -463,5 +475,41 @@ export function SignDocumentDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SaveIndicator({
+  state,
+}: {
+  state: "idle" | "pending" | "saving" | "saved" | "error";
+}) {
+  if (state === "idle") return null;
+  const map = {
+    pending: {
+      icon: <CloudUpload className="h-3 w-3" />,
+      label: "Modifications en attente",
+      cls: "text-muted-foreground",
+    },
+    saving: {
+      icon: <Loader2 className="h-3 w-3 animate-spin" />,
+      label: "Enregistrement…",
+      cls: "text-muted-foreground",
+    },
+    saved: {
+      icon: <Check className="h-3 w-3" />,
+      label: "Brouillon enregistré",
+      cls: "text-emerald-600 dark:text-emerald-400",
+    },
+    error: {
+      icon: <AlertCircle className="h-3 w-3" />,
+      label: "Échec de l'enregistrement",
+      cls: "text-destructive",
+    },
+  }[state];
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] ${map.cls}`}>
+      {map.icon}
+      {map.label}
+    </span>
   );
 }
