@@ -65,6 +65,8 @@ export function SignDocumentDialog({
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [locked, setLocked] = useState(false);
   const [sigWidthPt, setSigWidthPt] = useState(140);
+  const [applyInitials, setApplyInitials] = useState(false);
+  const initialsRef = useRef<SignatureCanvas | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
