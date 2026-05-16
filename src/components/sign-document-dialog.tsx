@@ -266,6 +266,13 @@ export function SignDocumentDialog({
         throw new Error("Veuillez confirmer le placement de la signature.");
       }
       const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
+      let initialsDataUrl: string | null = null;
+      if (applyInitials) {
+        if (!initialsRef.current || initialsRef.current.isEmpty()) {
+          throw new Error("Veuillez dessiner vos initiales pour les paraphes.");
+        }
+        initialsDataUrl = initialsRef.current.getCanvas().toDataURL("image/png");
+      }
       return fn({
         data: {
           document_id: documentId,
@@ -273,6 +280,8 @@ export function SignDocumentDialog({
           signer_email: email.trim() || null,
           signature_image_b64: dataUrl,
           placement,
+          initials_image_b64: initialsDataUrl,
+          apply_initials_each_page: applyInitials,
         },
       });
     },
