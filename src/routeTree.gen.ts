@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated.super-admin.index'
@@ -28,6 +29,7 @@ import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
 import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
 import { Route as AuthenticatedAdminTemplatesIndexRouteImport } from './routes/_authenticated.admin.templates.index'
+import { Route as ApiPublicSignRequestTokenRouteImport } from './routes/api/public/sign-request.$token'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
@@ -53,6 +55,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PTokenRoute = PTokenRouteImport.update({
@@ -138,6 +145,12 @@ const AuthenticatedAdminTemplatesIndexRoute =
     path: '/admin/templates/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicSignRequestTokenRoute =
+  ApiPublicSignRequestTokenRouteImport.update({
+    id: '/api/public/sign-request/$token',
+    path: '/api/public/sign-request/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
   id: '/api/public/share/$token',
   path: '/api/public/share/$token',
@@ -186,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/p/$token': typeof PTokenRoute
+  '/s/$token': typeof STokenRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -203,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
+  '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
@@ -213,6 +228,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/p/$token': typeof PTokenRoute
+  '/s/$token': typeof STokenRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -230,6 +246,7 @@ export interface FileRoutesByTo {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
+  '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
@@ -242,6 +259,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/p/$token': typeof PTokenRoute
+  '/s/$token': typeof STokenRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -259,6 +277,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRoute
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
+  '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/_authenticated/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
@@ -271,6 +290,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dashboard'
     | '/p/$token'
+    | '/s/$token'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -288,6 +308,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/api/public/share/$token'
+    | '/api/public/sign-request/$token'
     | '/admin/templates/'
     | '/admin/workflows/'
     | '/app/documents/'
@@ -298,6 +319,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dashboard'
     | '/p/$token'
+    | '/s/$token'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -315,6 +337,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/api/public/share/$token'
+    | '/api/public/sign-request/$token'
     | '/admin/templates'
     | '/admin/workflows'
     | '/app/documents'
@@ -326,6 +349,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/dashboard'
     | '/p/$token'
+    | '/s/$token'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
@@ -343,6 +367,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
     | '/api/public/share/$token'
+    | '/api/public/sign-request/$token'
     | '/_authenticated/admin/templates/'
     | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
@@ -354,7 +379,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   PTokenRoute: typeof PTokenRoute
+  STokenRoute: typeof STokenRoute
   ApiPublicShareTokenRoute: typeof ApiPublicShareTokenRoute
+  ApiPublicSignRequestTokenRoute: typeof ApiPublicSignRequestTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -385,6 +412,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$token': {
@@ -491,6 +525,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/templates/'
       preLoaderRoute: typeof AuthenticatedAdminTemplatesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/public/sign-request/$token': {
+      id: '/api/public/sign-request/$token'
+      path: '/api/public/sign-request/$token'
+      fullPath: '/api/public/sign-request/$token'
+      preLoaderRoute: typeof ApiPublicSignRequestTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/share/$token': {
       id: '/api/public/share/$token'
@@ -600,7 +641,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   PTokenRoute: PTokenRoute,
+  STokenRoute: STokenRoute,
   ApiPublicShareTokenRoute: ApiPublicShareTokenRoute,
+  ApiPublicSignRequestTokenRoute: ApiPublicSignRequestTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

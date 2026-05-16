@@ -192,6 +192,60 @@ export type Database = {
         }
         Relationships: []
       }
+      document_signature_requests: {
+        Row: {
+          created_at: string
+          decline_reason: string | null
+          document_id: string
+          expires_at: string | null
+          id: string
+          invited_by: string
+          order_index: number
+          sequential: boolean
+          signature_id: string | null
+          signed_at: string | null
+          signer_email: string
+          signer_name: string
+          status: Database["public"]["Enums"]["signature_request_status"]
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decline_reason?: string | null
+          document_id: string
+          expires_at?: string | null
+          id?: string
+          invited_by: string
+          order_index?: number
+          sequential?: boolean
+          signature_id?: string | null
+          signed_at?: string | null
+          signer_email: string
+          signer_name: string
+          status?: Database["public"]["Enums"]["signature_request_status"]
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decline_reason?: string | null
+          document_id?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string
+          order_index?: number
+          sequential?: boolean
+          signature_id?: string | null
+          signed_at?: string | null
+          signer_email?: string
+          signer_name?: string
+          status?: Database["public"]["Enums"]["signature_request_status"]
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       document_signatures: {
         Row: {
           document_id: string
@@ -748,6 +802,7 @@ export type Database = {
         | "invoice"
         | "contract"
         | "other"
+      signature_request_status: "pending" | "signed" | "declined" | "cancelled"
       workflow_step_status: "pending" | "approved" | "rejected" | "skipped"
     }
     CompositeTypes: {
@@ -895,6 +950,7 @@ export const Constants = {
         "contract",
         "other",
       ],
+      signature_request_status: ["pending", "signed", "declined", "cancelled"],
       workflow_step_status: ["pending", "approved", "rejected", "skipped"],
     },
   },
