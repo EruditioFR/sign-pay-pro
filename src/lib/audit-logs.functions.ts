@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import type { Json } from "@/integrations/supabase/types";
 
 const ListAuditLogsSchema = z.object({
   organizationId: z.string().uuid().optional().nullable(),
@@ -24,7 +25,7 @@ export type AuditLogRow = {
   user_full_name: string | null;
   action: string;
   resource: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Json;
 };
 
 export const listAuditLogs = createServerFn({ method: "POST" })
@@ -33,13 +34,13 @@ export const listAuditLogs = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: rows, error } = await supabase.rpc("list_audit_logs", {
-      p_org: data.organizationId ?? null,
-      p_from: data.from ?? null,
-      p_to: data.to ?? null,
-      p_action: data.action ?? null,
-      p_user: data.userId ?? null,
-      p_resource: data.resource ?? null,
-      p_q: data.q ?? null,
+      p_org: data.organizationId ?? undefined,
+      p_from: data.from ?? undefined,
+      p_to: data.to ?? undefined,
+      p_action: data.action ?? undefined,
+      p_user: data.userId ?? undefined,
+      p_resource: data.resource ?? undefined,
+      p_q: data.q ?? undefined,
       p_limit: data.limit,
       p_offset: data.offset,
     });
