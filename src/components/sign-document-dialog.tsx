@@ -67,6 +67,9 @@ export function SignDocumentDialog({
     enabled: open,
   });
 
+  const draftKey = `sign-draft:${documentId}`;
+  const [draftRestored, setDraftRestored] = useState(false);
+
   // Load PDF document when URL is available
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   useEffect(() => {
@@ -78,13 +81,74 @@ export function SignDocumentDialog({
       if (cancelled) return;
       pdfDocRef.current = doc;
       setPageCount(doc.numPages);
-      setPageIndex(0);
-      setPlacement(null);
+
+      // Try to restore a saved draft for this document.
+      let restored = false;
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (raw) {
+          const d = JSON.parse(raw) as {
+            placement: Placement | null;
+            locked: boolean;
+            sigWidthPt: number;
+            pageIndex: number;
+          };
+          if (
+            d.placement &&
+            typeof d.placement.page_index === "number" &&
+            d.placement.page_index < doc.numPages
+          ) {
+            setPageIndex(d.placement.page_index);
+            setPlacement(d.placement);
+            setLocked(!!d.locked);
+            if (typeof d.sigWidthPt === "number") setSigWidthPt(d.sigWidthPt);
+            restored = true;
+          }
+        }
+      } catch {
+        // ignore corrupted draft
+      }
+
+      if (!restored) {
+        setPageIndex(0);
+        setPlacement(null);
+        setLocked(false);
+      }
+      setDraftRestored(restored);
     })();
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, urlQ.data?.url]);
+
+  // Auto-save draft (placement / lock / width) per document.
+  useEffect(() => {
+    if (!open) return;
+    try {
+      if (placement) {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({ placement, locked, sigWidthPt, pageIndex }),
+        );
+      } else {
+        localStorage.removeItem(draftKey);
+      }
+    } catch {
+      // storage may be unavailable (private mode, quota)
+    }
+  }, [open, placement, locked, sigWidthPt, pageIndex, draftKey]);
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      /* noop */
+    }
+    setPlacement(null);
+    setLocked(false);
+    setDraftRestored(false);
+  };
 
   // Render the selected page
   useEffect(() => {
@@ -205,6 +269,12 @@ export function SignDocumentDialog({
       sigRef.current?.clear();
       setPlacement(null);
       setLocked(false);
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        /* noop */
+      }
+      setDraftRestored(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -340,6 +410,20 @@ export function SignDocumentDialog({
               <p className="text-[10px] text-muted-foreground">
                 Page {pageIndex + 1} : {Math.round(pagePoints.w)}×{Math.round(pagePoints.h)} pt
               </p>
+            )}
+            {draftRestored && placement && (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-amber-400/60 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                <span>Brouillon restauré (placement enregistré localement).</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={clearDraft}
+                >
+                  Réinitialiser
+                </Button>
+              </div>
             )}
             {placement && (
               <Button
