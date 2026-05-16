@@ -159,7 +159,46 @@ const SignInternalSchema = z.object({
   signer_name: z.string().min(1).max(150),
   signer_email: z.string().email().optional().nullable().or(z.literal("")),
   signature_image_b64: z.string().min(50).max(2_000_000),
+  placement: z
+    .object({
+      page_index: z.number().int().min(0).max(500),
+      x: z.number().min(0).max(5000),
+      y: z.number().min(0).max(5000),
+      width: z.number().min(20).max(2000),
+    })
+    .optional()
+    .nullable(),
 });
+
+export const getCurrentDocumentPdfUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ document_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: doc, error: docErr } = await supabase
+      .from("documents")
+      .select("id, organization_id")
+      .eq("id", data.document_id)
+      .maybeSingle();
+    if (docErr) throw new Error(docErr.message);
+    if (!doc) throw new Error("Document introuvable");
+
+    const { data: file } = await supabaseAdmin
+      .from("document_files")
+      .select("storage_path")
+      .eq("document_id", doc.id)
+      .eq("is_current", true)
+      .maybeSingle();
+    if (!file) return { url: null as string | null };
+
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("documents")
+      .createSignedUrl(file.storage_path, 600);
+    if (error) throw new Error(error.message);
+    return { url: signed.signedUrl as string | null };
+  });
 
 export const signDocumentInternal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
