@@ -263,6 +263,7 @@ export function SignDocumentDialog({
                 max={300}
                 step={5}
                 value={[sigWidthPt]}
+                disabled={locked}
                 onValueChange={(v) => {
                   setSigWidthPt(v[0]);
                   if (placement) setPlacement({ ...placement, width: v[0] });
