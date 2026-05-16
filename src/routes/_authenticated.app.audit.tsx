@@ -154,7 +154,7 @@ function AuditLogsPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const updateSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch, page: patch.page ?? 1 }) });
+    navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch, page: patch.page ?? 1 }) });
 
   const handleExport = () => {
     const csv = toCsv(rows);
