@@ -159,7 +159,46 @@ const SignInternalSchema = z.object({
   signer_name: z.string().min(1).max(150),
   signer_email: z.string().email().optional().nullable().or(z.literal("")),
   signature_image_b64: z.string().min(50).max(2_000_000),
+  placement: z
+    .object({
+      page_index: z.number().int().min(0).max(500),
+      x: z.number().min(0).max(5000),
+      y: z.number().min(0).max(5000),
+      width: z.number().min(20).max(2000),
+    })
+    .optional()
+    .nullable(),
 });
+
+export const getCurrentDocumentPdfUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ document_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: doc, error: docErr } = await supabase
+      .from("documents")
+      .select("id, organization_id")
+      .eq("id", data.document_id)
+      .maybeSingle();
+    if (docErr) throw new Error(docErr.message);
+    if (!doc) throw new Error("Document introuvable");
+
+    const { data: file } = await supabaseAdmin
+      .from("document_files")
+      .select("storage_path")
+      .eq("document_id", doc.id)
+      .eq("is_current", true)
+      .maybeSingle();
+    if (!file) return { url: null as string | null };
+
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("documents")
+      .createSignedUrl(file.storage_path, 600);
+    if (error) throw new Error(error.message);
+    return { url: signed.signedUrl as string | null };
+  });
 
 export const signDocumentInternal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -202,7 +241,6 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
     }
 
     const pdf = await PDFDocument.load(basePdfBytes);
-    const page = pdf.addPage([595.28, 400]);
     const signedAt = new Date();
 
     const pngB64 = data.signature_image_b64.replace(/^data:image\/png;base64,/, "");
@@ -212,13 +250,34 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
     } catch {
       throw new Error("Signature invalide");
     }
-    const dims = sigImg.scale(0.4);
-    page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
-    page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
-    if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
-    page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
-    page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
-    page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+
+    const pages = pdf.getPages();
+    if (data.placement) {
+      const idx = Math.min(data.placement.page_index, pages.length - 1);
+      const page = pages[idx];
+      const pageH = page.getHeight();
+      const ratio = sigImg.height / sigImg.width;
+      const w = data.placement.width;
+      const h = w * ratio;
+      // Convert from top-left origin (UI) to bottom-left (PDF).
+      const xPdf = data.placement.x;
+      const yPdf = pageH - data.placement.y - h;
+      page.drawImage(sigImg, { x: xPdf, y: yPdf, width: w, height: h });
+      page.drawText(
+        `Signé par ${data.signer_name} — ${signedAt.toISOString()}`,
+        { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
+      );
+    } else {
+      // Fallback: append a dedicated signature page (legacy behaviour).
+      const page = pdf.addPage([595.28, 400]);
+      const dims = sigImg.scale(0.4);
+      page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
+      page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
+      if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
+      page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
+      page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
+      page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+    }
 
     const signedBytes = await pdf.save();
 
