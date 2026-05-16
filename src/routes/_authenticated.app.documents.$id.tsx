@@ -14,6 +14,7 @@ import { SubmitDocumentButton } from "@/components/submit-document-button";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
+import { SignDocumentDialog } from "@/components/sign-document-dialog";
 import { ArrowLeft, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
@@ -79,6 +80,11 @@ function DocumentDetailPage() {
                 <>
                   <GeneratePdfButton documentId={doc.id} />
                   <ShareLinkDialog documentId={doc.id} />
+                  <SignDocumentDialog
+                    documentId={doc.id}
+                    defaultName={me?.fullName ?? undefined}
+                    defaultEmail={me?.email ?? undefined}
+                  />
                   <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
                 </>
               )}
