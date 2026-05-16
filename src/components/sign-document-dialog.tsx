@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { PenLine, Eraser } from "lucide-react";
+import { PenLine, Eraser, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import {
   signDocumentInternal,
