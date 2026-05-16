@@ -278,9 +278,11 @@ export function SignDocumentDialog({
               {pageCount > 0 ? (
                 <Select
                   value={String(pageIndex)}
+                  disabled={locked}
                   onValueChange={(v) => {
                     setPageIndex(Number(v));
                     setPlacement(null);
+                    setLocked(false);
                   }}
                 >
                   <SelectTrigger className="w-32">
