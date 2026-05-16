@@ -367,7 +367,11 @@ export function SignDocumentDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+          <Button
+            onClick={() => mut.mutate()}
+            disabled={mut.isPending || (!!placement && !locked)}
+            title={!!placement && !locked ? "Confirmez le placement avant d’enregistrer" : undefined}
+          >
             {mut.isPending ? t("common.loading") : t("public.sign_now")}
           </Button>
         </DialogFooter>
