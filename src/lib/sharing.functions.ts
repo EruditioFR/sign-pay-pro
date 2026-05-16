@@ -153,3 +153,110 @@ export const getSignedPdfUrl = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { url: signed.signedUrl };
   });
+
+const SignInternalSchema = z.object({
+  document_id: z.string().uuid(),
+  signer_name: z.string().min(1).max(150),
+  signer_email: z.string().email().optional().nullable().or(z.literal("")),
+  signature_image_b64: z.string().min(50).max(2_000_000),
+});
+
+export const signDocumentInternal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SignInternalSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Verify the user can see this document (RLS-checked via user client).
+    const { data: doc, error: docErr } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("id", data.document_id)
+      .maybeSingle();
+    if (docErr) throw new Error(docErr.message);
+    if (!doc) throw new Error("Document introuvable");
+
+    const { data: org } = await supabaseAdmin
+      .from("organizations")
+      .select("name, country")
+      .eq("id", doc.organization_id)
+      .maybeSingle();
+
+    const { data: currentFile } = await supabaseAdmin
+      .from("document_files")
+      .select("storage_path")
+      .eq("document_id", doc.id)
+      .eq("is_current", true)
+      .maybeSingle();
+
+    let basePdfBytes: Uint8Array;
+    if (currentFile) {
+      const { data: blob } = await supabaseAdmin.storage
+        .from("documents")
+        .download(currentFile.storage_path);
+      basePdfBytes = blob
+        ? new Uint8Array(await blob.arrayBuffer())
+        : await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+    } else {
+      basePdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+    }
+
+    const pdf = await PDFDocument.load(basePdfBytes);
+    const page = pdf.addPage([595.28, 400]);
+    const signedAt = new Date();
+
+    const pngB64 = data.signature_image_b64.replace(/^data:image\/png;base64,/, "");
+    let sigImg;
+    try {
+      sigImg = await pdf.embedPng(Uint8Array.from(atob(pngB64), (c) => c.charCodeAt(0)));
+    } catch {
+      throw new Error("Signature invalide");
+    }
+    const dims = sigImg.scale(0.4);
+    page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
+    page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
+    if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
+    page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
+    page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
+    page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+
+    const signedBytes = await pdf.save();
+
+    const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes as BufferSource);
+    const hashHex = Array.from(new Uint8Array(hashBuf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const path = `${doc.organization_id}/${doc.id}/signed-${signedAt.getTime()}.pdf`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("signed-documents")
+      .upload(path, signedBytes, { contentType: "application/pdf" });
+    if (upErr) throw new Error(upErr.message);
+
+    const { data: sig, error: sigErr } = await supabaseAdmin
+      .from("document_signatures")
+      .insert({
+        document_id: doc.id,
+        share_link_id: null,
+        signer_name: data.signer_name,
+        signer_email: data.signer_email || null,
+        signature_image_b64: data.signature_image_b64.slice(0, 500_000),
+        ip: null,
+        user_agent: "internal",
+        pdf_hash_sha256: hashHex,
+        pdf_storage_path: path,
+      })
+      .select()
+      .single();
+    if (sigErr) throw new Error(sigErr.message);
+
+    await supabaseAdmin.from("audit_logs").insert({
+      organization_id: doc.organization_id,
+      user_id: userId,
+      action: "document.signed_internal",
+      resource: `document:${doc.id}`,
+      metadata: { signature_id: sig.id, hash: hashHex, path },
+    });
+
+    return { signature_id: sig.id, hash: hashHex, path };
+  });
