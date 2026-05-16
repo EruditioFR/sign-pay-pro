@@ -183,6 +183,9 @@ export function SignDocumentDialog({
     mutationFn: async () => {
       if (!name.trim()) throw new Error(t("public.need_name"));
       if (!sigRef.current || sigRef.current.isEmpty()) throw new Error(t("public.need_signature"));
+      if (placement && !locked) {
+        throw new Error("Veuillez confirmer le placement de la signature.");
+      }
       const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
       return fn({
         data: {
@@ -201,6 +204,7 @@ export function SignDocumentDialog({
       setOpen(false);
       sigRef.current?.clear();
       setPlacement(null);
+      setLocked(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
