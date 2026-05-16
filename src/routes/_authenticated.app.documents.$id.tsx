@@ -87,6 +87,7 @@ function DocumentDetailPage() {
                     defaultName={me?.fullName ?? undefined}
                     defaultEmail={me?.email ?? undefined}
                   />
+                  <MultiSignersDialog documentId={doc.id} />
                   <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
                 </>
               )}
