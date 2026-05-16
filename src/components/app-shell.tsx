@@ -23,6 +23,7 @@ import {
   GitBranch,
   Home,
   LogOut,
+  PenLine,
   Settings,
   ShieldCheck,
   Store,
