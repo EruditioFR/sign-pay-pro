@@ -55,6 +55,7 @@ export function SignDocumentDialog({
   const [pagePoints, setPagePoints] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [renderScale, setRenderScale] = useState(1);
   const [placement, setPlacement] = useState<Placement | null>(null);
+  const [locked, setLocked] = useState(false);
   const [sigWidthPt, setSigWidthPt] = useState(140);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
