@@ -269,6 +269,12 @@ export function SignDocumentDialog({
       sigRef.current?.clear();
       setPlacement(null);
       setLocked(false);
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        /* noop */
+      }
+      setDraftRestored(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
