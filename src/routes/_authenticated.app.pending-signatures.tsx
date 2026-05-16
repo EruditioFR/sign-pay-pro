@@ -88,10 +88,9 @@ function PendingSignaturesPage() {
     }>,
   ) => {
     navigate({
-      search: (prev) => ({
+      search: (prev: Record<string, unknown>) => ({
         ...prev,
         ...patch,
-        // reset to page 1 on any filter/sort change unless page is patched
         page: patch.page ?? 1,
       }),
     });
