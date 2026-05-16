@@ -19,6 +19,11 @@ import {
   signDocumentInternal,
   getCurrentDocumentPdfUrl,
 } from "@/lib/sharing.functions";
+import {
+  getSignatureDraft,
+  saveSignatureDraft,
+  clearSignatureDraft,
+} from "@/lib/signature-drafts.functions";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
@@ -49,6 +54,9 @@ export function SignDocumentDialog({
   const qc = useQueryClient();
   const fn = useServerFn(signDocumentInternal);
   const fetchUrl = useServerFn(getCurrentDocumentPdfUrl);
+  const fetchDraft = useServerFn(getSignatureDraft);
+  const saveDraft = useServerFn(saveSignatureDraft);
+  const removeDraft = useServerFn(clearSignatureDraft);
 
   const [pageIndex, setPageIndex] = useState(0);
   const [pageCount, setPageCount] = useState(0);
@@ -67,14 +75,15 @@ export function SignDocumentDialog({
     enabled: open,
   });
 
-  const draftKey = `sign-draft:${documentId}`;
   const [draftRestored, setDraftRestored] = useState(false);
+  const draftLoadedRef = useRef(false);
 
-  // Load PDF document when URL is available
+  // Load PDF document when URL is available, then restore any server-side draft.
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   useEffect(() => {
     if (!open || !urlQ.data?.url) return;
     let cancelled = false;
+    draftLoadedRef.current = false;
     (async () => {
       const task = pdfjsLib.getDocument({ url: urlQ.data!.url! });
       const doc = await task.promise;
@@ -82,69 +91,64 @@ export function SignDocumentDialog({
       pdfDocRef.current = doc;
       setPageCount(doc.numPages);
 
-      // Try to restore a saved draft for this document.
       let restored = false;
       try {
-        const raw = localStorage.getItem(draftKey);
-        if (raw) {
-          const d = JSON.parse(raw) as {
-            placement: Placement | null;
-            locked: boolean;
-            sigWidthPt: number;
-            pageIndex: number;
-          };
-          if (
-            d.placement &&
-            typeof d.placement.page_index === "number" &&
-            d.placement.page_index < doc.numPages
-          ) {
-            setPageIndex(d.placement.page_index);
-            setPlacement(d.placement);
-            setLocked(!!d.locked);
-            if (typeof d.sigWidthPt === "number") setSigWidthPt(d.sigWidthPt);
-            restored = true;
-          }
+        const res = await fetchDraft({ data: { document_id: documentId } });
+        if (cancelled) return;
+        const d = res.draft;
+        if (
+          d?.placement &&
+          d.placement.page_index < doc.numPages
+        ) {
+          setPageIndex(d.placement.page_index);
+          setPlacement(d.placement);
+          setLocked(!!d.locked);
+          setSigWidthPt(d.sig_width_pt);
+          restored = true;
+        } else if (d) {
+          setPageIndex(Math.min(d.page_index, doc.numPages - 1));
+          setSigWidthPt(d.sig_width_pt);
         }
       } catch {
-        // ignore corrupted draft
+        // ignore — draft is optional
       }
 
       if (!restored) {
-        setPageIndex(0);
         setPlacement(null);
         setLocked(false);
       }
       setDraftRestored(restored);
+      draftLoadedRef.current = true;
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, urlQ.data?.url]);
+  }, [open, urlQ.data?.url, documentId]);
 
-  // Auto-save draft (placement / lock / width) per document.
+  // Debounced server-side auto-save.
   useEffect(() => {
-    if (!open) return;
-    try {
-      if (placement) {
-        localStorage.setItem(
-          draftKey,
-          JSON.stringify({ placement, locked, sigWidthPt, pageIndex }),
-        );
-      } else {
-        localStorage.removeItem(draftKey);
-      }
-    } catch {
-      // storage may be unavailable (private mode, quota)
-    }
-  }, [open, placement, locked, sigWidthPt, pageIndex, draftKey]);
+    if (!open || !draftLoadedRef.current) return;
+    const handle = window.setTimeout(() => {
+      saveDraft({
+        data: {
+          document_id: documentId,
+          placement,
+          locked,
+          sig_width_pt: sigWidthPt,
+          page_index: pageIndex,
+        },
+      }).catch(() => {
+        /* silent — draft save is best-effort */
+      });
+    }, 500);
+    return () => window.clearTimeout(handle);
+  }, [open, placement, locked, sigWidthPt, pageIndex, documentId, saveDraft]);
 
   const clearDraft = () => {
-    try {
-      localStorage.removeItem(draftKey);
-    } catch {
+    removeDraft({ data: { document_id: documentId } }).catch(() => {
       /* noop */
-    }
+    });
     setPlacement(null);
     setLocked(false);
     setDraftRestored(false);
@@ -269,11 +273,9 @@ export function SignDocumentDialog({
       sigRef.current?.clear();
       setPlacement(null);
       setLocked(false);
-      try {
-        localStorage.removeItem(draftKey);
-      } catch {
+      removeDraft({ data: { document_id: documentId } }).catch(() => {
         /* noop */
-      }
+      });
       setDraftRestored(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -413,7 +415,7 @@ export function SignDocumentDialog({
             )}
             {draftRestored && placement && (
               <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-amber-400/60 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-                <span>Brouillon restauré (placement enregistré localement).</span>
+                <span>Brouillon restauré depuis le serveur (synchronisé entre vos appareils).</span>
                 <Button
                   type="button"
                   variant="ghost"

@@ -551,6 +551,51 @@ export type Database = {
           },
         ]
       }
+      signature_drafts: {
+        Row: {
+          created_at: string
+          document_id: string
+          has_placement: boolean
+          id: string
+          locked: boolean
+          page_index: number
+          sig_width_pt: number
+          updated_at: string
+          user_id: string
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          has_placement?: boolean
+          id?: string
+          locked?: boolean
+          page_index?: number
+          sig_width_pt?: number
+          updated_at?: string
+          user_id: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          has_placement?: boolean
+          id?: string
+          locked?: boolean
+          page_index?: number
+          sig_width_pt?: number
+          updated_at?: string
+          user_id?: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
