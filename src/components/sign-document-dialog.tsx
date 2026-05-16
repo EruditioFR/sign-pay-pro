@@ -411,6 +411,20 @@ export function SignDocumentDialog({
                 Page {pageIndex + 1} : {Math.round(pagePoints.w)}×{Math.round(pagePoints.h)} pt
               </p>
             )}
+            {draftRestored && placement && (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-amber-400/60 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                <span>Brouillon restauré (placement enregistré localement).</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={clearDraft}
+                >
+                  Réinitialiser
+                </Button>
+              </div>
+            )}
             {placement && (
               <Button
                 type="button"
