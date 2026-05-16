@@ -8,8 +8,9 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
-import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -110,6 +111,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("i18nextLng");
+      if (stored && stored !== i18n.language && ["fr", "en"].includes(stored)) {
+        i18n.changeLanguage(stored);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
