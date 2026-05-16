@@ -281,6 +281,34 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
       page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
     }
 
+    // Initials on every page (optional)
+    if (data.apply_initials_each_page && data.initials_image_b64) {
+      const initB64 = data.initials_image_b64.replace(/^data:image\/png;base64,/, "");
+      let initImg;
+      try {
+        initImg = await pdf.embedPng(Uint8Array.from(atob(initB64), (c) => c.charCodeAt(0)));
+      } catch {
+        throw new Error("Paraphe invalide");
+      }
+      const initW = 60;
+      const initH = initW * (initImg.height / initImg.width);
+      const signedPageIdx = data.placement
+        ? Math.min(data.placement.page_index, pages.length - 1)
+        : -1;
+      pages.forEach((p, idx) => {
+        if (idx === signedPageIdx) return; // skip the page that already has the main signature
+        const pw = p.getWidth();
+        const x = pw - initW - 24;
+        const y = 24;
+        p.drawImage(initImg, { x, y, width: initW, height: initH });
+        p.drawText(`Paraphe ${data.signer_name}`, {
+          x,
+          y: y + initH + 2,
+          size: 6,
+        });
+      });
+    }
+
     const signedBytes = await pdf.save();
 
     const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes as BufferSource);
