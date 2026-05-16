@@ -344,7 +344,7 @@ export function SignDocumentDialog({
                 max={300}
                 step={5}
                 value={[sigWidthPt]}
-                disabled={locked}
+                disabled={locked || saveState === "saving"}
                 onValueChange={(v) => {
                   setSigWidthPt(v[0]);
                   if (placement) setPlacement({ ...placement, width: v[0] });
@@ -362,7 +362,7 @@ export function SignDocumentDialog({
               {pageCount > 0 ? (
                 <Select
                   value={String(pageIndex)}
-                  disabled={locked}
+                  disabled={locked || saveState === "saving"}
                   onValueChange={(v) => {
                     setPageIndex(Number(v));
                     setPlacement(null);
@@ -392,22 +392,36 @@ export function SignDocumentDialog({
               {pageCount > 0 && (
                 <div
                   ref={overlayRef}
-                  onClick={locked ? undefined : handleClick}
-                  className={`absolute inset-0 ${locked ? "cursor-default" : "cursor-crosshair"}`}
-                  title={locked ? "Position verrouillée" : "Cliquez pour placer la signature"}
+                  onClick={locked || saveState === "saving" ? undefined : handleClick}
+                  className={`absolute inset-0 ${
+                    saveState === "saving"
+                      ? "cursor-wait opacity-60"
+                      : locked
+                        ? "cursor-default"
+                        : "cursor-crosshair"
+                  }`}
+                  title={
+                    saveState === "saving"
+                      ? "Enregistrement en cours…"
+                      : locked
+                        ? "Position verrouillée"
+                        : "Cliquez pour placer la signature"
+                  }
                 >
                   {sigBoxStyle && (
                     <div
                       className={`absolute rounded border-2 bg-primary/10 select-none ${
-                        locked
-                          ? "border-solid border-emerald-500 cursor-not-allowed"
-                          : "border-dashed border-primary cursor-move touch-none"
+                        saveState === "saving"
+                          ? "border-dashed border-muted-foreground cursor-wait"
+                          : locked
+                            ? "border-solid border-emerald-500 cursor-not-allowed"
+                            : "border-dashed border-primary cursor-move touch-none"
                       }`}
                       style={sigBoxStyle}
-                      onPointerDown={locked ? undefined : startDrag}
-                      onPointerMove={locked ? undefined : moveDrag}
-                      onPointerUp={locked ? undefined : endDrag}
-                      onPointerCancel={locked ? undefined : endDrag}
+                      onPointerDown={locked || saveState === "saving" ? undefined : startDrag}
+                      onPointerMove={locked || saveState === "saving" ? undefined : moveDrag}
+                      onPointerUp={locked || saveState === "saving" ? undefined : endDrag}
+                      onPointerCancel={locked || saveState === "saving" ? undefined : endDrag}
                     />
                   )}
                 </div>
@@ -434,6 +448,7 @@ export function SignDocumentDialog({
                   size="sm"
                   className="h-6 px-2 text-[11px]"
                   onClick={clearDraft}
+                  disabled={saveState === "saving"}
                 >
                   Réinitialiser
                 </Button>
@@ -445,6 +460,7 @@ export function SignDocumentDialog({
                 variant={locked ? "outline" : "secondary"}
                 size="sm"
                 className="w-full"
+                disabled={saveState === "saving"}
                 onClick={() => setLocked((v) => !v)}
               >
                 {locked ? (
