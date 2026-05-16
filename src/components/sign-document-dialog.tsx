@@ -19,6 +19,11 @@ import {
   signDocumentInternal,
   getCurrentDocumentPdfUrl,
 } from "@/lib/sharing.functions";
+import {
+  getSignatureDraft,
+  saveSignatureDraft,
+  clearSignatureDraft,
+} from "@/lib/signature-drafts.functions";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
