@@ -48,8 +48,8 @@ export const listPendingSignaturesPage = createServerFn({ method: "POST" })
     const offset = (data.page - 1) * data.limit;
 
     const { data: rows, error } = await supabase.rpc("list_pending_signature_documents", {
-      p_q: data.q || null,
-      p_org: data.org || null,
+      p_q: data.q && data.q.length ? data.q : (null as unknown as string),
+      p_org: (data.org ?? null) as unknown as string,
       p_sort: data.sort,
       p_dir: data.dir,
       p_limit: data.limit,
