@@ -308,18 +308,22 @@ export function SignDocumentDialog({
               {pageCount > 0 && (
                 <div
                   ref={overlayRef}
-                  onClick={handleClick}
-                  className="absolute inset-0 cursor-crosshair"
-                  title="Cliquez pour placer la signature"
+                  onClick={locked ? undefined : handleClick}
+                  className={`absolute inset-0 ${locked ? "cursor-default" : "cursor-crosshair"}`}
+                  title={locked ? "Position verrouillée" : "Cliquez pour placer la signature"}
                 >
                   {sigBoxStyle && (
                     <div
-                      className="absolute rounded border-2 border-dashed border-primary bg-primary/10 cursor-move touch-none select-none"
+                      className={`absolute rounded border-2 bg-primary/10 select-none ${
+                        locked
+                          ? "border-solid border-emerald-500 cursor-not-allowed"
+                          : "border-dashed border-primary cursor-move touch-none"
+                      }`}
                       style={sigBoxStyle}
-                      onPointerDown={startDrag}
-                      onPointerMove={moveDrag}
-                      onPointerUp={endDrag}
-                      onPointerCancel={endDrag}
+                      onPointerDown={locked ? undefined : startDrag}
+                      onPointerMove={locked ? undefined : moveDrag}
+                      onPointerUp={locked ? undefined : endDrag}
+                      onPointerCancel={locked ? undefined : endDrag}
                     />
                   )}
                 </div>
@@ -327,7 +331,7 @@ export function SignDocumentDialog({
             </div>
             <p className="text-xs text-muted-foreground">
               {placement
-                ? `Position : page ${placement.page_index + 1}, x=${Math.round(placement.x)}pt, y=${Math.round(placement.y)}pt`
+                ? `Position : page ${placement.page_index + 1}, x=${Math.round(placement.x)}pt, y=${Math.round(placement.y)}pt${locked ? " — verrouillée" : ""}`
                 : pageCount > 0
                   ? "Cliquez sur la page à l’endroit où placer la signature."
                   : "Aucun PDF actuel — la signature sera ajoutée sur une page dédiée."}
@@ -336,6 +340,27 @@ export function SignDocumentDialog({
               <p className="text-[10px] text-muted-foreground">
                 Page {pageIndex + 1} : {Math.round(pagePoints.w)}×{Math.round(pagePoints.h)} pt
               </p>
+            )}
+            {placement && (
+              <Button
+                type="button"
+                variant={locked ? "outline" : "secondary"}
+                size="sm"
+                className="w-full"
+                onClick={() => setLocked((v) => !v)}
+              >
+                {locked ? (
+                  <>
+                    <Unlock className="mr-1 h-4 w-4" />
+                    Déverrouiller pour ajuster
+                  </>
+                ) : (
+                  <>
+                    <Lock className="mr-1 h-4 w-4" />
+                    Confirmer le placement
+                  </>
+                )}
+              </Button>
             )}
           </div>
         </div>
