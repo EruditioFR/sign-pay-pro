@@ -140,6 +140,21 @@
   "nav_extra": {
     "documents": "Documents", "approvals": "À valider", "workflows": "Workflows", "templates": "Modèles PDF"
   },
+  "templates": {
+    "title": "Modèles PDF", "subtitle": "Personnalisez l'apparence de vos documents générés.",
+    "new": "Nouveau modèle", "name": "Nom", "type": "Type de document",
+    "primary_color": "Couleur principale", "logo_url": "URL du logo",
+    "legal_mentions": "Mentions légales", "payment_terms": "Conditions de paiement",
+    "iban": "IBAN", "bic": "BIC", "vat_number": "N° TVA",
+    "active": "Actif", "is_default": "Modèle par défaut",
+    "saved": "Modèle enregistré.", "deleted": "Modèle supprimé.",
+    "empty": "Aucun modèle pour le moment.", "delete_confirm": "Supprimer ce modèle ?"
+  },
+  "doc_detail": {
+    "files": "Fichiers", "signatures": "Signatures", "payments": "Paiements",
+    "no_signatures": "Aucune signature pour le moment.", "no_payments": "Aucun paiement pour le moment.",
+    "signed_by": "Signé par", "on": "le", "amount": "Montant", "method": "Méthode", "status": "Statut"
+  },
   "pdf": { "generate": "Générer le PDF", "generated": "PDF généré." },
   "sharing": {
     "title": "Envoyer au tiers", "send": "Envoyer",
