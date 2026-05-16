@@ -477,3 +477,39 @@ export function SignDocumentDialog({
     </Dialog>
   );
 }
+
+function SaveIndicator({
+  state,
+}: {
+  state: "idle" | "pending" | "saving" | "saved" | "error";
+}) {
+  if (state === "idle") return null;
+  const map = {
+    pending: {
+      icon: <CloudUpload className="h-3 w-3" />,
+      label: "Modifications en attente",
+      cls: "text-muted-foreground",
+    },
+    saving: {
+      icon: <Loader2 className="h-3 w-3 animate-spin" />,
+      label: "Enregistrement…",
+      cls: "text-muted-foreground",
+    },
+    saved: {
+      icon: <Check className="h-3 w-3" />,
+      label: "Brouillon enregistré",
+      cls: "text-emerald-600 dark:text-emerald-400",
+    },
+    error: {
+      icon: <AlertCircle className="h-3 w-3" />,
+      label: "Échec de l'enregistrement",
+      cls: "text-destructive",
+    },
+  }[state];
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] ${map.cls}`}>
+      {map.icon}
+      {map.label}
+    </span>
+  );
+}
