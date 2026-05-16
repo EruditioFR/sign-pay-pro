@@ -291,6 +291,8 @@ export function SignDocumentDialog({
       qc.invalidateQueries({ queryKey: ["document", documentId] });
       setOpen(false);
       sigRef.current?.clear();
+      initialsRef.current?.clear();
+      setApplyInitials(false);
       setPlacement(null);
       setLocked(false);
       removeDraft({ data: { document_id: documentId } }).catch(() => {
