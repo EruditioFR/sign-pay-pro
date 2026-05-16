@@ -141,12 +141,21 @@ function DocumentDetailPage() {
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border text-sm">
               {(sigs?.signatures ?? []).map((s) => (
-                <li key={s.id} className="px-3 py-2">
-                  <div className="font-medium">{s.signer_name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {s.signer_email ?? "—"} · {new Date(s.signed_at).toLocaleString()}
-                    {s.ip ? ` · IP ${s.ip}` : ""}
+                <li key={s.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{s.signer_name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {s.signer_email ?? "—"} · {new Date(s.signed_at).toLocaleString()}
+                      {s.ip ? ` · IP ${s.ip}` : ""}
+                      {s.pdf_hash_sha256 ? ` · SHA-256 ${s.pdf_hash_sha256.slice(0, 12)}…` : ""}
+                    </div>
                   </div>
+                  {s.pdf_storage_path && (
+                    <SignedPdfPreview
+                      path={s.pdf_storage_path}
+                      fileName={`${doc.reference ?? doc.title}-signed.pdf`}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
