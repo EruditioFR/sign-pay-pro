@@ -126,10 +126,15 @@ export function SignDocumentDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, urlQ.data?.url, documentId]);
 
+  const [saveState, setSaveState] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
+  const savedTimerRef = useRef<number | null>(null);
+
   // Debounced server-side auto-save.
   useEffect(() => {
     if (!open || !draftLoadedRef.current) return;
+    setSaveState("pending");
     const handle = window.setTimeout(() => {
+      setSaveState("saving");
       saveDraft({
         data: {
           document_id: documentId,
@@ -138,9 +143,13 @@ export function SignDocumentDialog({
           sig_width_pt: sigWidthPt,
           page_index: pageIndex,
         },
-      }).catch(() => {
-        /* silent — draft save is best-effort */
-      });
+      })
+        .then(() => {
+          setSaveState("saved");
+          if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+          savedTimerRef.current = window.setTimeout(() => setSaveState("idle"), 2000);
+        })
+        .catch(() => setSaveState("error"));
     }, 500);
     return () => window.clearTimeout(handle);
   }, [open, placement, locked, sigWidthPt, pageIndex, documentId, saveDraft]);
