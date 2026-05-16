@@ -1,16 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { FileText, PenLine, CheckCircle2, Clock, Ban } from "lucide-react";
+import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick } from "lucide-react";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export const Route = createFileRoute("/s/$token")({
   component: PublicSignRequestPage,
 });
+
+interface Placement {
+  page_index: number;
+  x: number;
+  y: number;
+  width: number;
+}
 
 interface SignData {
   document: {
@@ -78,7 +90,7 @@ function PublicSignRequestPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-3">
           <FileText className="h-5 w-5 text-primary" />
           <div className="flex-1">
             <div className="text-sm font-semibold">{data.organization?.name}</div>
@@ -89,7 +101,7 @@ function PublicSignRequestPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+      <main className="mx-auto max-w-4xl space-y-4 px-4 py-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{data.document.title}</CardTitle>
@@ -103,13 +115,6 @@ function PublicSignRequestPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            {data.pdfUrl ? (
-              <iframe src={data.pdfUrl} className="h-[55vh] w-full rounded border" title="PDF" />
-            ) : (
-              <p className="text-sm text-muted-foreground">Aucun PDF disponible.</p>
-            )}
-          </CardContent>
         </Card>
 
         {status === "signed" && (
@@ -127,16 +132,17 @@ function PublicSignRequestPage() {
             Cette invitation a été annulée par l'émetteur.
           </StatusBox>
         )}
-
         {status === "pending" && !data.can_sign && (
           <StatusBox tone="info" icon={<Clock className="h-5 w-5" />}>
             En attente de la signature des signataires précédents avant que vous puissiez signer.
           </StatusBox>
         )}
 
-        {status === "pending" && data.can_sign && (
-          <SignPanel
+        {status === "pending" && data.can_sign ? (
+          <SignWithPlacement
             token={token}
+            pdfUrl={data.pdfUrl}
+            signerName={data.request.signer_name}
             onSigned={() => {
               setDone("signed");
               refresh();
@@ -146,7 +152,13 @@ function PublicSignRequestPage() {
               refresh();
             }}
           />
-        )}
+        ) : data.pdfUrl ? (
+          <Card>
+            <CardContent className="p-3">
+              <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
+            </CardContent>
+          </Card>
+        ) : null}
       </main>
     </div>
   );
@@ -175,30 +187,156 @@ function StatusBox({
   );
 }
 
-function SignPanel({
+function SignWithPlacement({
   token,
+  pdfUrl,
+  signerName,
   onSigned,
   onDeclined,
 }: {
   token: string;
+  pdfUrl: string | null;
+  signerName: string;
   onSigned: () => void;
   onDeclined: () => void;
 }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+
+  const [pageCount, setPageCount] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pagePoints, setPagePoints] = useState({ w: 595, h: 842 });
+  const [renderScale, setRenderScale] = useState(1);
+  const [placement, setPlacement] = useState<Placement | null>(null);
+  const [sigWidthPt, setSigWidthPt] = useState(140);
+
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [showDecline, setShowDecline] = useState(false);
+  const [showFreePlacement, setShowFreePlacement] = useState(true);
+
+  // Load PDF
+  useEffect(() => {
+    if (!pdfUrl) return;
+    let cancelled = false;
+    (async () => {
+      const task = pdfjsLib.getDocument({ url: pdfUrl });
+      const doc = await task.promise;
+      if (cancelled) return;
+      pdfDocRef.current = doc;
+      setPageCount(doc.numPages);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfUrl]);
+
+  // Render current page
+  useEffect(() => {
+    const doc = pdfDocRef.current;
+    const canvas = canvasRef.current;
+    if (!doc || !canvas || pageCount === 0) return;
+    let cancelled = false;
+    (async () => {
+      const page = await doc.getPage(pageIndex + 1);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const containerW = canvas.parentElement?.clientWidth ?? 480;
+      const scale = Math.min(containerW / baseViewport.width, 1.6);
+      const viewport = page.getViewport({ scale });
+      if (cancelled) return;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d")!;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      if (cancelled) return;
+      setPagePoints({ w: baseViewport.width, h: baseViewport.height });
+      setRenderScale(scale);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pageIndex, pageCount]);
+
+  const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+
+  const clampPlacement = (p: Placement): Placement => {
+    const h = p.width * 0.4;
+    return {
+      ...p,
+      x: Math.min(Math.max(0, p.x), Math.max(0, pagePoints.w - p.width)),
+      y: Math.min(Math.max(0, p.y), Math.max(0, pagePoints.h - h)),
+    };
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!showFreePlacement) return;
+    if (dragRef.current) return;
+    const rect = (overlayRef.current ?? e.currentTarget).getBoundingClientRect();
+    const xPx = e.clientX - rect.left;
+    const yPx = e.clientY - rect.top;
+    const xPt = xPx / renderScale;
+    const yPt = yPx / renderScale;
+    setPlacement(
+      clampPlacement({
+        page_index: pageIndex,
+        x: xPt - sigWidthPt / 2,
+        y: yPt - (sigWidthPt * 0.4) / 2,
+        width: sigWidthPt,
+      }),
+    );
+  };
+
+  const startDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!placement) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = overlayRef.current!.getBoundingClientRect();
+    const pointerXPt = (e.clientX - rect.left) / renderScale;
+    const pointerYPt = (e.clientY - rect.top) / renderScale;
+    dragRef.current = {
+      offsetX: pointerXPt - placement.x,
+      offsetY: pointerYPt - placement.y,
+    };
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+
+  const moveDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current || !placement) return;
+    const rect = overlayRef.current!.getBoundingClientRect();
+    const pointerXPt = (e.clientX - rect.left) / renderScale;
+    const pointerYPt = (e.clientY - rect.top) / renderScale;
+    setPlacement(
+      clampPlacement({
+        ...placement,
+        x: pointerXPt - dragRef.current.offsetX,
+        y: pointerYPt - dragRef.current.offsetY,
+      }),
+    );
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragRef.current) {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId);
+      setTimeout(() => (dragRef.current = null), 0);
+    }
+  };
 
   const sign = async () => {
     if (sigRef.current?.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
     setSubmitting(true);
     try {
       const dataUrl = sigRef.current!.getTrimmedCanvas().toDataURL("image/png");
+      const body: Record<string, unknown> = { action: "sign", signature_image_b64: dataUrl };
+      if (showFreePlacement && placement) {
+        body.placement = placement;
+      }
       const res = await fetch(`/api/public/sign-request/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sign", signature_image_b64: dataUrl }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -229,6 +367,8 @@ function SignPanel({
     }
   };
 
+  const sigHeightPt = sigWidthPt * 0.4;
+
   return (
     <Card>
       <CardHeader>
@@ -236,7 +376,98 @@ function SignPanel({
           <PenLine className="h-4 w-4" /> Signer ce document
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
+        {pdfUrl ? (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+                  disabled={pageIndex === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm tabular-nums">
+                  Page {pageIndex + 1} / {pageCount || "…"}
+                </span>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setPageIndex((i) => Math.min(pageCount - 1, i + 1))}
+                  disabled={pageIndex >= pageCount - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={showFreePlacement}
+                  onChange={(e) => setShowFreePlacement(e.target.checked)}
+                />
+                Placer ma signature librement
+              </label>
+            </div>
+
+            <div
+              ref={overlayRef}
+              onClick={handleClick}
+              className={`relative w-full overflow-hidden rounded border bg-muted/20 ${
+                showFreePlacement ? "cursor-crosshair" : ""
+              }`}
+            >
+              <canvas ref={canvasRef} className="block w-full" />
+              {showFreePlacement && !placement && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="rounded-full bg-foreground/80 px-3 py-1 text-xs text-background flex items-center gap-1">
+                    <MousePointerClick className="h-3 w-3" />
+                    Cliquez où placer votre signature
+                  </div>
+                </div>
+              )}
+              {showFreePlacement && placement && placement.page_index === pageIndex && (
+                <div
+                  onPointerDown={startDrag}
+                  onPointerMove={moveDrag}
+                  onPointerUp={endDrag}
+                  onPointerCancel={endDrag}
+                  className="absolute cursor-move rounded border-2 border-primary bg-primary/10"
+                  style={{
+                    left: placement.x * renderScale,
+                    top: placement.y * renderScale,
+                    width: placement.width * renderScale,
+                    height: sigHeightPt * renderScale,
+                  }}
+                >
+                  <div className="absolute -top-5 left-0 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                    {signerName}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {showFreePlacement && (
+              <div>
+                <Label className="text-xs">Taille de la signature</Label>
+                <Slider
+                  value={[sigWidthPt]}
+                  min={80}
+                  max={260}
+                  step={10}
+                  onValueChange={(v) => {
+                    setSigWidthPt(v[0]);
+                    if (placement) setPlacement(clampPlacement({ ...placement, width: v[0] }));
+                  }}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">Aucun PDF disponible.</p>
+        )}
+
         <div>
           <Label>Tracez votre signature</Label>
           <div className="mt-1 rounded-md border bg-background">
@@ -246,8 +477,17 @@ function SignPanel({
             Effacer
           </Button>
         </div>
-        <Button onClick={sign} disabled={submitting} className="w-full">
-          {submitting ? "Envoi…" : "Signer maintenant"}
+
+        <Button
+          onClick={sign}
+          disabled={submitting || (showFreePlacement && !placement)}
+          className="w-full"
+        >
+          {submitting
+            ? "Envoi…"
+            : showFreePlacement && !placement
+              ? "Placez votre signature sur le document"
+              : "Signer maintenant"}
         </Button>
 
         {!showDecline ? (
