@@ -127,6 +127,52 @@
     "title": "To approve", "subtitle": "Your pending validation steps."
   },
   "nav_extra": {
-    "documents": "Documents", "approvals": "To approve", "workflows": "Workflows"
+    "documents": "Documents", "approvals": "To approve", "workflows": "Workflows", "templates": "PDF templates"
+  },
+  "pdf": { "generate": "Generate PDF", "generated": "PDF generated." },
+  "sharing": {
+    "title": "Send to recipient", "send": "Send",
+    "recipient_name": "Recipient name", "recipient_email": "Email",
+    "expires_in_days": "Expires in (days)",
+    "allow_sign": "Allow signature", "allow_pay": "Allow payment",
+    "create_link": "Create link", "link_created_copied": "Link created and copied.",
+    "link_revoked": "Link revoked.", "copied": "Link copied.",
+    "existing_links": "Existing links", "views": "views",
+    "active": "active", "inactive": "expired"
+  },
+  "payments": {
+    "record": "Record payment", "record_title": "Record a payment",
+    "amount": "Amount", "method": "Method", "reference": "Reference",
+    "bank_transfer": "Bank transfer", "cash": "Cash", "check": "Check", "other": "Other",
+    "recorded": "Payment recorded."
+  },
+  "templates": {
+    "title": "PDF templates", "subtitle": "Customize the look of your generated documents.",
+    "new": "New template", "name": "Name", "type": "Document type",
+    "primary_color": "Primary color", "logo_url": "Logo URL",
+    "legal_mentions": "Legal mentions", "payment_terms": "Payment terms",
+    "iban": "IBAN", "bic": "BIC", "vat_number": "VAT number",
+    "active": "Active", "is_default": "Default template",
+    "saved": "Template saved.", "deleted": "Template deleted.",
+    "empty": "No templates yet.", "delete_confirm": "Delete this template?"
+  },
+  "doc_detail": {
+    "files": "Files", "signatures": "Signatures", "payments": "Payments",
+    "no_signatures": "No signatures yet.", "no_payments": "No payments yet.",
+    "signed_by": "Signed by", "on": "on", "amount": "Amount", "method": "Method", "status": "Status"
+  },
+  "public": {
+    "invalid_title": "Invalid link", "invalid_text": "This link is expired or revoked.",
+    "shared_with_you": "Document shared with you",
+    "no_pdf": "No PDF available.", "actions": "Actions",
+    "sign": "Sign", "pay": "Pay",
+    "signer_name": "Signer name", "signer_email": "Email",
+    "draw_signature": "Sign below", "clear": "Clear",
+    "sign_now": "Sign now", "signed_ok": "Document signed. Thank you!",
+    "need_name": "Please enter your name.", "need_signature": "Please sign.",
+    "amount": "Amount", "payer_name": "Payer name",
+    "payment_ref": "Payment reference", "payment_ref_hint": "e.g. transfer reference",
+    "declare_payment": "Declare payment", "declare_payment_hint": "Enter your transfer details.",
+    "paid_ok": "Payment recorded. Thank you!", "need_amount": "Invalid amount."
   }
 }

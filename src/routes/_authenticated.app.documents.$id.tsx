@@ -27,11 +27,22 @@ function DocumentDetailPage() {
   const fetchMe = useServerFn(getCurrentUser);
   const signFn = useServerFn(getDocumentFileSignedUrl);
 
+  const fetchSigs = useServerFn(listDocumentSignatures);
+  const fetchPays = useServerFn(listDocumentPayments);
+
   const { data, isLoading } = useQuery({
     queryKey: ["document", id],
     queryFn: () => fetchDoc({ data: { id } }),
   });
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => fetchMe() });
+  const { data: sigs } = useQuery({
+    queryKey: ["doc_signatures", id],
+    queryFn: () => fetchSigs({ data: { document_id: id } }),
+  });
+  const { data: pays } = useQuery({
+    queryKey: ["doc_payments", id],
+    queryFn: () => fetchPays({ data: { document_id: id } }),
+  });
 
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   const { document: doc, files, workflows } = data;
@@ -114,6 +125,51 @@ function DocumentDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader><CardTitle>{t("doc_detail.signatures")}</CardTitle></CardHeader>
+        <CardContent>
+          {(sigs?.signatures ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("doc_detail.no_signatures")}</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border text-sm">
+              {(sigs?.signatures ?? []).map((s) => (
+                <li key={s.id} className="px-3 py-2">
+                  <div className="font-medium">{s.signer_name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {s.signer_email ?? "—"} · {new Date(s.signed_at).toLocaleString()}
+                    {s.ip ? ` · IP ${s.ip}` : ""}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>{t("doc_detail.payments")}</CardTitle></CardHeader>
+        <CardContent>
+          {(pays?.payments ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("doc_detail.no_payments")}</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border text-sm">
+              {(pays?.payments ?? []).map((p) => (
+                <li key={p.id} className="flex items-center justify-between px-3 py-2">
+                  <div>
+                    <div className="font-medium">{p.amount} {p.currency}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {p.method} · {p.status}
+                      {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleDateString()}` : ""}
+                      {p.provider_ref ? ` · ${p.provider_ref}` : ""}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
