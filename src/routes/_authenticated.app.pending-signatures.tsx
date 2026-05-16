@@ -142,6 +142,7 @@ function PendingSignaturesPage() {
         case "document":
           return a.document_title.localeCompare(b.document_title) * mult;
       }
+      return 0;
     });
     return arr;
   }, [filtered, sort, dir]);
