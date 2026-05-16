@@ -16,6 +16,7 @@ import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
 import { SignDocumentDialog } from "@/components/sign-document-dialog";
 import { SignedPdfPreview } from "@/components/signed-pdf-preview";
+import { MultiSignersDialog } from "@/components/multi-signers-dialog";
 import { ArrowLeft, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
