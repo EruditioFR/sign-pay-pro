@@ -20,7 +20,6 @@ import {
   getCurrentDocumentPdfUrl,
 } from "@/lib/sharing.functions";
 import * as pdfjsLib from "pdfjs-dist";
-// @ts-expect-error — vite ?url import for the worker bundle
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
