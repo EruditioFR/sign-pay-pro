@@ -24,6 +24,7 @@ import {
   Home,
   LogOut,
   PenLine,
+  ScrollText,
   Settings,
   ShieldCheck,
   Store,
@@ -46,6 +47,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/super-admin", label: t("nav.dashboard"), icon: Home },
         { to: "/super-admin/tenants", label: t("nav.tenants"), icon: Building2 },
+        { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },
       ];
     case "reseller":
       return [{ to: "/reseller", label: t("nav.clients"), icon: Store }];
@@ -59,6 +61,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
         { to: "/admin/users", label: t("nav.users"), icon: Users },
         { to: "/admin/roles", label: t("nav.roles"), icon: ShieldCheck },
+        { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },
         { to: "/admin/settings", label: t("nav.settings"), icon: Settings },
       ];
     case "manager":
