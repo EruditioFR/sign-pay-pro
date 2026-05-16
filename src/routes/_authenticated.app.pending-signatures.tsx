@@ -165,7 +165,6 @@ function PendingSignaturesPage() {
                             <Badge variant="secondary">
                               {g.signed_signers}/{g.total_signers} signés
                             </Badge>
-                            {g.sequential() /* harmless */ }
                             {g.pending_signers > 0 && (
                               <Badge variant="outline">{g.pending_signers} en attente</Badge>
                             )}
