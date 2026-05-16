@@ -415,7 +415,7 @@ export function SignDocumentDialog({
             )}
             {draftRestored && placement && (
               <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-amber-400/60 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-                <span>Brouillon restauré (placement enregistré localement).</span>
+                <span>Brouillon restauré depuis le serveur (synchronisé entre vos appareils).</span>
                 <Button
                   type="button"
                   variant="ghost"
