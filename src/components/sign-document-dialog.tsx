@@ -273,11 +273,9 @@ export function SignDocumentDialog({
       sigRef.current?.clear();
       setPlacement(null);
       setLocked(false);
-      try {
-        localStorage.removeItem(draftKey);
-      } catch {
+      removeDraft({ data: { document_id: documentId } }).catch(() => {
         /* noop */
-      }
+      });
       setDraftRestored(false);
     },
     onError: (e: Error) => toast.error(e.message),
