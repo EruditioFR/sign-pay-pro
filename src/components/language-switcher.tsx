@@ -16,6 +16,11 @@ export function LanguageSwitcher() {
 
   const change = (lng: string) => {
     i18n.changeLanguage(lng);
+    try {
+      window.localStorage.setItem("i18nextLng", lng);
+    } catch {
+      // ignore
+    }
   };
 
   return (
