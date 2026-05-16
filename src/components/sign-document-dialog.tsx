@@ -350,6 +350,39 @@ export function SignDocumentDialog({
               </Button>
             </div>
 
+            <div className="space-y-2 rounded-md border border-dashed border-border p-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={applyInitials}
+                  onChange={(e) => setApplyInitials(e.target.checked)}
+                />
+                Apposer un paraphe sur chaque page
+              </label>
+              {applyInitials && (
+                <>
+                  <Label className="text-xs">Vos initiales (paraphe)</Label>
+                  <div className="rounded-md border border-border bg-background">
+                    <SignatureCanvas
+                      ref={initialsRef}
+                      canvasProps={{ className: "w-full h-20 touch-none" }}
+                      penColor="black"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => initialsRef.current?.clear()}
+                  >
+                    <Eraser className="mr-1 h-4 w-4" />
+                    Effacer le paraphe
+                  </Button>
+                </>
+              )}
+            </div>
+
             <div className="space-y-1">
               <Label>Largeur de la signature ({Math.round(sigWidthPt)} pt)</Label>
               <Slider
