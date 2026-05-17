@@ -250,7 +250,8 @@ interface DemoScenarioResult {
   status: string;
 }
 
-async function buildResult(supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any, docId: string, scenario: ScenarioMeta, origin: string): Promise<DemoScenarioResult> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function buildResult(supabase: any, docId: string, scenario: ScenarioMeta, origin: string): Promise<DemoScenarioResult> {
   const { data: req } = await supabase
     .from("document_signature_requests")
     .select("token, status, signer_email")
