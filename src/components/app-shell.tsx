@@ -25,6 +25,7 @@ import {
   LogOut,
   PenLine,
   ScrollText,
+  Sparkles,
   Settings,
   ShieldCheck,
   Store,
