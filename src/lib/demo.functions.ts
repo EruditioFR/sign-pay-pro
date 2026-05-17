@@ -189,7 +189,7 @@ async function buildVisitSlipPdf(orgName: string): Promise<Uint8Array> {
   let y = pageHeight() - 130;
   page.drawText("BIEN VISITÉ", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
   page.drawText("Appartement T3 — 68 m² Carrez", { x: 40, y, size: 12, font: bold, color: dark }); y -= 14;
-  page.drawText("14 rue des Lilas, 75011 Paris — 4ᵉ étage avec ascenseur", { x: 40, y, size: 10, font: reg, color: dark }); y -= 12;
+  page.drawText("14 rue des Lilas, 75011 Paris — 4e étage avec ascenseur", { x: 40, y, size: 10, font: reg, color: dark }); y -= 12;
   page.drawText("Prix de présentation : 595 000 € — Honoraires charge vendeur", { x: 40, y, size: 10, font: reg, color: dark });
 
   // Visiteur
