@@ -25,6 +25,7 @@ import {
   LogOut,
   PenLine,
   ScrollText,
+  Sparkles,
   Settings,
   ShieldCheck,
   Store,
@@ -54,6 +55,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
     case "admin_client":
       return [
         { to: "/admin", label: t("nav.dashboard"), icon: Home },
+        { to: "/app/demo", label: "Démo", icon: Sparkles },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
@@ -69,6 +71,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
     default:
       return [
         { to: "/app", label: t("nav.dashboard"), icon: Home },
+        { to: "/app/demo", label: "Démo", icon: Sparkles },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },

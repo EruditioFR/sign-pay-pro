@@ -23,6 +23,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated.super-admin.tenants'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated.app.profile'
 import { Route as AuthenticatedAppPendingSignaturesRouteImport } from './routes/_authenticated.app.pending-signatures'
+import { Route as AuthenticatedAppDemoRouteImport } from './routes/_authenticated.app.demo'
 import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated.app.audit'
 import { Route as AuthenticatedAppApprovalsRouteImport } from './routes/_authenticated.app.approvals'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
@@ -113,6 +114,11 @@ const AuthenticatedAppPendingSignaturesRoute =
     path: '/app/pending-signatures',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppDemoRoute = AuthenticatedAppDemoRouteImport.update({
+  id: '/app/demo',
+  path: '/app/demo',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
   id: '/app/audit',
   path: '/app/audit',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
+  '/app/demo': typeof AuthenticatedAppDemoRoute
   '/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
+  '/app/demo': typeof AuthenticatedAppDemoRoute
   '/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
+  '/_authenticated/app/demo': typeof AuthenticatedAppDemoRoute
   '/_authenticated/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
@@ -315,6 +324,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/app/approvals'
     | '/app/audit'
+    | '/app/demo'
     | '/app/pending-signatures'
     | '/app/profile'
     | '/super-admin/tenants'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/app/approvals'
     | '/app/audit'
+    | '/app/demo'
     | '/app/pending-signatures'
     | '/app/profile'
     | '/super-admin/tenants'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/app/approvals'
     | '/_authenticated/app/audit'
+    | '/_authenticated/app/demo'
     | '/_authenticated/app/pending-signatures'
     | '/_authenticated/app/profile'
     | '/_authenticated/super-admin/tenants'
@@ -509,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPendingSignaturesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/demo': {
+      id: '/_authenticated/app/demo'
+      path: '/app/demo'
+      fullPath: '/app/demo'
+      preLoaderRoute: typeof AuthenticatedAppDemoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/audit': {
       id: '/_authenticated/app/audit'
       path: '/app/audit'
@@ -631,6 +650,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAppApprovalsRoute: typeof AuthenticatedAppApprovalsRoute
   AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
+  AuthenticatedAppDemoRoute: typeof AuthenticatedAppDemoRoute
   AuthenticatedAppPendingSignaturesRoute: typeof AuthenticatedAppPendingSignaturesRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
@@ -656,6 +676,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAppApprovalsRoute: AuthenticatedAppApprovalsRoute,
   AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
+  AuthenticatedAppDemoRoute: AuthenticatedAppDemoRoute,
   AuthenticatedAppPendingSignaturesRoute:
     AuthenticatedAppPendingSignaturesRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
@@ -692,13 +713,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
