@@ -79,27 +79,27 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
 
   // Header
   page.drawRectangle({ x: 0, y: H - 80, width: W, height: 80, color: accent });
-  page.drawText(orgName, { x: 40, y: H - 35, size: 16, font: bold, color: rgb(1, 1, 1) });
-  page.drawText(meta.title.toUpperCase(), { x: 40, y: H - 58, size: 11, font: reg, color: rgb(0.92, 0.96, 0.96) });
+  page.drawText(s(orgName), { x: 40, y: H - 35, size: 16, font: bold, color: rgb(1, 1, 1) });
+  page.drawText(s(meta.title.toUpperCase()), { x: 40, y: H - 58, size: 11, font: reg, color: rgb(0.92, 0.96, 0.96) });
 
   // Meta box
   page.drawRectangle({ x: W - 220, y: H - 150, width: 180, height: 55, borderColor: muted, borderWidth: 0.6 });
-  page.drawText(`N° ${reference}`, { x: W - 210, y: H - 110, size: 10, font: bold, color: dark });
+  page.drawText(s(`N° ${reference}`), { x: W - 210, y: H - 110, size: 10, font: bold, color: dark });
   const today = new Date().toLocaleDateString("fr-FR");
-  page.drawText(`Date : ${today}`, { x: W - 210, y: H - 125, size: 9, font: reg, color: dark });
-  page.drawText(`Valable 12 mois`, { x: W - 210, y: H - 140, size: 9, font: reg, color: muted });
+  page.drawText(s(`Date : ${today}`), { x: W - 210, y: H - 125, size: 9, font: reg, color: dark });
+  page.drawText(s(`Valable 12 mois`), { x: W - 210, y: H - 140, size: 9, font: reg, color: muted });
 
   // Parties
   let y = H - 120;
   page.drawText("AGENCE", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
-  page.drawText(orgName, { x: 40, y, size: 11, font: bold, color: dark }); y -= 12;
-  page.drawText("Carte professionnelle CPI — Loi Hoguet n° 70-9", { x: 40, y, size: 9, font: reg, color: muted });
+  page.drawText(s(orgName), { x: 40, y, size: 11, font: bold, color: dark }); y -= 12;
+  page.drawText(s("Carte professionnelle CPI — Loi Hoguet n° 70-9"), { x: 40, y, size: 9, font: reg, color: muted });
 
   y = H - 185;
   page.drawText("CLIENT", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
-  page.drawText(input.client_name, { x: 40, y, size: 11, font: bold, color: dark }); y -= 12;
-  page.drawText(`Email : ${input.client_email}`, { x: 40, y, size: 9, font: reg, color: dark }); y -= 11;
-  if (input.client_phone) page.drawText(`Téléphone : ${input.client_phone}`, { x: 40, y, size: 9, font: reg, color: dark });
+  page.drawText(s(input.client_name), { x: 40, y, size: 11, font: bold, color: dark }); y -= 12;
+  page.drawText(s(`Email : ${input.client_email}`), { x: 40, y, size: 9, font: reg, color: dark }); y -= 11;
+  if (input.client_phone) page.drawText(s(`Téléphone : ${input.client_phone}`), { x: 40, y, size: 9, font: reg, color: dark });
 
   // Property
   y = H - 270;
@@ -113,9 +113,9 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
     const amountLabel = kind === "purchase_offer" ? "MONTANT DE L'OFFRE"
       : kind === "visit_slip" ? "PRIX DE PRÉSENTATION"
       : "PRIX DE VENTE NET VENDEUR";
-    page.drawText(amountLabel, { x: 40, y, size: 8, font: bold, color: muted }); y -= 16;
+    page.drawText(s(amountLabel), { x: 40, y, size: 8, font: bold, color: muted }); y -= 16;
     page.drawRectangle({ x: 40, y: y - 4, width: 200, height: 26, color: accent });
-    page.drawText(`${input.amount.toLocaleString("fr-FR")} €`, { x: 50, y: y + 5, size: 13, font: bold, color: rgb(1, 1, 1) });
+    page.drawText(s(`${input.amount.toLocaleString("fr-FR")} €`), { x: 50, y: y + 5, size: 13, font: bold, color: rgb(1, 1, 1) });
     y -= 30;
   }
 
@@ -139,19 +139,19 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
 
   if (input.agent_notes) {
     y -= 14;
-    page.drawText("Conditions particulières", { x: 40, y, size: 9, font: bold, color: dark }); y -= 14;
+    page.drawText(s("Conditions particulières"), { x: 40, y, size: 9, font: bold, color: dark }); y -= 14;
     y = drawPara(page, input.agent_notes, 40, y, reg, 9, W - 80, dark);
   }
 
   // Signature
   y -= 30;
-  page.drawText("Mention « lu et approuvé » + signature du client", { x: 40, y, size: 9, font: ital, color: muted });
+  page.drawText(s("Mention « lu et approuvé » + signature du client"), { x: 40, y, size: 9, font: ital, color: muted });
   page.drawRectangle({ x: 40, y: y - 80, width: W - 80, height: 70, borderColor: muted, borderWidth: 0.5 });
 
   // Footer
   page.drawLine({ start: { x: 40, y: 50 }, end: { x: W - 40, y: 50 }, thickness: 0.4, color: muted });
-  page.drawText(`${orgName} — Document généré via Lovable`, { x: 40, y: 36, size: 8, font: reg, color: muted });
-  page.drawText("Document soumis à signature électronique", { x: W - 220, y: 36, size: 8, font: ital, color: muted });
+  page.drawText(s(`${orgName} — Document généré via Lovable`), { x: 40, y: 36, size: 8, font: reg, color: muted });
+  page.drawText(s("Document soumis à signature électronique"), { x: W - 220, y: 36, size: 8, font: ital, color: muted });
 
   return await pdf.save();
 }
