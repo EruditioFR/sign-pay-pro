@@ -22,6 +22,12 @@ function DashboardRedirect() {
   });
 
   useEffect(() => {
+    if (!loading && !session) {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [loading, session, navigate]);
+
+  useEffect(() => {
     if (!me) return;
 
     const to =
