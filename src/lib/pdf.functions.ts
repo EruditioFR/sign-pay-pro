@@ -58,7 +58,11 @@ export async function buildDocumentPdf(
   template: TemplateRecord | null,
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595.28, 841.89]); // A4
+  const rawPage = pdfDoc.addPage([595.28, 841.89]); // A4
+  const sanitize = (s: string) => s.replace(/[\u00a0\u202f\u2009\u200a\u2007\u2060]/g, " ").replace(/[\u2013\u2014]/g, "-").replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"');
+  const _origDraw = rawPage.drawText.bind(rawPage);
+  rawPage.drawText = ((text: string, opts: Parameters<typeof _origDraw>[1]) => _origDraw(sanitize(text ?? ""), opts)) as typeof rawPage.drawText;
+  const page = rawPage;
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const color = hexToRgb(template?.primary_color || "#1f2937");
