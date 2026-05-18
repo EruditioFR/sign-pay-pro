@@ -301,7 +301,7 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
       const yPdf = pageH - data.placement.y - h;
       page.drawImage(sigImg, { x: xPdf, y: yPdf, width: w, height: h });
       page.drawText(
-        `Signé par ${data.signer_name} — ${signedAt.toISOString()}`,
+        sanitizeWinAnsi(`Signé par ${data.signer_name} - ${signedAt.toISOString()}`),
         { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
       );
     } else {
