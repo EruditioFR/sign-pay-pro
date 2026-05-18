@@ -40,7 +40,7 @@ function s(t: string): string {
 
 function wrap(text: string, font: PDFFont, size: number, max: number): string[] {
   const out: string[] = [];
-  for (const para of text.split(/\n/)) {
+  for (const para of s(text).split(/\n/)) {
     const words = para.split(/\s+/);
     let cur = "";
     for (const w of words) {
