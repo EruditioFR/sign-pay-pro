@@ -228,6 +228,24 @@ export const getCurrentDocumentPdfUrl = createServerFn({ method: "POST" })
     if (docErr) throw new Error(docErr.message);
     if (!doc) throw new Error("Document introuvable");
 
+    // Prefer the latest signed PDF if any signature exists for this document.
+    const { data: latestSig } = await supabaseAdmin
+      .from("document_signatures")
+      .select("pdf_storage_path, signed_at")
+      .eq("document_id", doc.id)
+      .not("pdf_storage_path", "is", null)
+      .order("signed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestSig?.pdf_storage_path) {
+      const { data: signedUrl, error: signedErr } = await supabaseAdmin.storage
+        .from("signed-documents")
+        .createSignedUrl(latestSig.pdf_storage_path, 600);
+      if (signedErr) throw new Error(signedErr.message);
+      return { url: signedUrl.signedUrl as string | null };
+    }
+
     const { data: file } = await supabaseAdmin
       .from("document_files")
       .select("storage_path")
