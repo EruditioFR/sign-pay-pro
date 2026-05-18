@@ -172,7 +172,7 @@ function SignPanel({
     if (sigRef.current?.isEmpty()) return toast.error(t("public.need_signature"));
     setSubmitting(true);
     try {
-      const dataUrl = sigRef.current!.getTrimmedCanvas().toDataURL("image/png");
+      const dataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
       const res = await fetch(`/api/public/share/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
