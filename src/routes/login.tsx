@@ -23,12 +23,14 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(t("auth.error_invalid"));
       return;
     }
-    navigate({ to: "/dashboard" });
+    // Full reload to guarantee the new session is picked up by all loaders
+    // (avoids race with AuthProvider's router.invalidate()).
+    window.location.assign("/dashboard");
   };
 
   return (
