@@ -20,12 +20,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      setLoading(false);
-    });
-
     const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!active) return;
       setSession(newSession);
@@ -36,6 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           queryClient.invalidateQueries();
         }, 0);
       }
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setSession(data.session);
+      setLoading(false);
     });
 
     return () => {

@@ -180,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-60 border-r border-border bg-card md:flex md:flex-col">
         <div className="border-b border-border px-5 py-4">
-          <Link to="/" className="flex items-center gap-2 text-base font-semibold">
+          <Link to="/dashboard" className="flex items-center gap-2 text-base font-semibold">
             <FileText className="h-5 w-5 text-primary" />
             {t("app.name")}
           </Link>
@@ -208,7 +208,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="flex h-full flex-col">
                   <div className="border-b border-border px-5 py-4">
                     <Link
-                      to="/"
+                      to="/dashboard"
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2 text-base font-semibold"
                     >
