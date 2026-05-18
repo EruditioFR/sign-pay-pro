@@ -12,12 +12,14 @@ import {
   seedDemoScenarios,
   resetDemoScenarios,
 } from "@/lib/demo.functions";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/app/demo")({
   component: DemoPage,
 });
 
 function DemoPage() {
+  const { session, loading: authLoading } = useAuth();
   const fetchScenarios = useServerFn(listDemoScenarios);
   const seed = useServerFn(seedDemoScenarios);
   const reset = useServerFn(resetDemoScenarios);
@@ -26,6 +28,7 @@ function DemoPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["demo-scenarios"],
     queryFn: () => fetchScenarios(),
+    enabled: !authLoading && !!session,
   });
 
   const seedMut = useMutation({
