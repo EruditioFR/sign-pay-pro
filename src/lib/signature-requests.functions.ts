@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendResendEmail, renderSignatureRequestEmail, getOriginFromRequest } from "@/lib/email.server";
+import { sendResendEmail, renderSignatureRequestEmail, getOriginFromRequest } from "@/lib/email-sender";
 import { z } from "zod";
 
 const SignerSchema = z.object({
