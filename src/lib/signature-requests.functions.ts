@@ -69,7 +69,7 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
             html: renderSignatureRequestEmail({
               signerName: r.signer_name,
               documentTitle: doc?.title ?? "Document",
-              url: `${origin}/p/${r.token}`,
+              url: `${origin}/s/${r.token}`,
               expiresAt: r.expires_at,
               senderOrg: org?.name,
             }),
