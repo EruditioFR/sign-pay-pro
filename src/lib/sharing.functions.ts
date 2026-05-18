@@ -7,6 +7,12 @@ import { buildDocumentPdf } from "@/lib/pdf.functions";
 import { sendResendEmail, renderShareEmail, getOriginFromRequest } from "@/lib/email-sender";
 import { z } from "zod";
 
+const sanitizeWinAnsi = (s: string) =>
+  s.replace(/[\u00a0\u202f\u2009\u200a\u2007\u2060]/g, " ")
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"');
+
 const CreateLinkSchema = z.object({
   document_id: z.string().uuid(),
   recipient_email: z.string().email().optional().nullable().or(z.literal("")),
@@ -301,18 +307,18 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
       const yPdf = pageH - data.placement.y - h;
       page.drawImage(sigImg, { x: xPdf, y: yPdf, width: w, height: h });
       page.drawText(
-        `Signé par ${data.signer_name} — ${signedAt.toISOString()}`,
+        sanitizeWinAnsi(`Signé par ${data.signer_name} - ${signedAt.toISOString()}`),
         { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
       );
     } else {
       // Fallback: append a dedicated signature page (legacy behaviour).
       const page = pdf.addPage([595.28, 400]);
       const dims = sigImg.scale(0.4);
-      page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
-      page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
-      if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
-      page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
-      page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
+      page.drawText(sanitizeWinAnsi("SIGNATURE"), { x: 50, y: 340, size: 14 });
+      page.drawText(sanitizeWinAnsi(`Signé par : ${data.signer_name}`), { x: 50, y: 310, size: 11 });
+      if (data.signer_email) page.drawText(sanitizeWinAnsi(`Email : ${data.signer_email}`), { x: 50, y: 294, size: 10 });
+      page.drawText(sanitizeWinAnsi(`Date : ${signedAt.toISOString()}`), { x: 50, y: 278, size: 10 });
+      page.drawText(sanitizeWinAnsi(`Signataire interne (user_id: ${userId})`), { x: 50, y: 262, size: 9 });
       page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
     }
 
@@ -336,7 +342,7 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
         const x = pw - initW - 24;
         const y = 24;
         p.drawImage(initImg, { x, y, width: initW, height: initH });
-        p.drawText(`Paraphe ${data.signer_name}`, {
+        p.drawText(sanitizeWinAnsi(`Paraphe ${data.signer_name}`), {
           x,
           y: y + initH + 2,
           size: 6,
