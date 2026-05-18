@@ -18,18 +18,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      router.invalidate();
-      queryClient.invalidateQueries();
-    });
+    let active = true;
 
     supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
       setSession(data.session);
       setLoading(false);
     });
 
-    return () => sub.subscription.unsubscribe();
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!active) return;
+      setSession(newSession);
+
+      if (event !== "INITIAL_SESSION") {
+        window.setTimeout(() => {
+          router.invalidate();
+          queryClient.invalidateQueries();
+        }, 0);
+      }
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, [router, queryClient]);
 
   return <AuthContext.Provider value={{ session, loading }}>{children}</AuthContext.Provider>;
