@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,6 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,9 +27,14 @@ function LoginPage() {
       toast.error(t("auth.error_invalid"));
       return;
     }
-    // Full reload to guarantee the new session is picked up by all loaders
-    // (avoids race with AuthProvider's router.invalidate()).
-    window.location.assign("/dashboard");
+    const deadline = Date.now() + 2500;
+    while (Date.now() < deadline) {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) break;
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+    }
+
+    window.location.href = "/dashboard";
   };
 
   return (
