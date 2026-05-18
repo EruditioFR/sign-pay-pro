@@ -189,7 +189,7 @@ export async function buildDocumentPdf(
 }
 
 function wrapText(text: string, font: import("pdf-lib").PDFFont, size: number, maxWidth: number): string[] {
-  const words = text.replace(/\r/g, "").split(/\s+/);
+  const words = text.replace(/[\u00a0\u202f\u2009\u200a\u2007\u2060]/g, " ").replace(/[\u2013\u2014]/g, "-").replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/\r/g, "").split(/\s+/);
   const lines: string[] = [];
   let current = "";
   for (const word of words) {
