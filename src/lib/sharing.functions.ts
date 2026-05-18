@@ -308,11 +308,11 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
       // Fallback: append a dedicated signature page (legacy behaviour).
       const page = pdf.addPage([595.28, 400]);
       const dims = sigImg.scale(0.4);
-      page.drawText("SIGNATURE", { x: 50, y: 340, size: 14 });
-      page.drawText(`Signé par : ${data.signer_name}`, { x: 50, y: 310, size: 11 });
-      if (data.signer_email) page.drawText(`Email : ${data.signer_email}`, { x: 50, y: 294, size: 10 });
-      page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 278, size: 10 });
-      page.drawText(`Signataire interne (user_id: ${userId})`, { x: 50, y: 262, size: 9 });
+      page.drawText(sanitizeWinAnsi("SIGNATURE"), { x: 50, y: 340, size: 14 });
+      page.drawText(sanitizeWinAnsi(`Signé par : ${data.signer_name}`), { x: 50, y: 310, size: 11 });
+      if (data.signer_email) page.drawText(sanitizeWinAnsi(`Email : ${data.signer_email}`), { x: 50, y: 294, size: 10 });
+      page.drawText(sanitizeWinAnsi(`Date : ${signedAt.toISOString()}`), { x: 50, y: 278, size: 10 });
+      page.drawText(sanitizeWinAnsi(`Signataire interne (user_id: ${userId})`), { x: 50, y: 262, size: 9 });
       page.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
     }
 
