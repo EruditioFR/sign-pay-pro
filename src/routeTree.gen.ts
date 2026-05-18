@@ -24,6 +24,7 @@ import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_au
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated.app.profile'
 import { Route as AuthenticatedAppPendingSignaturesRouteImport } from './routes/_authenticated.app.pending-signatures'
 import { Route as AuthenticatedAppDemoRouteImport } from './routes/_authenticated.app.demo'
+import { Route as AuthenticatedAppChatbotRouteImport } from './routes/_authenticated.app.chatbot'
 import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated.app.audit'
 import { Route as AuthenticatedAppApprovalsRouteImport } from './routes/_authenticated.app.approvals'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
@@ -117,6 +118,11 @@ const AuthenticatedAppPendingSignaturesRoute =
 const AuthenticatedAppDemoRoute = AuthenticatedAppDemoRouteImport.update({
   id: '/app/demo',
   path: '/app/demo',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAppChatbotRoute = AuthenticatedAppChatbotRouteImport.update({
+  id: '/app/chatbot',
+  path: '/app/chatbot',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
+  '/app/chatbot': typeof AuthenticatedAppChatbotRoute
   '/app/demo': typeof AuthenticatedAppDemoRoute
   '/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
+  '/app/chatbot': typeof AuthenticatedAppChatbotRoute
   '/app/demo': typeof AuthenticatedAppDemoRoute
   '/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
+  '/_authenticated/app/chatbot': typeof AuthenticatedAppChatbotRoute
   '/_authenticated/app/demo': typeof AuthenticatedAppDemoRoute
   '/_authenticated/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/app/approvals'
     | '/app/audit'
+    | '/app/chatbot'
     | '/app/demo'
     | '/app/pending-signatures'
     | '/app/profile'
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/app/approvals'
     | '/app/audit'
+    | '/app/chatbot'
     | '/app/demo'
     | '/app/pending-signatures'
     | '/app/profile'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/app/approvals'
     | '/_authenticated/app/audit'
+    | '/_authenticated/app/chatbot'
     | '/_authenticated/app/demo'
     | '/_authenticated/app/pending-signatures'
     | '/_authenticated/app/profile'
@@ -528,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDemoRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/chatbot': {
+      id: '/_authenticated/app/chatbot'
+      path: '/app/chatbot'
+      fullPath: '/app/chatbot'
+      preLoaderRoute: typeof AuthenticatedAppChatbotRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/audit': {
       id: '/_authenticated/app/audit'
       path: '/app/audit'
@@ -650,6 +669,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAppApprovalsRoute: typeof AuthenticatedAppApprovalsRoute
   AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
+  AuthenticatedAppChatbotRoute: typeof AuthenticatedAppChatbotRoute
   AuthenticatedAppDemoRoute: typeof AuthenticatedAppDemoRoute
   AuthenticatedAppPendingSignaturesRoute: typeof AuthenticatedAppPendingSignaturesRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
@@ -676,6 +696,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAppApprovalsRoute: AuthenticatedAppApprovalsRoute,
   AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
+  AuthenticatedAppChatbotRoute: AuthenticatedAppChatbotRoute,
   AuthenticatedAppDemoRoute: AuthenticatedAppDemoRoute,
   AuthenticatedAppPendingSignaturesRoute:
     AuthenticatedAppPendingSignaturesRoute,
