@@ -64,7 +64,12 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         { to: "/app/chatbot", label: "Assistant agent", icon: Bot },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
-        { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
+        {
+          to: "/app/approvals",
+          label: t("nav_extra.approvals"),
+          icon: CheckSquare,
+          badgeKey: "approvals",
+        },
         { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
         { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
         { to: "/admin/users", label: t("nav.users"), icon: Users },
@@ -81,7 +86,12 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         { to: "/app/chatbot", label: "Assistant agent", icon: Bot },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
-        { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
+        {
+          to: "/app/approvals",
+          label: t("nav_extra.approvals"),
+          icon: CheckSquare,
+          badgeKey: "approvals",
+        },
         { to: "/app/profile", label: t("nav.profile"), icon: UserIcon },
       ];
   }
@@ -111,7 +121,7 @@ function NavList({
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               active
                 ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             )}
           >
             <item.icon className="h-4 w-4" />
