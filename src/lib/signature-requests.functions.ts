@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendResendEmail, renderSignatureRequestEmail, getOriginFromRequest } from "@/lib/email.server";
 import { z } from "zod";
 
 const SignerSchema = z.object({
@@ -42,6 +45,40 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
       resource: `document:${data.document_id}`,
       metadata: { count: rows.length, sequential: data.sequential },
     });
+
+    // Send invitation emails
+    try {
+      const { data: doc } = await supabaseAdmin
+        .from("documents")
+        .select("title, organization_id")
+        .eq("id", data.document_id)
+        .maybeSingle();
+      const { data: org } = doc
+        ? await supabaseAdmin.from("organizations").select("name").eq("id", doc.organization_id).maybeSingle()
+        : { data: null };
+      const origin = getOriginFromRequest(getRequest());
+      // In sequential mode, only email the first signer; otherwise email everyone now.
+      const targets = data.sequential
+        ? (inserted ?? []).filter((r) => r.order_index === Math.min(...(inserted ?? []).map((x) => x.order_index)))
+        : inserted ?? [];
+      await Promise.all(
+        targets.map((r) =>
+          sendResendEmail({
+            to: r.signer_email,
+            subject: `Signature requise : ${doc?.title ?? "Document"}`,
+            html: renderSignatureRequestEmail({
+              signerName: r.signer_name,
+              documentTitle: doc?.title ?? "Document",
+              url: `${origin}/p/${r.token}`,
+              expiresAt: r.expires_at,
+              senderOrg: org?.name,
+            }),
+          }).catch((e) => console.error("signature email failed:", e)),
+        ),
+      );
+    } catch (e) {
+      console.error("signature email batch failed:", e);
+    }
 
     return { requests: inserted ?? [] };
   });
