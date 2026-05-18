@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
+  Bot,
   Building2,
   CheckSquare,
   FileText,
@@ -59,6 +60,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/admin", label: t("nav.dashboard"), icon: Home },
         { to: "/app/demo", label: "Démo", icon: Sparkles },
+        { to: "/app/chatbot", label: "Assistant agent", icon: Bot },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
@@ -75,6 +77,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/app", label: t("nav.dashboard"), icon: Home },
         { to: "/app/demo", label: "Démo", icon: Sparkles },
+        { to: "/app/chatbot", label: "Assistant agent", icon: Bot },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
