@@ -231,10 +231,10 @@ export const getCurrentDocumentPdfUrl = createServerFn({ method: "POST" })
     // Prefer the latest signed PDF if any signature exists for this document.
     const { data: latestSig } = await supabaseAdmin
       .from("document_signatures")
-      .select("pdf_storage_path, created_at")
+      .select("pdf_storage_path, signed_at")
       .eq("document_id", doc.id)
       .not("pdf_storage_path", "is", null)
-      .order("created_at", { ascending: false })
+      .order("signed_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
