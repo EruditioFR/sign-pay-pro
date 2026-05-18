@@ -68,7 +68,7 @@ export const createShareLink = createServerFn({ method: "POST" })
           ? await supabaseAdmin.from("organizations").select("name").eq("id", doc.organization_id).maybeSingle()
           : { data: null };
         const origin = getOriginFromRequest(getRequest());
-        const url = `${origin}/s/${link.token}`;
+        const url = `${origin}/p/${link.token}`;
         await sendResendEmail({
           to: data.recipient_email,
           subject: `Document partagé : ${doc?.title ?? "Document"}`,
