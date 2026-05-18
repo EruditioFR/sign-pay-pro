@@ -4,6 +4,8 @@ import { AppShell } from "@/components/app-shell";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
+    if (typeof window === "undefined") return;
+
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       throw redirect({ to: "/login" });
