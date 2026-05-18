@@ -328,7 +328,7 @@ function SignWithPlacement({
     if (sigRef.current?.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
     setSubmitting(true);
     try {
-      const dataUrl = sigRef.current!.getTrimmedCanvas().toDataURL("image/png");
+      const dataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
       const body: Record<string, unknown> = { action: "sign", signature_image_b64: dataUrl };
       if (showFreePlacement && placement) {
         body.placement = placement;
