@@ -54,7 +54,40 @@ export const createShareLink = createServerFn({ method: "POST" })
       metadata: { link_id: link.id, recipient: data.recipient_email },
     });
 
-    return { link };
+    // Send email via Resend if a recipient email is provided
+    let email_sent = false;
+    let email_error: string | null = null;
+    if (data.recipient_email) {
+      try {
+        const { data: doc } = await supabaseAdmin
+          .from("documents")
+          .select("title, organization_id")
+          .eq("id", data.document_id)
+          .maybeSingle();
+        const { data: org } = doc
+          ? await supabaseAdmin.from("organizations").select("name").eq("id", doc.organization_id).maybeSingle()
+          : { data: null };
+        const origin = getOriginFromRequest(getRequest());
+        const url = `${origin}/s/${link.token}`;
+        await sendResendEmail({
+          to: data.recipient_email,
+          subject: `Document partagé : ${doc?.title ?? "Document"}`,
+          html: renderShareEmail({
+            recipientName: data.recipient_name,
+            documentTitle: doc?.title ?? "Document",
+            url,
+            expiresAt: expiresAt,
+            senderOrg: org?.name,
+          }),
+        });
+        email_sent = true;
+      } catch (e) {
+        email_error = e instanceof Error ? e.message : String(e);
+        console.error("share email failed:", email_error);
+      }
+    }
+
+    return { link, email_sent, email_error };
   });
 
 export const listShareLinks = createServerFn({ method: "GET" })
