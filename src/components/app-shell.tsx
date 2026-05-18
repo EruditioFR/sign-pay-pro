@@ -6,6 +6,7 @@ import { useState } from "react";
 import { getCurrentUser, type AppRole } from "@/lib/auth.functions";
 import { listMyPendingApprovals } from "@/lib/workflows.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -131,14 +132,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const fetchMe = useServerFn(getCurrentUser);
   const fetchApprovals = useServerFn(listMyPendingApprovals);
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => fetchMe() });
+  const { data: me } = useQuery({
+    queryKey: ["me", session?.user.id],
+    queryFn: () => fetchMe(),
+    enabled: !authLoading && !!session,
+    retry: false,
+  });
   const { data: approvals } = useQuery({
-    queryKey: ["my_approvals"],
+    queryKey: ["my_approvals", session?.user.id],
     queryFn: () => fetchApprovals(),
-    enabled: !!me,
+    enabled: !authLoading && !!session && !!me,
+    retry: false,
     refetchInterval: 60_000,
   });
   const approvalsCount = approvals?.steps.length ?? 0;
@@ -149,6 +157,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Chargement…
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
