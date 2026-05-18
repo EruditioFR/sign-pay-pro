@@ -25,6 +25,19 @@ const Schema = z.object({
 
 const W = 595.28, H = 841.89;
 
+// Replace characters that WinAnsi (Helvetica standard font) cannot encode.
+function s(t: string): string {
+  return t
+    .replace(/\u202F/g, " ")  // narrow no-break space (from fr-FR number/currency formatting)
+    .replace(/\u00A0/g, " ")  // no-break space
+    .replace(/\u2009/g, " ")  // thin space
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2013/g, "-")
+    .replace(/\u2014/g, "-")
+    .replace(/\u2026/g, "...");
+}
+
 function wrap(text: string, font: PDFFont, size: number, max: number): string[] {
   const out: string[] = [];
   for (const para of text.split(/\n/)) {
