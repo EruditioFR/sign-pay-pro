@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PDFDocument } from "pdf-lib";
 import { buildDocumentPdf } from "@/lib/pdf.functions";
+import { sendResendEmail, renderShareEmail, getOriginFromRequest } from "@/lib/email.server";
 import { z } from "zod";
 
 const CreateLinkSchema = z.object({
