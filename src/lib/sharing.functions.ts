@@ -336,7 +336,7 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
         const x = pw - initW - 24;
         const y = 24;
         p.drawImage(initImg, { x, y, width: initW, height: initH });
-        p.drawText(`Paraphe ${data.signer_name}`, {
+        p.drawText(sanitizeWinAnsi(`Paraphe ${data.signer_name}`), {
           x,
           y: y + initH + 2,
           size: 6,
