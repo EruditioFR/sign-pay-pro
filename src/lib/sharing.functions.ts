@@ -7,6 +7,12 @@ import { buildDocumentPdf } from "@/lib/pdf.functions";
 import { sendResendEmail, renderShareEmail, getOriginFromRequest } from "@/lib/email-sender";
 import { z } from "zod";
 
+const sanitizeWinAnsi = (s: string) =>
+  s.replace(/[\u00a0\u202f\u2009\u200a\u2007\u2060]/g, " ")
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"');
+
 const CreateLinkSchema = z.object({
   document_id: z.string().uuid(),
   recipient_email: z.string().email().optional().nullable().or(z.literal("")),
