@@ -6,6 +6,7 @@ import { useState } from "react";
 import { getCurrentUser, type AppRole } from "@/lib/auth.functions";
 import { listMyPendingApprovals } from "@/lib/workflows.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,12 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         { to: "/app/chatbot", label: "Assistant agent", icon: Bot },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
-        { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
+        {
+          to: "/app/approvals",
+          label: t("nav_extra.approvals"),
+          icon: CheckSquare,
+          badgeKey: "approvals",
+        },
         { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
         { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
         { to: "/admin/users", label: t("nav.users"), icon: Users },
@@ -80,7 +86,12 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         { to: "/app/chatbot", label: "Assistant agent", icon: Bot },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
-        { to: "/app/approvals", label: t("nav_extra.approvals"), icon: CheckSquare, badgeKey: "approvals" },
+        {
+          to: "/app/approvals",
+          label: t("nav_extra.approvals"),
+          icon: CheckSquare,
+          badgeKey: "approvals",
+        },
         { to: "/app/profile", label: t("nav.profile"), icon: UserIcon },
       ];
   }
@@ -110,7 +121,7 @@ function NavList({
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               active
                 ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             )}
           >
             <item.icon className="h-4 w-4" />
@@ -131,14 +142,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const fetchMe = useServerFn(getCurrentUser);
   const fetchApprovals = useServerFn(listMyPendingApprovals);
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => fetchMe() });
+  const { data: me } = useQuery({
+    queryKey: ["me", session?.user.id],
+    queryFn: () => fetchMe(),
+    enabled: !authLoading && !!session,
+    retry: false,
+  });
   const { data: approvals } = useQuery({
-    queryKey: ["my_approvals"],
+    queryKey: ["my_approvals", session?.user.id],
     queryFn: () => fetchApprovals(),
-    enabled: !!me,
+    enabled: !authLoading && !!session && !!me,
+    retry: false,
     refetchInterval: 60_000,
   });
   const approvalsCount = approvals?.steps.length ?? 0;
@@ -149,6 +167,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Chargement…
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
