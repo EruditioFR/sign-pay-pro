@@ -80,17 +80,17 @@ export function FloatingChatbot() {
         type="button"
         aria-label="Ouvrir l'assistant"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
       >
-        {open ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+        {open ? <X className="h-7 w-7 sm:h-6 sm:w-6" /> : <Bot className="h-7 w-7 sm:h-6 sm:w-6" />}
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
+          className="flex h-[100dvh] w-full flex-col gap-0 p-0 sm:max-w-md"
         >
-          <SheetHeader className="border-b p-4">
+          <SheetHeader className="border-b p-4 pt-[max(1rem,env(safe-area-inset-top))]">
             <SheetTitle className="flex items-center gap-2 text-base">
               <Bot className="h-5 w-5 text-primary" />
               Assistant agent immobilier
