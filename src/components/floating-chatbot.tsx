@@ -80,17 +80,17 @@ export function FloatingChatbot() {
         type="button"
         aria-label="Ouvrir l'assistant"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
       >
-        {open ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+        {open ? <X className="h-7 w-7 sm:h-6 sm:w-6" /> : <Bot className="h-7 w-7 sm:h-6 sm:w-6" />}
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
+          className="flex h-[100dvh] w-full flex-col gap-0 p-0 sm:max-w-md"
         >
-          <SheetHeader className="border-b p-4">
+          <SheetHeader className="border-b p-4 pt-[max(1rem,env(safe-area-inset-top))]">
             <SheetTitle className="flex items-center gap-2 text-base">
               <Bot className="h-5 w-5 text-primary" />
               Assistant agent immobilier
@@ -228,11 +228,11 @@ function ChatbotPanel() {
               <button
                 key={k.id}
                 onClick={() => pickKind(k.id)}
-                className="group flex items-start gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
+                className="group flex min-h-14 items-center gap-3 rounded-xl border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-accent active:bg-accent"
               >
-                <k.icon className="mt-0.5 h-5 w-5 text-primary" />
-                <div>
-                  <div className="text-sm font-medium">{k.label}</div>
+                <k.icon className="h-6 w-6 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <div className="text-base font-medium">{k.label}</div>
                   <div className="text-xs text-muted-foreground">{k.desc}</div>
                 </div>
               </button>
@@ -255,15 +255,18 @@ function ChatbotPanel() {
       </div>
 
       {step !== "choose-kind" && step !== "review" && step !== "done" && (
-        <div className="border-t bg-muted/30 p-3">
-          <div className="flex gap-2">
+        <div
+          className="border-t bg-background p-3"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="flex items-end gap-2">
             {(step === "property-description" || step === "agent-notes") ? (
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Votre réponse…"
                 rows={2}
-                className="resize-none"
+                className="min-h-12 resize-none text-base"
                 onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmitInput(); }}
                 autoFocus
               />
@@ -272,13 +275,20 @@ function ChatbotPanel() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Votre réponse…"
+                className="h-12 text-base"
                 onKeyDown={(e) => { if (e.key === "Enter") handleSubmitInput(); }}
                 autoFocus
                 type={step === "client-email" ? "email" : "text"}
                 inputMode={step === "amount" ? "numeric" : undefined}
               />
             )}
-            <Button onClick={handleSubmitInput} size="icon"><Send className="h-4 w-4" /></Button>
+            <Button
+              onClick={handleSubmitInput}
+              aria-label="Envoyer"
+              className="h-12 w-12 shrink-0 rounded-full p-0"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}
