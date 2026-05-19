@@ -300,6 +300,8 @@ function UserDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <FloatingChatbot />
     </div>
   );
 }
