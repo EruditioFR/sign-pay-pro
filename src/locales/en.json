@@ -108,7 +108,8 @@
     },
     "status": {
       "draft": "Draft", "pending_validation": "Pending", "validated": "Validated",
-      "rejected": "Rejected", "archived": "Archived"
+      "rejected": "Rejected", "archived": "Archived",
+      "sent": "Sent", "signed": "Signed", "paid": "Paid", "partially_paid": "Partially paid"
     },
     "upload": {
       "label": "Drop a file or click", "choose": "Choose",

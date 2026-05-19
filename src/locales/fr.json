@@ -115,7 +115,8 @@
     },
     "status": {
       "draft": "Brouillon", "pending_validation": "À valider",
-      "validated": "Validé", "rejected": "Rejeté", "archived": "Archivé"
+      "validated": "Validé", "rejected": "Rejeté", "archived": "Archivé",
+      "sent": "Envoyé", "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé"
     },
     "upload": {
       "label": "Glissez un fichier ou cliquez", "choose": "Choisir",
