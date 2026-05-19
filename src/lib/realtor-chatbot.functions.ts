@@ -114,11 +114,13 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
   page.drawText(s(`Email : ${input.client_email}`), { x: 40, y, size: 9, font: reg, color: dark }); y -= 11;
   if (input.client_phone) page.drawText(s(`Téléphone : ${input.client_phone}`), { x: 40, y, size: 9, font: reg, color: dark });
 
-  // Property
+  // Property / Object
+  const isCommercial = kind === "purchase_order" || kind === "quote" || kind === "invoice";
   y = H - 270;
-  page.drawText("BIEN IMMOBILIER", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
+  page.drawText(isCommercial ? "OBJET" : "BIEN IMMOBILIER", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
   y = drawPara(page, input.property_address, 40, y, bold, 11, W - 80, dark); y -= 4;
   if (input.property_description) y = drawPara(page, input.property_description, 40, y, reg, 9, W - 80, dark);
+
 
   // Amount
   if (input.amount && input.amount > 0) {
