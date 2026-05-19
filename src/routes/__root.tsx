@@ -74,19 +74,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DocFlow Pro — Plateforme B2B de gestion documentaire" },
+      { title: "Watica — Plateforme B2B de gestion documentaire" },
       {
         name: "description",
         content:
           "Création, validation, signature électronique et paiement de vos documents commerciaux sur une plateforme multi-tenant sécurisée.",
       },
-      { property: "og:title", content: "DocFlow Pro — Plateforme B2B de gestion documentaire" },
+      { property: "og:title", content: "Watica — Plateforme B2B de gestion documentaire" },
       {
         property: "og:description",
         content: "Plateforme B2B de gestion documentaire de bout en bout.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "DocFlow Pro — Plateforme B2B de gestion documentaire" },
+      { name: "twitter:title", content: "Watica — Plateforme B2B de gestion documentaire" },
       { name: "description", content: "DocuFlow Pro is a B2B SaaS platform for managing commercial documents." },
       { property: "og:description", content: "DocuFlow Pro is a B2B SaaS platform for managing commercial documents." },
       { name: "twitter:description", content: "DocuFlow Pro is a B2B SaaS platform for managing commercial documents." },
