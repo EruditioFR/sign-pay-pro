@@ -30,7 +30,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { FloatingChatbot } from "@/components/floating-chatbot";
+
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: UserDashboard,
@@ -301,7 +301,7 @@ function UserDashboard() {
         </CardContent>
       </Card>
 
-      <FloatingChatbot />
+      
     </div>
   );
 }
