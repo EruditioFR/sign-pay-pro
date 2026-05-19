@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { sendResendEmail, renderSignatureRequestEmail, getOriginFromRequest } from "@/lib/email-sender";
 
 export type DocKind = "visit_slip" | "purchase_offer" | "mandate_simple" | "mandate_exclusive";
 
