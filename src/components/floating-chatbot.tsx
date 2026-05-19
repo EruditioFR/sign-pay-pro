@@ -255,15 +255,18 @@ function ChatbotPanel() {
       </div>
 
       {step !== "choose-kind" && step !== "review" && step !== "done" && (
-        <div className="border-t bg-muted/30 p-3">
-          <div className="flex gap-2">
+        <div
+          className="border-t bg-background p-3"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="flex items-end gap-2">
             {(step === "property-description" || step === "agent-notes") ? (
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Votre réponse…"
                 rows={2}
-                className="resize-none"
+                className="min-h-12 resize-none text-base"
                 onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmitInput(); }}
                 autoFocus
               />
@@ -272,13 +275,20 @@ function ChatbotPanel() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Votre réponse…"
+                className="h-12 text-base"
                 onKeyDown={(e) => { if (e.key === "Enter") handleSubmitInput(); }}
                 autoFocus
                 type={step === "client-email" ? "email" : "text"}
                 inputMode={step === "amount" ? "numeric" : undefined}
               />
             )}
-            <Button onClick={handleSubmitInput} size="icon"><Send className="h-4 w-4" /></Button>
+            <Button
+              onClick={handleSubmitInput}
+              aria-label="Envoyer"
+              className="h-12 w-12 shrink-0 rounded-full p-0"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}
