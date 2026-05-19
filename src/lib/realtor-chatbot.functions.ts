@@ -125,6 +125,9 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
     y -= 14;
     const amountLabel = kind === "purchase_offer" ? "MONTANT DE L'OFFRE"
       : kind === "visit_slip" ? "PRIX DE PRÉSENTATION"
+      : kind === "purchase_order" ? "MONTANT DE LA COMMANDE"
+      : kind === "quote" ? "MONTANT DU DEVIS"
+      : kind === "invoice" ? "MONTANT À RÉGLER"
       : "PRIX DE VENTE NET VENDEUR";
     page.drawText(s(amountLabel), { x: 40, y, size: 8, font: bold, color: muted }); y -= 16;
     page.drawRectangle({ x: 40, y: y - 4, width: 200, height: 26, color: accent });
@@ -147,8 +150,15 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
       "Le mandant confie à l'agence, à titre non exclusif, le soin de rechercher un acquéreur pour le bien désigné, au prix net vendeur indiqué. Le mandant conserve la faculté de traiter directement ou par l'intermédiaire d'un autre mandataire. Durée : trois (3) mois renouvelables. Honoraires à la charge de l'acquéreur, dus en cas de vente conclue grâce à l'entremise de l'agence.",
     mandate_exclusive:
       "Le mandant confie à l'agence, à titre EXCLUSIF, le soin de rechercher un acquéreur pour le bien désigné. Pendant la durée du mandat, le mandant s'interdit de traiter directement ou par l'intermédiaire d'un autre mandataire. Durée irrévocable : trois (3) mois, puis reconductible jusqu'à dénonciation. Honoraires dus à l'agence en cas de vente conclue pendant la durée du mandat, y compris avec un acquéreur présenté par le mandant.",
+    purchase_order:
+      "Le client confirme par la présente la commande des prestations et/ou produits décrits ci-dessus, aux conditions et au prix indiqués. La signature de ce bon de commande vaut acceptation ferme et définitive. Les conditions générales de vente du prestataire s'appliquent. Toute annulation après signature pourra donner lieu à facturation des frais déjà engagés.",
+    quote:
+      "Le présent devis est valable trente (30) jours à compter de sa date d'émission. Son acceptation, matérialisée par la signature du client précédée de la mention « Bon pour accord », vaut commande ferme aux conditions indiquées. Un acompte pourra être demandé à la commande. Les prix s'entendent toutes taxes éventuelles incluses, sauf mention contraire.",
+    invoice:
+      "Facture à régler dans un délai de trente (30) jours à compter de la date d'émission, sauf accord particulier. Tout retard de paiement entraînera de plein droit l'application de pénalités au taux légal en vigueur ainsi qu'une indemnité forfaitaire pour frais de recouvrement de 40 €. Conformément à la réglementation, aucun escompte n'est accordé pour règlement anticipé sauf mention contraire.",
   };
   y = drawPara(page, legal[kind], 40, y, reg, 9, W - 80, dark);
+
 
   if (input.agent_notes) {
     y -= 14;
