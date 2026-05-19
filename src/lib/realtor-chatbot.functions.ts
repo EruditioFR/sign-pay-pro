@@ -6,17 +6,27 @@ import { z } from "zod";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { sendResendEmail, renderSignatureRequestEmail, getOriginFromRequest } from "@/lib/email-sender";
 
-export type DocKind = "visit_slip" | "purchase_offer" | "mandate_simple" | "mandate_exclusive";
+export type DocKind =
+  | "visit_slip"
+  | "purchase_offer"
+  | "mandate_simple"
+  | "mandate_exclusive"
+  | "purchase_order"
+  | "quote"
+  | "invoice";
 
 const KIND_META: Record<DocKind, { title: string; prefix: string; tag: string }> = {
   visit_slip:        { title: "Bon de visite",                  prefix: "BV", tag: "realtor:visit" },
   purchase_offer:    { title: "Offre d'achat",                  prefix: "OA", tag: "realtor:offer" },
   mandate_simple:    { title: "Mandat de vente simple",         prefix: "MS", tag: "realtor:mandate-simple" },
   mandate_exclusive: { title: "Mandat de vente exclusif",       prefix: "ME", tag: "realtor:mandate-exclusive" },
+  purchase_order:    { title: "Bon de commande",                prefix: "BC", tag: "commercial:order" },
+  quote:             { title: "Devis",                          prefix: "DV", tag: "commercial:quote" },
+  invoice:           { title: "Facture",                        prefix: "FA", tag: "commercial:invoice" },
 };
 
 const Schema = z.object({
-  kind: z.enum(["visit_slip", "purchase_offer", "mandate_simple", "mandate_exclusive"]),
+  kind: z.enum(["visit_slip", "purchase_offer", "mandate_simple", "mandate_exclusive", "purchase_order", "quote", "invoice"]),
   client_name: z.string().min(1).max(200),
   client_email: z.string().email().max(255),
   client_phone: z.string().max(40).optional().default(""),
