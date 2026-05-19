@@ -25,6 +25,9 @@ import {
   RefreshCw,
   CheckCircle2,
   X,
+  ShoppingCart,
+  FileText,
+  Receipt,
 } from "lucide-react";
 import {
   createRealtorDocument,
@@ -33,6 +36,7 @@ import {
 } from "@/lib/realtor-chatbot.functions";
 
 type Step =
+  | "choose-category"
   | "choose-kind"
   | "client-name"
   | "client-email"
@@ -44,12 +48,15 @@ type Step =
   | "review"
   | "done";
 
+type Category = "realtor" | "commercial";
+
 interface BotMsg { role: "bot"; text: string }
 interface UserMsg { role: "user"; text: string }
 type Msg = BotMsg | UserMsg;
 
 interface FormState {
   kind: DocKind | null;
+  category: Category | null;
   client_name: string;
   client_email: string;
   client_phone: string;
@@ -59,17 +66,26 @@ interface FormState {
   agent_notes: string;
 }
 
-const KINDS: { id: DocKind; label: string; desc: string; icon: typeof HomeIcon }[] = [
-  { id: "visit_slip",        label: "Bon de visite",   desc: "Reconnaissance de visite", icon: HomeIcon },
-  { id: "purchase_offer",    label: "Offre d'achat",   desc: "Proposition d'acquisition", icon: FileSignature },
-  { id: "mandate_simple",    label: "Mandat simple",   desc: "Mandat non exclusif", icon: ScrollText },
-  { id: "mandate_exclusive", label: "Mandat exclusif", desc: "Mandat exclusif", icon: Crown },
+const KINDS: { id: DocKind; category: Category; label: string; desc: string; icon: typeof HomeIcon }[] = [
+  { id: "visit_slip",        category: "realtor",    label: "Bon de visite",   desc: "Reconnaissance de visite", icon: HomeIcon },
+  { id: "purchase_offer",    category: "realtor",    label: "Offre d'achat",   desc: "Proposition d'acquisition", icon: FileSignature },
+  { id: "mandate_simple",    category: "realtor",    label: "Mandat simple",   desc: "Mandat non exclusif", icon: ScrollText },
+  { id: "mandate_exclusive", category: "realtor",    label: "Mandat exclusif", desc: "Mandat exclusif", icon: Crown },
+  { id: "purchase_order",    category: "commercial", label: "Bon de commande", desc: "Commande ferme à signer", icon: ShoppingCart },
+  { id: "quote",             category: "commercial", label: "Devis",           desc: "Proposition commerciale", icon: FileText },
+  { id: "invoice",           category: "commercial", label: "Facture",         desc: "Facture à régler", icon: Receipt },
+];
+
+const CATEGORIES: { id: Category; label: string; desc: string; icon: typeof HomeIcon }[] = [
+  { id: "realtor",    label: "Immobilier",   desc: "Visite, offre, mandats", icon: HomeIcon },
+  { id: "commercial", label: "Commercial",   desc: "Bon de commande, devis, facture", icon: ShoppingCart },
 ];
 
 const initialForm: FormState = {
-  kind: null, client_name: "", client_email: "", client_phone: "",
+  kind: null, category: null, client_name: "", client_email: "", client_phone: "",
   property_address: "", property_description: "", amount: "", agent_notes: "",
 };
+
 
 export function FloatingChatbot() {
   const [open, setOpen] = useState(false);
