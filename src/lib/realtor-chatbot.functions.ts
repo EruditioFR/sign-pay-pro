@@ -252,3 +252,46 @@ export const createRealtorDocument = createServerFn({ method: "POST" })
       kind_label: meta.title,
     };
   });
+
+export const sendRealtorSignatureEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      token: z.string().min(10).max(200),
+      signer_name: z.string().min(1).max(200),
+      signer_email: z.string().email().max(255),
+      document_title: z.string().min(1).max(300),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    // Resolve sender org name for nicer email body
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", userId)
+      .maybeSingle();
+    let orgName: string | null = null;
+    if (profile?.organization_id) {
+      const { data: org } = await supabaseAdmin
+        .from("organizations")
+        .select("name")
+        .eq("id", profile.organization_id)
+        .maybeSingle();
+      orgName = org?.name ?? null;
+    }
+
+    const origin = getOriginFromRequest(getRequest());
+    const url = `${origin}/s/${data.token}`;
+    await sendResendEmail({
+      to: data.signer_email,
+      subject: `Signature requise — ${data.document_title}`,
+      html: renderSignatureRequestEmail({
+        signerName: data.signer_name,
+        documentTitle: data.document_title,
+        url,
+        senderOrg: orgName,
+      }),
+    });
+    return { ok: true };
+  });
