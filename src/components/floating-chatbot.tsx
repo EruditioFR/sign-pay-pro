@@ -312,7 +312,7 @@ function ChatbotPanel() {
         )}
       </div>
 
-      {step !== "choose-kind" && step !== "review" && step !== "done" && (
+      {step !== "choose-category" && step !== "choose-kind" && step !== "review" && step !== "done" && (
         <div
           className="border-t bg-background p-3"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
