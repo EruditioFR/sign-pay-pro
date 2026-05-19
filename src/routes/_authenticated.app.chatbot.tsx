@@ -24,7 +24,7 @@ import {
   RefreshCw,
   CheckCircle2,
 } from "lucide-react";
-import { createRealtorDocument, type DocKind } from "@/lib/realtor-chatbot.functions";
+import { createRealtorDocument, sendRealtorSignatureEmail, type DocKind } from "@/lib/realtor-chatbot.functions";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/app/chatbot")({
