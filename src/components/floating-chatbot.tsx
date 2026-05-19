@@ -228,11 +228,11 @@ function ChatbotPanel() {
               <button
                 key={k.id}
                 onClick={() => pickKind(k.id)}
-                className="group flex items-start gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-primary hover:bg-accent"
+                className="group flex min-h-14 items-center gap-3 rounded-xl border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-accent active:bg-accent"
               >
-                <k.icon className="mt-0.5 h-5 w-5 text-primary" />
-                <div>
-                  <div className="text-sm font-medium">{k.label}</div>
+                <k.icon className="h-6 w-6 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <div className="text-base font-medium">{k.label}</div>
                   <div className="text-xs text-muted-foreground">{k.desc}</div>
                 </div>
               </button>
