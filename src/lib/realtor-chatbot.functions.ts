@@ -6,17 +6,27 @@ import { z } from "zod";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { sendResendEmail, renderSignatureRequestEmail, getOriginFromRequest } from "@/lib/email-sender";
 
-export type DocKind = "visit_slip" | "purchase_offer" | "mandate_simple" | "mandate_exclusive";
+export type DocKind =
+  | "visit_slip"
+  | "purchase_offer"
+  | "mandate_simple"
+  | "mandate_exclusive"
+  | "purchase_order"
+  | "quote"
+  | "invoice";
 
 const KIND_META: Record<DocKind, { title: string; prefix: string; tag: string }> = {
   visit_slip:        { title: "Bon de visite",                  prefix: "BV", tag: "realtor:visit" },
   purchase_offer:    { title: "Offre d'achat",                  prefix: "OA", tag: "realtor:offer" },
   mandate_simple:    { title: "Mandat de vente simple",         prefix: "MS", tag: "realtor:mandate-simple" },
   mandate_exclusive: { title: "Mandat de vente exclusif",       prefix: "ME", tag: "realtor:mandate-exclusive" },
+  purchase_order:    { title: "Bon de commande",                prefix: "BC", tag: "commercial:order" },
+  quote:             { title: "Devis",                          prefix: "DV", tag: "commercial:quote" },
+  invoice:           { title: "Facture",                        prefix: "FA", tag: "commercial:invoice" },
 };
 
 const Schema = z.object({
-  kind: z.enum(["visit_slip", "purchase_offer", "mandate_simple", "mandate_exclusive"]),
+  kind: z.enum(["visit_slip", "purchase_offer", "mandate_simple", "mandate_exclusive", "purchase_order", "quote", "invoice"]),
   client_name: z.string().min(1).max(200),
   client_email: z.string().email().max(255),
   client_phone: z.string().max(40).optional().default(""),
@@ -104,17 +114,22 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
   page.drawText(s(`Email : ${input.client_email}`), { x: 40, y, size: 9, font: reg, color: dark }); y -= 11;
   if (input.client_phone) page.drawText(s(`Téléphone : ${input.client_phone}`), { x: 40, y, size: 9, font: reg, color: dark });
 
-  // Property
+  // Property / Object
+  const isCommercial = kind === "purchase_order" || kind === "quote" || kind === "invoice";
   y = H - 270;
-  page.drawText("BIEN IMMOBILIER", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
+  page.drawText(isCommercial ? "OBJET" : "BIEN IMMOBILIER", { x: 40, y, size: 8, font: bold, color: muted }); y -= 14;
   y = drawPara(page, input.property_address, 40, y, bold, 11, W - 80, dark); y -= 4;
   if (input.property_description) y = drawPara(page, input.property_description, 40, y, reg, 9, W - 80, dark);
+
 
   // Amount
   if (input.amount && input.amount > 0) {
     y -= 14;
     const amountLabel = kind === "purchase_offer" ? "MONTANT DE L'OFFRE"
       : kind === "visit_slip" ? "PRIX DE PRÉSENTATION"
+      : kind === "purchase_order" ? "MONTANT DE LA COMMANDE"
+      : kind === "quote" ? "MONTANT DU DEVIS"
+      : kind === "invoice" ? "MONTANT À RÉGLER"
       : "PRIX DE VENTE NET VENDEUR";
     page.drawText(s(amountLabel), { x: 40, y, size: 8, font: bold, color: muted }); y -= 16;
     page.drawRectangle({ x: 40, y: y - 4, width: 200, height: 26, color: accent });
@@ -137,8 +152,15 @@ async function buildPdf(kind: DocKind, orgName: string, reference: string, input
       "Le mandant confie à l'agence, à titre non exclusif, le soin de rechercher un acquéreur pour le bien désigné, au prix net vendeur indiqué. Le mandant conserve la faculté de traiter directement ou par l'intermédiaire d'un autre mandataire. Durée : trois (3) mois renouvelables. Honoraires à la charge de l'acquéreur, dus en cas de vente conclue grâce à l'entremise de l'agence.",
     mandate_exclusive:
       "Le mandant confie à l'agence, à titre EXCLUSIF, le soin de rechercher un acquéreur pour le bien désigné. Pendant la durée du mandat, le mandant s'interdit de traiter directement ou par l'intermédiaire d'un autre mandataire. Durée irrévocable : trois (3) mois, puis reconductible jusqu'à dénonciation. Honoraires dus à l'agence en cas de vente conclue pendant la durée du mandat, y compris avec un acquéreur présenté par le mandant.",
+    purchase_order:
+      "Le client confirme par la présente la commande des prestations et/ou produits décrits ci-dessus, aux conditions et au prix indiqués. La signature de ce bon de commande vaut acceptation ferme et définitive. Les conditions générales de vente du prestataire s'appliquent. Toute annulation après signature pourra donner lieu à facturation des frais déjà engagés.",
+    quote:
+      "Le présent devis est valable trente (30) jours à compter de sa date d'émission. Son acceptation, matérialisée par la signature du client précédée de la mention « Bon pour accord », vaut commande ferme aux conditions indiquées. Un acompte pourra être demandé à la commande. Les prix s'entendent toutes taxes éventuelles incluses, sauf mention contraire.",
+    invoice:
+      "Facture à régler dans un délai de trente (30) jours à compter de la date d'émission, sauf accord particulier. Tout retard de paiement entraînera de plein droit l'application de pénalités au taux légal en vigueur ainsi qu'une indemnité forfaitaire pour frais de recouvrement de 40 €. Conformément à la réglementation, aucun escompte n'est accordé pour règlement anticipé sauf mention contraire.",
   };
   y = drawPara(page, legal[kind], 40, y, reg, 9, W - 80, dark);
+
 
   if (input.agent_notes) {
     y -= 14;

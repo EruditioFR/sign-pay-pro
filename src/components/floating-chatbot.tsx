@@ -25,6 +25,9 @@ import {
   RefreshCw,
   CheckCircle2,
   X,
+  ShoppingCart,
+  FileText,
+  Receipt,
 } from "lucide-react";
 import {
   createRealtorDocument,
@@ -33,6 +36,7 @@ import {
 } from "@/lib/realtor-chatbot.functions";
 
 type Step =
+  | "choose-category"
   | "choose-kind"
   | "client-name"
   | "client-email"
@@ -44,12 +48,15 @@ type Step =
   | "review"
   | "done";
 
+type Category = "realtor" | "commercial";
+
 interface BotMsg { role: "bot"; text: string }
 interface UserMsg { role: "user"; text: string }
 type Msg = BotMsg | UserMsg;
 
 interface FormState {
   kind: DocKind | null;
+  category: Category | null;
   client_name: string;
   client_email: string;
   client_phone: string;
@@ -59,17 +66,26 @@ interface FormState {
   agent_notes: string;
 }
 
-const KINDS: { id: DocKind; label: string; desc: string; icon: typeof HomeIcon }[] = [
-  { id: "visit_slip",        label: "Bon de visite",   desc: "Reconnaissance de visite", icon: HomeIcon },
-  { id: "purchase_offer",    label: "Offre d'achat",   desc: "Proposition d'acquisition", icon: FileSignature },
-  { id: "mandate_simple",    label: "Mandat simple",   desc: "Mandat non exclusif", icon: ScrollText },
-  { id: "mandate_exclusive", label: "Mandat exclusif", desc: "Mandat exclusif", icon: Crown },
+const KINDS: { id: DocKind; category: Category; label: string; desc: string; icon: typeof HomeIcon }[] = [
+  { id: "visit_slip",        category: "realtor",    label: "Bon de visite",   desc: "Reconnaissance de visite", icon: HomeIcon },
+  { id: "purchase_offer",    category: "realtor",    label: "Offre d'achat",   desc: "Proposition d'acquisition", icon: FileSignature },
+  { id: "mandate_simple",    category: "realtor",    label: "Mandat simple",   desc: "Mandat non exclusif", icon: ScrollText },
+  { id: "mandate_exclusive", category: "realtor",    label: "Mandat exclusif", desc: "Mandat exclusif", icon: Crown },
+  { id: "purchase_order",    category: "commercial", label: "Bon de commande", desc: "Commande ferme à signer", icon: ShoppingCart },
+  { id: "quote",             category: "commercial", label: "Devis",           desc: "Proposition commerciale", icon: FileText },
+  { id: "invoice",           category: "commercial", label: "Facture",         desc: "Facture à régler", icon: Receipt },
+];
+
+const CATEGORIES: { id: Category; label: string; desc: string; icon: typeof HomeIcon }[] = [
+  { id: "realtor",    label: "Immobilier",   desc: "Visite, offre, mandats", icon: HomeIcon },
+  { id: "commercial", label: "Commercial",   desc: "Bon de commande, devis, facture", icon: ShoppingCart },
 ];
 
 const initialForm: FormState = {
-  kind: null, client_name: "", client_email: "", client_phone: "",
+  kind: null, category: null, client_name: "", client_email: "", client_phone: "",
   property_address: "", property_description: "", amount: "", agent_notes: "",
 };
+
 
 export function FloatingChatbot() {
   const [open, setOpen] = useState(false);
@@ -105,10 +121,10 @@ export function FloatingChatbot() {
 
 function ChatbotPanel() {
   const submit = useServerFn(createRealtorDocument);
-  const [step, setStep] = useState<Step>("choose-kind");
+  const [step, setStep] = useState<Step>("choose-category");
   const [form, setForm] = useState<FormState>(initialForm);
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "bot", text: "Bonjour ! Quel document souhaitez-vous créer ?" },
+    { role: "bot", text: "Bonjour ! Quel type de document souhaitez-vous créer ?" },
   ]);
   const [input, setInput] = useState("");
   const [result, setResult] = useState<Awaited<ReturnType<typeof createRealtorDocument>> | null>(null);
@@ -141,9 +157,20 @@ function ChatbotPanel() {
     },
   });
 
+  function pickCategory(c: Category) {
+    const meta = CATEGORIES.find((x) => x.id === c)!;
+    setForm({ ...form, category: c });
+    setMessages((m) => [
+      ...m,
+      { role: "user", text: meta.label },
+      { role: "bot", text: c === "realtor" ? "Quel document immobilier ?" : "Quel document commercial ?" },
+    ]);
+    setStep("choose-kind");
+  }
+
   function pickKind(k: DocKind) {
     const meta = KINDS.find((x) => x.id === k)!;
-    setForm({ ...form, kind: k });
+    setForm({ ...form, kind: k, category: meta.category });
     setMessages((m) => [
       ...m,
       { role: "user", text: meta.label },
@@ -161,6 +188,7 @@ function ChatbotPanel() {
   function handleSubmitInput() {
     const v = input.trim();
     if (!v && step !== "client-phone" && step !== "property-description" && step !== "amount" && step !== "agent-notes") return;
+    const isCommercial = form.category === "commercial";
     switch (step) {
       case "client-name":
         setForm({ ...form, client_name: v });
@@ -173,17 +201,28 @@ function ChatbotPanel() {
         break;
       case "client-phone":
         setForm({ ...form, client_phone: v });
-        pushAndAdvance(v || "(aucun)", "Adresse complète du bien ?", "property-address");
+        pushAndAdvance(
+          v || "(aucun)",
+          isCommercial ? "Objet du document (ex : Prestation de conseil, Lot de produits…) ?" : "Adresse complète du bien ?",
+          "property-address",
+        );
         break;
       case "property-address":
         setForm({ ...form, property_address: v });
-        pushAndAdvance(v, "Description courte du bien ? Optionnel.", "property-description");
+        pushAndAdvance(
+          v,
+          isCommercial ? "Détail des prestations / produits ? Optionnel." : "Description courte du bien ? Optionnel.",
+          "property-description",
+        );
         break;
       case "property-description":
         setForm({ ...form, property_description: v });
         if (form.kind) {
           const ask = form.kind === "purchase_offer" ? "Montant de l'offre (€) ?"
             : form.kind === "visit_slip" ? "Prix de présentation (€) ? Optionnel."
+            : form.kind === "purchase_order" ? "Montant de la commande (€) ?"
+            : form.kind === "quote" ? "Montant du devis (€) ?"
+            : form.kind === "invoice" ? "Montant à régler (€) ?"
             : "Prix net vendeur (€) ?";
           pushAndAdvance(v || "(aucune)", ask, "amount");
         }
@@ -205,13 +244,13 @@ function ChatbotPanel() {
     setForm(initialForm);
     setResult(null);
     setInput("");
-    setStep("choose-kind");
-    setMessages([{ role: "bot", text: "Nouvelle conversation. Quel document souhaitez-vous créer ?" }]);
+    setStep("choose-category");
+    setMessages([{ role: "bot", text: "Nouvelle conversation. Quel type de document souhaitez-vous créer ?" }]);
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {step !== "choose-kind" && (
+      {step !== "choose-category" && (
         <div className="flex justify-end border-b px-3 py-2">
           <Button variant="ghost" size="sm" onClick={reset}>
             <RefreshCw className="mr-1 h-3 w-3" />Nouveau
@@ -222,9 +261,27 @@ function ChatbotPanel() {
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((m, i) => <Bubble key={i} msg={m} />)}
 
+        {step === "choose-category" && (
+          <div className="grid gap-2">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => pickCategory(c.id)}
+                className="group flex min-h-14 items-center gap-3 rounded-xl border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-accent active:bg-accent"
+              >
+                <c.icon className="h-6 w-6 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <div className="text-base font-medium">{c.label}</div>
+                  <div className="text-xs text-muted-foreground">{c.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
         {step === "choose-kind" && (
           <div className="grid gap-2">
-            {KINDS.map((k) => (
+            {KINDS.filter((k) => k.category === form.category).map((k) => (
               <button
                 key={k.id}
                 onClick={() => pickKind(k.id)}
@@ -240,6 +297,7 @@ function ChatbotPanel() {
           </div>
         )}
 
+
         {step === "review" && form.kind && (
           <ReviewCard
             form={form}
@@ -254,7 +312,7 @@ function ChatbotPanel() {
         )}
       </div>
 
-      {step !== "choose-kind" && step !== "review" && step !== "done" && (
+      {step !== "choose-category" && step !== "choose-kind" && step !== "review" && step !== "done" && (
         <div
           className="border-t bg-background p-3"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
