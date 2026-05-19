@@ -298,14 +298,23 @@ function ReviewCard({ form, kindLabel, onSubmit, pending }: { form: FormState; k
 
 function ResultCard({ result, clientPhone }: { result: NonNullable<Awaited<ReturnType<typeof createRealtorDocument>>>; clientPhone: string }) {
   const url = result.signature_url || (typeof window !== "undefined" ? `${window.location.origin}/s/${result.signature_token}` : "");
-  const subject = encodeURIComponent(`${result.kind_label} à signer — ${result.reference}`);
-  const body = encodeURIComponent(`Bonjour ${result.client_name},\n\nVeuillez signer électroniquement le document suivant : ${result.kind_label} (réf. ${result.reference}).\n\nLien sécurisé : ${url}\n\nMerci,`);
-  const mailto = `mailto:${result.client_email}?subject=${subject}&body=${body}`;
   const cleanPhone = clientPhone.replace(/[^\d]/g, "");
   const waText = encodeURIComponent(`Bonjour ${result.client_name}, voici votre ${result.kind_label.toLowerCase()} (réf. ${result.reference}) à signer : ${url}`);
   const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waText}` : `https://wa.me/?text=${waText}`;
 
   const copy = () => { navigator.clipboard.writeText(url); toast.success("Lien copié"); };
+
+  const sendEmail = useServerFn(sendRealtorSignatureEmail);
+  const emailMut = useMutation({
+    mutationFn: () => sendEmail({ data: {
+      token: result.signature_token,
+      signer_name: result.client_name,
+      signer_email: result.client_email,
+      document_title: `${result.kind_label} — ${result.reference}`,
+    } }),
+    onSuccess: () => toast.success(`Email envoyé à ${result.client_email}`),
+    onError: (e: Error) => toast.error(e.message || "Échec de l'envoi"),
+  });
 
   return (
     <Card className="space-y-4 border-primary/40 bg-card p-4">
@@ -326,8 +335,9 @@ function ResultCard({ result, clientPhone }: { result: NonNullable<Awaited<Retur
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <Button asChild variant="default">
-          <a href={mailto}><Mail className="mr-2 h-4 w-4" />Envoyer par email</a>
+        <Button variant="default" onClick={() => emailMut.mutate()} disabled={emailMut.isPending}>
+          <Mail className="mr-2 h-4 w-4" />
+          {emailMut.isPending ? "Envoi…" : "Envoyer par email"}
         </Button>
         <Button asChild variant="default" className="bg-[#25D366] hover:bg-[#1ebe5d] text-white">
           <a href={waUrl} target="_blank" rel="noreferrer"><MessageCircle className="mr-2 h-4 w-4" />Envoyer via WhatsApp</a>
