@@ -19,6 +19,7 @@ function AuthenticatedLayout() {
   return (
     <AppShell>
       <Outlet />
+      <FloatingChatbot />
     </AppShell>
   );
 }
