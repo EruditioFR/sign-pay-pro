@@ -73,6 +73,7 @@ export const createShareLink = createServerFn({ method: "POST" })
         const { data: org } = doc
           ? await supabaseAdmin.from("organizations").select("name").eq("id", doc.organization_id).maybeSingle()
           : { data: null };
+        const { getRequest } = await import("@tanstack/react-start/server");
         const origin = getOriginFromRequest(getRequest());
         const url = `${origin}/p/${link.token}`;
         await sendResendEmail({
