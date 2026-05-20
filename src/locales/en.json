@@ -139,7 +139,14 @@
     "create_link": "Create link", "link_created_copied": "Link created and copied.",
     "link_revoked": "Link revoked.", "copied": "Link copied.",
     "existing_links": "Existing links", "views": "views",
-    "active": "active", "inactive": "expired"
+    "active": "active", "inactive": "expired",
+    "channel": "Delivery method", "via_email": "Email", "via_whatsapp": "WhatsApp",
+    "recipient_phone": "Phone (international format)",
+    "phone_required": "Please enter a phone number.",
+    "email_required": "Please enter the recipient's email.",
+    "whatsapp_opened": "WhatsApp opened with link.",
+    "email_subject": "Document to sign",
+    "share_message": "Hello {{name}}, here is the link to review and sign the document: {{url}}"
   },
   "payments": {
     "record": "Record payment", "record_title": "Record a payment",
