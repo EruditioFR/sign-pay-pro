@@ -381,6 +381,42 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
       .upload(path, signedBytes, { contentType: "application/pdf" });
     if (upErr) throw new Error(upErr.message);
 
+    // Also publish the signed PDF as the new current version in `document_files`
+    // so the user immediately sees the signature on the document's generated PDF.
+    try {
+      const docPath = `${doc.organization_id}/${doc.id}/${signedAt.getTime()}-signed.pdf`;
+      const { error: docUpErr } = await supabaseAdmin.storage
+        .from("documents")
+        .upload(docPath, signedBytes, { contentType: "application/pdf", upsert: false });
+      if (!docUpErr) {
+        await supabaseAdmin
+          .from("document_files")
+          .update({ is_current: false })
+          .eq("document_id", doc.id);
+
+        const { data: prev } = await supabaseAdmin
+          .from("document_files")
+          .select("version")
+          .eq("document_id", doc.id)
+          .order("version", { ascending: false })
+          .limit(1);
+        const nextVersion = (prev?.[0]?.version ?? 0) + 1;
+
+        await supabaseAdmin.from("document_files").insert({
+          document_id: doc.id,
+          version: nextVersion,
+          storage_path: docPath,
+          file_name: `${doc.type}-${doc.reference ?? doc.id.slice(0, 8)}-signed.pdf`,
+          mime_type: "application/pdf",
+          size_bytes: signedBytes.byteLength,
+          uploaded_by: userId,
+          is_current: true,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to publish signed PDF as current version:", e);
+    }
+
     const { data: sig, error: sigErr } = await supabaseAdmin
       .from("document_signatures")
       .insert({
