@@ -53,6 +53,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/super-admin", label: t("nav.dashboard"), icon: Home },
         { to: "/super-admin/tenants", label: t("nav.tenants"), icon: Building2 },
+        { to: "/super-admin/admin-clients", label: "Comptes admin client", icon: Users },
         { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },
       ];
     case "reseller":
