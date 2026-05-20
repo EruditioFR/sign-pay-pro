@@ -21,6 +21,7 @@ import { Route as AuthenticatedResellerIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
 import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated.super-admin.tenants'
+import { Route as AuthenticatedSuperAdminAdminClientsRouteImport } from './routes/_authenticated.super-admin.admin-clients'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated.app.profile'
 import { Route as AuthenticatedAppPendingSignaturesRouteImport } from './routes/_authenticated.app.pending-signatures'
 import { Route as AuthenticatedAppDemoRouteImport } from './routes/_authenticated.app.demo'
@@ -102,6 +103,12 @@ const AuthenticatedSuperAdminTenantsRoute =
   AuthenticatedSuperAdminTenantsRouteImport.update({
     id: '/super-admin/tenants',
     path: '/super-admin/tenants',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSuperAdminAdminClientsRoute =
+  AuthenticatedSuperAdminAdminClientsRouteImport.update({
+    id: '/super-admin/admin-clients',
+    path: '/super-admin/admin-clients',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/app/demo': typeof AuthenticatedAppDemoRoute
   '/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
+  '/super-admin/admin-clients': typeof AuthenticatedSuperAdminAdminClientsRoute
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/app/demo': typeof AuthenticatedAppDemoRoute
   '/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
+  '/super-admin/admin-clients': typeof AuthenticatedSuperAdminAdminClientsRoute
   '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -302,6 +311,7 @@ export interface FileRoutesById {
   '/_authenticated/app/demo': typeof AuthenticatedAppDemoRoute
   '/_authenticated/app/pending-signatures': typeof AuthenticatedAppPendingSignaturesRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
+  '/_authenticated/super-admin/admin-clients': typeof AuthenticatedSuperAdminAdminClientsRoute
   '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/app/demo'
     | '/app/pending-signatures'
     | '/app/profile'
+    | '/super-admin/admin-clients'
     | '/super-admin/tenants'
     | '/admin/'
     | '/app/'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/app/demo'
     | '/app/pending-signatures'
     | '/app/profile'
+    | '/super-admin/admin-clients'
     | '/super-admin/tenants'
     | '/admin'
     | '/app'
@@ -404,6 +416,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/demo'
     | '/_authenticated/app/pending-signatures'
     | '/_authenticated/app/profile'
+    | '/_authenticated/super-admin/admin-clients'
     | '/_authenticated/super-admin/tenants'
     | '/_authenticated/admin/'
     | '/_authenticated/app/'
@@ -517,6 +530,13 @@ declare module '@tanstack/react-router' {
       path: '/super-admin/tenants'
       fullPath: '/super-admin/tenants'
       preLoaderRoute: typeof AuthenticatedSuperAdminTenantsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/super-admin/admin-clients': {
+      id: '/_authenticated/super-admin/admin-clients'
+      path: '/super-admin/admin-clients'
+      fullPath: '/super-admin/admin-clients'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAdminClientsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/app/profile': {
@@ -673,6 +693,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppDemoRoute: typeof AuthenticatedAppDemoRoute
   AuthenticatedAppPendingSignaturesRoute: typeof AuthenticatedAppPendingSignaturesRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
+  AuthenticatedSuperAdminAdminClientsRoute: typeof AuthenticatedSuperAdminAdminClientsRoute
   AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -701,6 +722,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppPendingSignaturesRoute:
     AuthenticatedAppPendingSignaturesRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
+  AuthenticatedSuperAdminAdminClientsRoute:
+    AuthenticatedSuperAdminAdminClientsRoute,
   AuthenticatedSuperAdminTenantsRoute: AuthenticatedSuperAdminTenantsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
