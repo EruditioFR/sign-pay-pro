@@ -63,7 +63,10 @@ export function ShareLinkDialog({ documentId }: { documentId: string }) {
       const message = t("sharing.share_message", { name: name || "", url });
       if (channel === "whatsapp") {
         const cleanPhone = phone.replace(/[^\d]/g, "");
-        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const waUrl = isMobile
+          ? `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`
+          : `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
         window.open(waUrl, "_blank", "noopener");
         toast.success(t("sharing.whatsapp_opened"));
       } else {
