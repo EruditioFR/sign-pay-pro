@@ -100,15 +100,50 @@ export function ShareLinkDialog({ documentId }: { documentId: string }) {
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{t("sharing.title")}</DialogTitle></DialogHeader>
         <div className="space-y-3">
+          <div className="space-y-2">
+            <Label>{t("sharing.channel")}</Label>
+            <RadioGroup
+              value={channel}
+              onValueChange={(v) => setChannel(v as Channel)}
+              className="grid grid-cols-2 gap-2"
+            >
+              <Label
+                htmlFor="ch-email"
+                className={`flex items-center gap-2 rounded border p-2 cursor-pointer ${channel === "email" ? "border-primary" : ""}`}
+              >
+                <RadioGroupItem value="email" id="ch-email" />
+                <Mail className="h-4 w-4" /> {t("sharing.via_email")}
+              </Label>
+              <Label
+                htmlFor="ch-whatsapp"
+                className={`flex items-center gap-2 rounded border p-2 cursor-pointer ${channel === "whatsapp" ? "border-primary" : ""}`}
+              >
+                <RadioGroupItem value="whatsapp" id="ch-whatsapp" />
+                <MessageCircle className="h-4 w-4" /> {t("sharing.via_whatsapp")}
+              </Label>
+            </RadioGroup>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>{t("sharing.recipient_name")}</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label>{t("sharing.recipient_email")}</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
+            {channel === "email" ? (
+              <div className="space-y-1">
+                <Label>{t("sharing.recipient_email")}</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label>{t("sharing.recipient_phone")}</Label>
+                <Input
+                  type="tel"
+                  placeholder="+33612345678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+            )}
             <div className="space-y-1">
               <Label>{t("sharing.expires_in_days")}</Label>
               <Input type="number" min={1} max={365} value={days} onChange={(e) => setDays(parseInt(e.target.value) || 30)} />
