@@ -258,7 +258,9 @@ export const createRealtorDocument = createServerFn({ method: "POST" })
       .single();
     if (sigErr) throw new Error(sigErr.message);
 
-    const origin = (typeof process !== "undefined" && process.env?.APP_ORIGIN) || "";
+    let origin = "";
+    try { origin = getOriginFromRequest(getRequest()); } catch { /* noop */ }
+    if (!origin) origin = (typeof process !== "undefined" && process.env?.APP_ORIGIN) || "https://sign-pay-pro.lovable.app";
     const signature_url = sigReq?.token ? `${origin}/s/${sigReq.token}` : "";
 
     return {
