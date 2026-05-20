@@ -573,6 +573,7 @@ export type Database = {
           id: string
           lang: string
           organization_id: string | null
+          signature_image_b64: string | null
           updated_at: string
         }
         Insert: {
@@ -583,6 +584,7 @@ export type Database = {
           id: string
           lang?: string
           organization_id?: string | null
+          signature_image_b64?: string | null
           updated_at?: string
         }
         Update: {
@@ -593,6 +595,7 @@ export type Database = {
           id?: string
           lang?: string
           organization_id?: string | null
+          signature_image_b64?: string | null
           updated_at?: string
         }
         Relationships: [

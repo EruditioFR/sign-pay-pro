@@ -213,6 +213,38 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           page.drawImage(sigImg, { x: 50, y: 60, width: dims.width, height: dims.height });
         }
 
+        // Append a summary page with both signatures (client + provider)
+        try {
+          const { data: creator } = await supabaseAdmin
+            .from("profiles")
+            .select("signature_image_b64, full_name, email")
+            .eq("id", doc.created_by)
+            .maybeSingle();
+
+          const summary = pdf.addPage([595.28, 400]);
+          const dims = sigImg.scale(0.4);
+          summary.drawText("SIGNATURE CLIENT", { x: 50, y: 340, size: 12 });
+          summary.drawText(`Signataire : ${req.signer_name}`, { x: 50, y: 320, size: 10 });
+          summary.drawText(`Email : ${req.signer_email}`, { x: 50, y: 306, size: 9 });
+          summary.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 292, size: 9 });
+          summary.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
+
+          summary.drawText("SIGNATURE PRESTATAIRE", { x: 320, y: 340, size: 12 });
+          summary.drawText(`${creator?.full_name ?? org?.name ?? "—"}`, { x: 320, y: 320, size: 10 });
+          if (creator?.email) summary.drawText(`Email : ${creator.email}`, { x: 320, y: 306, size: 9 });
+          if (creator?.signature_image_b64) {
+            const pb64 = creator.signature_image_b64.replace(/^data:image\/png;base64,/, "");
+            const provImg = await pdf.embedPng(Uint8Array.from(atob(pb64), (c) => c.charCodeAt(0)));
+            const pdims = provImg.scale(0.4);
+            summary.drawImage(provImg, { x: 320, y: 100, width: pdims.width, height: pdims.height });
+          } else {
+            summary.drawText("(Signature non configurée)", { x: 320, y: 200, size: 9 });
+          }
+        } catch (e) {
+          console.error("provider signature stamp failed:", e);
+        }
+
+
         const signedBytes = await pdf.save();
         const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes as BufferSource);
         const hashHex = Array.from(new Uint8Array(hashBuf))
