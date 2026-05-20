@@ -165,7 +165,14 @@
     "create_link": "Créer le lien", "link_created_copied": "Lien créé et copié.",
     "link_revoked": "Lien révoqué.", "copied": "Lien copié.",
     "existing_links": "Liens existants", "views": "vues",
-    "active": "actif", "inactive": "expiré"
+    "active": "actif", "inactive": "expiré",
+    "channel": "Mode d'envoi", "via_email": "Email", "via_whatsapp": "WhatsApp",
+    "recipient_phone": "Téléphone (format international)",
+    "phone_required": "Veuillez renseigner le numéro de téléphone.",
+    "email_required": "Veuillez renseigner l'email du destinataire.",
+    "whatsapp_opened": "WhatsApp ouvert avec le lien.",
+    "email_subject": "Document à signer",
+    "share_message": "Bonjour {{name}}, voici le lien pour consulter et signer le document : {{url}}"
   },
   "payments": {
     "record": "Encaisser", "record_title": "Enregistrer un paiement",
