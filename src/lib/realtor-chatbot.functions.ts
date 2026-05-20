@@ -307,7 +307,8 @@ export const sendRealtorSignatureEmail = createServerFn({ method: "POST" })
       orgName = org?.name ?? null;
     }
 
-    const origin = getOriginFromRequest(getRequest());
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const origin = getOriginFromRequest(getRequest()) || "https://sign-pay-pro.lovable.app";
     const url = `${origin}/s/${data.token}`;
     await sendResendEmail({
       to: data.signer_email,
