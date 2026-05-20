@@ -9,14 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Send, Copy, Trash2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Send, Copy, Trash2, Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { createShareLink, listShareLinks, revokeShareLink } from "@/lib/sharing.functions";
+
+type Channel = "email" | "whatsapp";
 
 export function ShareLinkDialog({ documentId }: { documentId: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [channel, setChannel] = useState<Channel>("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [days, setDays] = useState(30);
   const [allowSign, setAllowSign] = useState(true);
@@ -34,20 +39,39 @@ export function ShareLinkDialog({ documentId }: { documentId: string }) {
   });
 
   const create = useMutation({
-    mutationFn: () => createFn({
-      data: {
-        document_id: documentId,
-        recipient_email: email || null,
-        recipient_name: name || null,
-        expires_in_days: days,
-        allow_sign: allowSign,
-        allow_pay: allowPay,
-      },
-    }),
+    mutationFn: () => {
+      if (channel === "whatsapp" && !phone.trim()) {
+        throw new Error(t("sharing.phone_required"));
+      }
+      if (channel === "email" && !email.trim()) {
+        throw new Error(t("sharing.email_required"));
+      }
+      return createFn({
+        data: {
+          document_id: documentId,
+          recipient_email: email || null,
+          recipient_name: name || null,
+          expires_in_days: days,
+          allow_sign: allowSign,
+          allow_pay: allowPay,
+        },
+      });
+    },
     onSuccess: (res) => {
       const url = `${window.location.origin}/p/${res.link.token}`;
       navigator.clipboard.writeText(url).catch(() => {});
-      toast.success(t("sharing.link_created_copied"));
+      const message = t("sharing.share_message", { name: name || "", url });
+      if (channel === "whatsapp") {
+        const cleanPhone = phone.replace(/[^\d]/g, "");
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, "_blank", "noopener");
+        toast.success(t("sharing.whatsapp_opened"));
+      } else {
+        const subject = encodeURIComponent(t("sharing.email_subject"));
+        const body = encodeURIComponent(message);
+        window.open(`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`, "_self");
+        toast.success(t("sharing.link_created_copied"));
+      }
       qc.invalidateQueries({ queryKey: ["share_links", documentId] });
       qc.invalidateQueries({ queryKey: ["document", documentId] });
     },
