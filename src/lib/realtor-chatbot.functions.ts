@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
@@ -259,7 +258,10 @@ export const createRealtorDocument = createServerFn({ method: "POST" })
     if (sigErr) throw new Error(sigErr.message);
 
     let origin = "";
-    try { origin = getOriginFromRequest(getRequest()); } catch { /* noop */ }
+    try {
+      const { getRequest } = await import("@tanstack/react-start/server");
+      origin = getOriginFromRequest(getRequest());
+    } catch { /* noop */ }
     if (!origin) origin = (typeof process !== "undefined" && process.env?.APP_ORIGIN) || "https://sign-pay-pro.lovable.app";
     const signature_url = sigReq?.token ? `${origin}/s/${sigReq.token}` : "";
 
@@ -305,7 +307,8 @@ export const sendRealtorSignatureEmail = createServerFn({ method: "POST" })
       orgName = org?.name ?? null;
     }
 
-    const origin = getOriginFromRequest(getRequest());
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const origin = getOriginFromRequest(getRequest()) || "https://sign-pay-pro.lovable.app";
     const url = `${origin}/s/${data.token}`;
     await sendResendEmail({
       to: data.signer_email,
