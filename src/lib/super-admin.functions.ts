@@ -98,3 +98,79 @@ export const listAdminClients = createServerFn({ method: "GET" })
 
     return { accounts };
   });
+
+const UpdateSchema = z.object({
+  userId: z.string().uuid(),
+  fullName: z.string().trim().min(1).max(120).optional(),
+  email: z.string().trim().email().optional(),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  organizationName: z.string().trim().min(1).max(120).optional(),
+  country: z.string().trim().min(2).max(3).optional(),
+  active: z.boolean().optional(),
+  password: z.string().min(8).max(72).optional().or(z.literal("")),
+});
+
+export const updateAdminClientAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => UpdateSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertSuperAdmin(context.supabase, context.userId);
+
+    const authPatch: Record<string, unknown> = {};
+    if (data.email) authPatch.email = data.email;
+    if (typeof data.phone === "string") {
+      const clean = data.phone.replace(/[^\d+]/g, "");
+      authPatch.phone = clean || null;
+    }
+    if (data.password && data.password.length > 0) authPatch.password = data.password;
+    if (typeof data.active === "boolean") authPatch.ban_duration = data.active ? "none" : "876000h";
+
+    if (Object.keys(authPatch).length > 0) {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, authPatch as any);
+      if (error) throw new Error(error.message);
+    }
+
+    const profilePatch: Record<string, any> = {};
+    if (data.fullName) profilePatch.full_name = data.fullName;
+    if (data.email) profilePatch.email = data.email;
+    if (typeof data.active === "boolean") profilePatch.active = data.active;
+    if (Object.keys(profilePatch).length > 0) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update(profilePatch as never)
+        .eq("id", data.userId);
+      if (error) throw new Error(error.message);
+    }
+
+    if (data.organizationName || data.country) {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", data.userId)
+        .maybeSingle();
+      if (prof?.organization_id) {
+        const orgPatch: Record<string, any> = {};
+        if (data.organizationName) orgPatch.name = data.organizationName;
+        if (data.country) orgPatch.country = data.country;
+        const { error } = await supabaseAdmin
+          .from("organizations")
+          .update(orgPatch as never)
+          .eq("id", prof.organization_id);
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    return { ok: true };
+  });
+
+const DeleteSchema = z.object({ userId: z.string().uuid() });
+
+export const deleteAdminClientAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => DeleteSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertSuperAdmin(context.supabase, context.userId);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
