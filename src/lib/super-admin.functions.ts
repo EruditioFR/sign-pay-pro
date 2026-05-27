@@ -130,7 +130,7 @@ export const updateAdminClientAccount = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const profilePatch: Record<string, unknown> = {};
+    const profilePatch: Record<string, any> = {};
     if (data.fullName) profilePatch.full_name = data.fullName;
     if (data.email) profilePatch.email = data.email;
     if (typeof data.active === "boolean") profilePatch.active = data.active;
@@ -149,7 +149,7 @@ export const updateAdminClientAccount = createServerFn({ method: "POST" })
         .eq("id", data.userId)
         .maybeSingle();
       if (prof?.organization_id) {
-        const orgPatch: Record<string, unknown> = {};
+        const orgPatch: Record<string, any> = {};
         if (data.organizationName) orgPatch.name = data.organizationName;
         if (data.country) orgPatch.country = data.country;
         const { error } = await supabaseAdmin
