@@ -137,7 +137,7 @@ export const updateAdminClientAccount = createServerFn({ method: "POST" })
     if (Object.keys(profilePatch).length > 0) {
       const { error } = await supabaseAdmin
         .from("profiles")
-        .update(profilePatch)
+        .update(profilePatch as never)
         .eq("id", data.userId);
       if (error) throw new Error(error.message);
     }
