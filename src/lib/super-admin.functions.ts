@@ -154,7 +154,7 @@ export const updateAdminClientAccount = createServerFn({ method: "POST" })
         if (data.country) orgPatch.country = data.country;
         const { error } = await supabaseAdmin
           .from("organizations")
-          .update(orgPatch)
+          .update(orgPatch as never)
           .eq("id", prof.organization_id);
         if (error) throw new Error(error.message);
       }
