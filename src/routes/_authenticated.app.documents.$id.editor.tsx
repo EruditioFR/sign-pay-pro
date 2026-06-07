@@ -127,7 +127,8 @@ function PdfEditorPage() {
     if (!urlQ.data?.url) return;
     let cancelled = false;
     (async () => {
-      const task = pdfjsLib.getDocument({ url: urlQ.data!.url! });
+      const pdfjs = await loadPdfjs();
+      const task = pdfjs.getDocument({ url: urlQ.data!.url! });
       const doc = await task.promise;
       if (cancelled) return;
       pdfDocRef.current = doc;
