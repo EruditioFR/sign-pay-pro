@@ -26,6 +26,9 @@ import {
   listPdfFields, savePdfFields, flattenPdfWithFields,
   type PdfFieldKind,
 } from "@/lib/pdf-editor.functions";
+import { saveDocumentAsPdfTemplate } from "@/lib/pdf-templates.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { BookmarkPlus } from "lucide-react";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 

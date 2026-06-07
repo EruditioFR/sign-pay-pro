@@ -34,6 +34,7 @@ import { Route as AuthenticatedAppApprovalsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated.admin.settings'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
+import { Route as AuthenticatedAppPdfTemplatesIndexRouteImport } from './routes/_authenticated.app.pdf-templates.index'
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
 import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
 import { Route as AuthenticatedAdminTemplatesIndexRouteImport } from './routes/_authenticated.admin.templates.index'
@@ -178,6 +179,12 @@ const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
   path: '/admin/roles',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAppPdfTemplatesIndexRoute =
+  AuthenticatedAppPdfTemplatesIndexRouteImport.update({
+    id: '/app/pdf-templates/',
+    path: '/app/pdf-templates/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsIndexRoute =
   AuthenticatedAppDocumentsIndexRouteImport.update({
     id: '/app/documents/',
@@ -286,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
+  '/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
 }
 export interface FileRoutesByTo {
@@ -324,6 +332,7 @@ export interface FileRoutesByTo {
   '/admin/templates': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
+  '/app/pdf-templates': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
 }
 export interface FileRoutesById {
@@ -364,6 +373,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
+  '/_authenticated/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/_authenticated/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
 }
 export interface FileRouteTypes {
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/admin/templates/'
     | '/admin/workflows/'
     | '/app/documents/'
+    | '/app/pdf-templates/'
     | '/app/documents/$id/editor'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/admin/templates'
     | '/admin/workflows'
     | '/app/documents'
+    | '/app/pdf-templates'
     | '/app/documents/$id/editor'
   id:
     | '__root__'
@@ -481,6 +493,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/templates/'
     | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
+    | '/_authenticated/app/pdf-templates/'
     | '/_authenticated/app/documents/$id/editor'
   fileRoutesById: FileRoutesById
 }
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/pdf-templates/': {
+      id: '/_authenticated/app/pdf-templates/'
+      path: '/app/pdf-templates'
+      fullPath: '/app/pdf-templates/'
+      preLoaderRoute: typeof AuthenticatedAppPdfTemplatesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/': {
       id: '/_authenticated/app/documents/'
       path: '/app/documents'
@@ -803,6 +823,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminTemplatesIndexRoute: typeof AuthenticatedAdminTemplatesIndexRoute
   AuthenticatedAdminWorkflowsIndexRoute: typeof AuthenticatedAdminWorkflowsIndexRoute
   AuthenticatedAppDocumentsIndexRoute: typeof AuthenticatedAppDocumentsIndexRoute
+  AuthenticatedAppPdfTemplatesIndexRoute: typeof AuthenticatedAppPdfTemplatesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -834,6 +855,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminTemplatesIndexRoute: AuthenticatedAdminTemplatesIndexRoute,
   AuthenticatedAdminWorkflowsIndexRoute: AuthenticatedAdminWorkflowsIndexRoute,
   AuthenticatedAppDocumentsIndexRoute: AuthenticatedAppDocumentsIndexRoute,
+  AuthenticatedAppPdfTemplatesIndexRoute:
+    AuthenticatedAppPdfTemplatesIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
