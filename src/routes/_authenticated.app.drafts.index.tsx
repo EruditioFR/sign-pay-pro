@@ -43,7 +43,7 @@ function DraftsListPage() {
           </p>
         </div>
         <Button asChild>
-          <Link to="/app/documents/new/wysiwyg">
+          <Link to="/app/documents/wysiwyg">
             <FilePlus2 className="mr-1 h-4 w-4" /> Nouveau brouillon
           </Link>
         </Button>
@@ -58,7 +58,7 @@ function DraftsListPage() {
           {data!.drafts.map((d) => (
             <Card key={d.id} className="hover:bg-accent/40 cursor-pointer">
               <CardContent className="flex items-center justify-between gap-3 p-3"
-                onClick={() => navigate({ to: "/app/documents/new/wysiwyg", search: { draftId: d.id } })}
+                onClick={() => navigate({ to: "/app/documents/wysiwyg", search: { draftId: d.id } })}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText className="h-4 w-4 text-muted-foreground shrink-0" />

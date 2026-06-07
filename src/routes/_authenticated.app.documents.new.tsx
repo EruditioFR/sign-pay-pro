@@ -27,7 +27,7 @@ function NewDocumentPage() {
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle>{t("documents.new")}</CardTitle>
         <Button asChild variant="outline" size="sm">
-          <Link to="/app/documents/new/wysiwyg">
+          <Link to="/app/documents/wysiwyg">
             <Sparkles className="mr-1 h-4 w-4" />
             Créer avec éditeur WYSIWYG
           </Link>
