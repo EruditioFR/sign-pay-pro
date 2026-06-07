@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
-  CheckSquare, PenLine, Initial, Loader2,
+  CheckSquare, PenLine, Signature, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl } from "@/lib/sharing.functions";
@@ -29,8 +29,7 @@ import {
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-// Icon fallback (lucide doesn't have "Initial")
-const Initials = Initial ?? PenLine;
+const Initials = Signature;
 
 type Field = {
   id?: string;
