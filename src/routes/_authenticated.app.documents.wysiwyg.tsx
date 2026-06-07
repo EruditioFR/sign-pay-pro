@@ -20,7 +20,7 @@ import { toast } from "sonner";
 
 const searchSchema = z.object({ draftId: z.string().uuid().optional() });
 
-export const Route = createFileRoute("/_authenticated/app/documents/new/wysiwyg")({
+export const Route = createFileRoute("/_authenticated/app/documents/wysiwyg")({
   validateSearch: searchSchema,
   component: WysiwygNewDocPage,
 });
