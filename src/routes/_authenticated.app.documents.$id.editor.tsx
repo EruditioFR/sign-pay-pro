@@ -289,6 +289,9 @@ function PdfEditorPage() {
             {saveMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
             Enregistrer
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setTplOpen(true)} disabled={fields.length === 0}>
+            <BookmarkPlus className="mr-1 h-4 w-4" /> Enregistrer comme modèle
+          </Button>
           <Button size="sm" onClick={() => flattenMut.mutate()} disabled={flattenMut.isPending || fields.length === 0}>
             {flattenMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
             Générer PDF final
