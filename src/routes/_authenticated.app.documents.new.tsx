@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/new")({
   component: NewDocumentPage,
@@ -23,8 +24,14 @@ function NewDocumentPage() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle>{t("documents.new")}</CardTitle>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/app/documents/wysiwyg">
+            <Sparkles className="mr-1 h-4 w-4" />
+            Créer avec éditeur WYSIWYG
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent>
         <form

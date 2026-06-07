@@ -35,11 +35,13 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated.admin.settings'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
 import { Route as AuthenticatedAppPdfTemplatesIndexRouteImport } from './routes/_authenticated.app.pdf-templates.index'
+import { Route as AuthenticatedAppDraftsIndexRouteImport } from './routes/_authenticated.app.drafts.index'
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
 import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
 import { Route as AuthenticatedAdminTemplatesIndexRouteImport } from './routes/_authenticated.admin.templates.index'
 import { Route as ApiPublicSignRequestTokenRouteImport } from './routes/api/public/sign-request.$token'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
+import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
 import { Route as AuthenticatedAdminWorkflowsNewRouteImport } from './routes/_authenticated.admin.workflows.new'
@@ -185,6 +187,12 @@ const AuthenticatedAppPdfTemplatesIndexRoute =
     path: '/app/pdf-templates/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppDraftsIndexRoute =
+  AuthenticatedAppDraftsIndexRouteImport.update({
+    id: '/app/drafts/',
+    path: '/app/drafts/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsIndexRoute =
   AuthenticatedAppDocumentsIndexRouteImport.update({
     id: '/app/documents/',
@@ -214,6 +222,12 @@ const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
   path: '/api/public/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppDocumentsWysiwygRoute =
+  AuthenticatedAppDocumentsWysiwygRouteImport.update({
+    id: '/app/documents/wysiwyg',
+    path: '/app/documents/wysiwyg',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsNewRoute =
   AuthenticatedAppDocumentsNewRouteImport.update({
     id: '/app/documents/new',
@@ -288,11 +302,13 @@ export interface FileRoutesByFullPath {
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
+  '/app/drafts/': typeof AuthenticatedAppDraftsIndexRoute
   '/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
 }
@@ -327,11 +343,13 @@ export interface FileRoutesByTo {
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
+  '/app/drafts': typeof AuthenticatedAppDraftsIndexRoute
   '/app/pdf-templates': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
 }
@@ -368,11 +386,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
+  '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/_authenticated/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
+  '/_authenticated/app/drafts/': typeof AuthenticatedAppDraftsIndexRoute
   '/_authenticated/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/_authenticated/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
 }
@@ -409,11 +429,13 @@ export interface FileRouteTypes {
     | '/admin/workflows/new'
     | '/app/documents/$id'
     | '/app/documents/new'
+    | '/app/documents/wysiwyg'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
     | '/admin/templates/'
     | '/admin/workflows/'
     | '/app/documents/'
+    | '/app/drafts/'
     | '/app/pdf-templates/'
     | '/app/documents/$id/editor'
   fileRoutesByTo: FileRoutesByTo
@@ -448,11 +470,13 @@ export interface FileRouteTypes {
     | '/admin/workflows/new'
     | '/app/documents/$id'
     | '/app/documents/new'
+    | '/app/documents/wysiwyg'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
     | '/admin/templates'
     | '/admin/workflows'
     | '/app/documents'
+    | '/app/drafts'
     | '/app/pdf-templates'
     | '/app/documents/$id/editor'
   id:
@@ -488,11 +512,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workflows/new'
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
+    | '/_authenticated/app/documents/wysiwyg'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
     | '/_authenticated/admin/templates/'
     | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
+    | '/_authenticated/app/drafts/'
     | '/_authenticated/app/pdf-templates/'
     | '/_authenticated/app/documents/$id/editor'
   fileRoutesById: FileRoutesById
@@ -695,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPdfTemplatesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/drafts/': {
+      id: '/_authenticated/app/drafts/'
+      path: '/app/drafts'
+      fullPath: '/app/drafts/'
+      preLoaderRoute: typeof AuthenticatedAppDraftsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/': {
       id: '/_authenticated/app/documents/'
       path: '/app/documents'
@@ -729,6 +762,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/share/$token'
       preLoaderRoute: typeof ApiPublicShareTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/documents/wysiwyg': {
+      id: '/_authenticated/app/documents/wysiwyg'
+      path: '/app/documents/wysiwyg'
+      fullPath: '/app/documents/wysiwyg'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsWysiwygRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/app/documents/new': {
       id: '/_authenticated/app/documents/new'
@@ -820,9 +860,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminWorkflowsNewRoute: typeof AuthenticatedAdminWorkflowsNewRoute
   AuthenticatedAppDocumentsIdRoute: typeof AuthenticatedAppDocumentsIdRouteWithChildren
   AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
+  AuthenticatedAppDocumentsWysiwygRoute: typeof AuthenticatedAppDocumentsWysiwygRoute
   AuthenticatedAdminTemplatesIndexRoute: typeof AuthenticatedAdminTemplatesIndexRoute
   AuthenticatedAdminWorkflowsIndexRoute: typeof AuthenticatedAdminWorkflowsIndexRoute
   AuthenticatedAppDocumentsIndexRoute: typeof AuthenticatedAppDocumentsIndexRoute
+  AuthenticatedAppDraftsIndexRoute: typeof AuthenticatedAppDraftsIndexRoute
   AuthenticatedAppPdfTemplatesIndexRoute: typeof AuthenticatedAppPdfTemplatesIndexRoute
 }
 
@@ -852,9 +894,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppDocumentsIdRoute:
     AuthenticatedAppDocumentsIdRouteWithChildren,
   AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
+  AuthenticatedAppDocumentsWysiwygRoute: AuthenticatedAppDocumentsWysiwygRoute,
   AuthenticatedAdminTemplatesIndexRoute: AuthenticatedAdminTemplatesIndexRoute,
   AuthenticatedAdminWorkflowsIndexRoute: AuthenticatedAdminWorkflowsIndexRoute,
   AuthenticatedAppDocumentsIndexRoute: AuthenticatedAppDocumentsIndexRoute,
+  AuthenticatedAppDraftsIndexRoute: AuthenticatedAppDraftsIndexRoute,
   AuthenticatedAppPdfTemplatesIndexRoute:
     AuthenticatedAppPdfTemplatesIndexRoute,
 }

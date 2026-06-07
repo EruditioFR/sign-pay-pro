@@ -1062,6 +1062,39 @@ export type Database = {
           },
         ]
       }
+      wysiwyg_drafts: {
+        Row: {
+          created_at: string
+          created_by: string
+          document_id: string | null
+          html: string
+          id: string
+          organization_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          document_id?: string | null
+          html?: string
+          id?: string
+          organization_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          document_id?: string | null
+          html?: string
+          id?: string
+          organization_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
