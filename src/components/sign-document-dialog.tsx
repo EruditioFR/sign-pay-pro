@@ -24,10 +24,17 @@ import {
   saveSignatureDraft,
   clearSignatureDraft,
 } from "@/lib/signature-drafts.functions";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import type * as PdfJs from "pdfjs-dist";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+let _pdfjs: typeof PdfJs | null = null;
+async function loadPdfjs() {
+  if (_pdfjs) return _pdfjs;
+  const mod = await import("pdfjs-dist");
+  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
+  mod.GlobalWorkerOptions.workerSrc = workerUrl;
+  _pdfjs = mod;
+  return mod;
+}
 
 type Placement = {
   page_index: number;
