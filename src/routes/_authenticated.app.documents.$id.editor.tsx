@@ -88,6 +88,9 @@ function PdfEditorPage() {
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [tplDesc, setTplDesc] = useState("");
 
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
