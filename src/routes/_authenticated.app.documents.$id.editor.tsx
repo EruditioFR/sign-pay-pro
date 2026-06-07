@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Rnd } from "react-rnd";
 import SignatureCanvas from "react-signature-canvas";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import type * as PdfJs from "pdfjs-dist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,8 +25,19 @@ import {
   listPdfFields, savePdfFields, flattenPdfWithFields,
   type PdfFieldKind,
 } from "@/lib/pdf-editor.functions";
+import { saveDocumentAsPdfTemplate } from "@/lib/pdf-templates.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { BookmarkPlus } from "lucide-react";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+let _pdfjs: typeof PdfJs | null = null;
+async function loadPdfjs() {
+  if (_pdfjs) return _pdfjs;
+  const mod = await import("pdfjs-dist");
+  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
+  mod.GlobalWorkerOptions.workerSrc = workerUrl;
+  _pdfjs = mod;
+  return mod;
+}
 
 const Initials = Signature;
 
@@ -85,8 +95,11 @@ function PdfEditorPage() {
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [tplDesc, setTplDesc] = useState("");
 
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -114,7 +127,8 @@ function PdfEditorPage() {
     if (!urlQ.data?.url) return;
     let cancelled = false;
     (async () => {
-      const task = pdfjsLib.getDocument({ url: urlQ.data!.url! });
+      const pdfjs = await loadPdfjs();
+      const task = pdfjs.getDocument({ url: urlQ.data!.url! });
       const doc = await task.promise;
       if (cancelled) return;
       pdfDocRef.current = doc;
@@ -231,6 +245,39 @@ function PdfEditorPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveTplFn = useServerFn(saveDocumentAsPdfTemplate);
+  const saveTplMut = useMutation({
+    mutationFn: async () => {
+      // persist current fields first so they are part of the template
+      await saveFn({
+        data: {
+          documentId: id,
+          fields: fields.map((f, i) => ({
+            page_index: f.page_index, kind: f.kind,
+            x: f.x, y: f.y, width: f.width, height: f.height,
+            value: f.value, font_size: f.font_size,
+            required: f.required, label: f.label, position: i,
+          })),
+        },
+      });
+      return saveTplFn({
+        data: {
+          documentId: id,
+          name: tplName.trim(),
+          description: tplDesc.trim() || null,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Modèle enregistré");
+      setTplOpen(false);
+      setTplName("");
+      setTplDesc("");
+      qc.invalidateQueries({ queryKey: ["pdf-templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const pageFields = useMemo(
     () => fields.filter((f) => f.page_index === pageIndex),
     [fields, pageIndex],
@@ -249,6 +296,9 @@ function PdfEditorPage() {
           <Button variant="outline" size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
             {saveMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
             Enregistrer
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setTplOpen(true)} disabled={fields.length === 0}>
+            <BookmarkPlus className="mr-1 h-4 w-4" /> Enregistrer comme modèle
           </Button>
           <Button size="sm" onClick={() => flattenMut.mutate()} disabled={flattenMut.isPending || fields.length === 0}>
             {flattenMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
@@ -424,6 +474,32 @@ function PdfEditorPage() {
           }}
         />
       )}
+
+      <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Enregistrer comme modèle</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="tpl-name">Nom du modèle</Label>
+              <Input id="tpl-name" value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Ex : Devis prestation standard" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="tpl-desc">Description (optionnel)</Label>
+              <Textarea id="tpl-desc" value={tplDesc} onChange={(e) => setTplDesc(e.target.value)} rows={3} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Le PDF et ses {fields.length} zone(s) seront enregistrés et réutilisables depuis « Modèles PDF ».
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTplOpen(false)}>Annuler</Button>
+            <Button onClick={() => saveTplMut.mutate()} disabled={!tplName.trim() || saveTplMut.isPending}>
+              {saveTplMut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

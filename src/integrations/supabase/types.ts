@@ -687,6 +687,110 @@ export type Database = {
           },
         ]
       }
+      pdf_template_fields: {
+        Row: {
+          created_at: string
+          default_value: string | null
+          font_size: number
+          height: number
+          id: string
+          kind: Database["public"]["Enums"]["pdf_field_kind"]
+          label: string | null
+          page_index: number
+          position: number
+          required: boolean
+          template_id: string
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          default_value?: string | null
+          font_size?: number
+          height?: number
+          id?: string
+          kind: Database["public"]["Enums"]["pdf_field_kind"]
+          label?: string | null
+          page_index?: number
+          position?: number
+          required?: boolean
+          template_id: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          default_value?: string | null
+          font_size?: number
+          height?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["pdf_field_kind"]
+          label?: string | null
+          page_index?: number
+          position?: number
+          required?: boolean
+          template_id?: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_template_fields_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string
+          id: string
+          name: string
+          organization_id: string
+          page_count: number
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name: string
+          id?: string
+          name: string
+          organization_id: string
+          page_count?: number
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          page_count?: number
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean
