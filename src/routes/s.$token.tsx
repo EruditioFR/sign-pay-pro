@@ -230,7 +230,8 @@ function SignWithPlacement({
     if (!pdfUrl) return;
     let cancelled = false;
     (async () => {
-      const task = pdfjsLib.getDocument({ url: pdfUrl });
+      const pdfjs = await loadPdfjs();
+      const task = pdfjs.getDocument({ url: pdfUrl });
       const doc = await task.promise;
       if (cancelled) return;
       pdfDocRef.current = doc;
