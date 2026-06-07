@@ -144,6 +144,60 @@ export type Database = {
         }
         Relationships: []
       }
+      document_pdf_fields: {
+        Row: {
+          created_at: string
+          document_id: string
+          font_size: number
+          height: number
+          id: string
+          kind: Database["public"]["Enums"]["pdf_field_kind"]
+          label: string | null
+          page_index: number
+          position: number
+          required: boolean
+          updated_at: string
+          value: string | null
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          font_size?: number
+          height?: number
+          id?: string
+          kind: Database["public"]["Enums"]["pdf_field_kind"]
+          label?: string | null
+          page_index?: number
+          position?: number
+          required?: boolean
+          updated_at?: string
+          value?: string | null
+          width?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          font_size?: number
+          height?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["pdf_field_kind"]
+          label?: string | null
+          page_index?: number
+          position?: number
+          required?: boolean
+          updated_at?: string
+          value?: string | null
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       document_share_links: {
         Row: {
           allow_pay: boolean
@@ -953,6 +1007,7 @@ export type Database = {
         | "invoice"
         | "contract"
         | "other"
+      pdf_field_kind: "text" | "date" | "checkbox" | "signature" | "initials"
       signature_request_status: "pending" | "signed" | "declined" | "cancelled"
       workflow_step_status: "pending" | "approved" | "rejected" | "skipped"
     }
@@ -1101,6 +1156,7 @@ export const Constants = {
         "contract",
         "other",
       ],
+      pdf_field_kind: ["text", "date", "checkbox", "signature", "initials"],
       signature_request_status: ["pending", "signed", "declined", "cancelled"],
       workflow_step_status: ["pending", "approved", "rejected", "skipped"],
     },

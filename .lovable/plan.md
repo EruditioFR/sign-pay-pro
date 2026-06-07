@@ -1,123 +1,76 @@
+# Éditeur PDF — Phase 1 : PDF existant + zones
 
 ## Objectif
+Permettre à l'auteur d'uploader un PDF existant, de placer visuellement des zones (texte, date, case à cocher, signature, paraphe), de les pré-remplir, puis d'exporter un PDF final aplati prêt à être présenté/envoyé aux signataires via le circuit existant.
 
-Permettre à un visiteur non connecté de créer un circuit complet (upload doc, signataires, paiement) et d'y revenir plus tard via un lien magique envoyé par email. À l'inscription avec le même email, ses circuits sont rattachés automatiquement à son nouveau compte.
+> Phase 2 (éditeur WYSIWYG avancé → PDF) est volontairement repoussée — livrée séparément après validation de la phase 1.
 
-## Architecture invité
+## Parcours utilisateur
+1. Depuis un document : bouton **"Éditer le PDF"** → ouvre l'éditeur plein écran.
+2. L'éditeur affiche le PDF page par page (rendu via `pdfjs-dist`) avec un **canvas overlay** par page.
+3. Palette à gauche : `Texte`, `Date`, `Case à cocher`, `Signature`, `Paraphe`.
+4. Drag & drop d'un champ sur la page → zone redimensionnable/déplaçable.
+5. Panneau de droite (zone sélectionnée) : libellé, valeur pré-remplie, police/taille, requis, page.
+6. Bouton **"Enregistrer brouillon"** : persiste les zones + valeurs (JSON).
+7. Bouton **"Générer PDF final"** : aplatit les zones dans le PDF (via `pdf-lib`) → nouveau `document_files` versionné, devient le fichier courant. Réutilisable dans les flows existants (circuit, signature, envoi).
 
-```text
-  ┌──────────────┐   email +    ┌──────────────────┐
-  │  Visiteur    │── doc PDF ──▶│  /guest/new      │
-  │  anonyme     │              │  (formulaire)    │
-  └──────────────┘              └────────┬─────────┘
-                                         │ crée guest_session + circuit
-                                         ▼
-                                ┌──────────────────┐
-                                │ Email "votre     │
-                                │ espace invité"   │
-                                │ + lien magique   │
-                                └────────┬─────────┘
-                                         ▼
-                              /guest/{token-session}
-                              → liste de SES circuits
-                              → suivi, relance, annulation
-```
+## Architecture technique
 
-## 1. Modèle de données (migration)
+### Données (migration)
+Nouvelle table `document_pdf_fields` rattachée au `document_id` :
+- `id`, `document_id`, `page_index` (int), `kind` (`text|date|checkbox|signature|initials`)
+- `x`, `y`, `width`, `height` (float, **coordonnées PDF en points**, origine bas-gauche)
+- `value` (text, nullable), `font_size` (int, défaut 11), `required` (bool), `label` (text)
+- `position` (int, ordre d'affichage), timestamps
+- RLS : accès via `organization_id` du document parent (helper existant).
+- GRANTs : `authenticated` + `service_role`.
 
-Nouvelle table `guest_sessions` :
-- `email` (unique, lowercased)
-- `magic_token` (uuid, rotable)
-- `token_expires_at` (renouvelé à 30 j à chaque clic, jamais expiré tant que activité)
-- `last_seen_at`, `created_at`
-- `claimed_by_user_id` (uuid null) — rempli quand un compte est créé/lié avec ce mail
-- `claimed_at`
+Aucun changement aux tables existantes.
 
-Modification `documents` et `document_workflows` :
-- ajouter `guest_session_id uuid null`
-- rendre `organization_id` / `created_by` nullables OU créer une "organisation fantôme" par session invité (option retenue ci-dessous : organisation fantôme `is_guest = true` sur `organizations`, pour ne pas réécrire toutes les RLS existantes).
+### Librairies
+- `pdfjs-dist` (déjà compatible Worker via build worker) — **rendu** dans l'éditeur côté client uniquement.
+- `pdf-lib` (déjà installée, utilisée par `pdf.functions.ts`) — **aplatissage** côté serveur.
+- Signature/paraphe : réutilisation du composant `sign-document-dialog` (canvas → image PNG) — stockée comme `value` (data URL) sur la zone.
 
-Ajout `organizations.is_guest boolean default false` + `organizations.guest_session_id uuid null`.
+### Côté client
+- Nouvelle route `_authenticated.app.documents.$id.editor.tsx` (éditeur plein écran).
+- Nouveau composant `pdf-editor/` :
+  - `PdfCanvas.tsx` : rend chaque page + overlay absolute.
+  - `FieldOverlay.tsx` : zones draggables (lib `react-rnd` ajoutée — légère, compat Workers car client-only).
+  - `FieldPalette.tsx` / `FieldInspector.tsx`.
+- Conversion coordonnées écran ↔ PDF (ratio `viewport.scale`).
 
-GRANTs : `anon` reçoit `SELECT/INSERT/UPDATE` ciblé sur les rangées rattachées à sa session courante (validée côté serverFn par token, pas via auth.uid()).
+### Côté serveur (nouveau `src/lib/pdf-editor.functions.ts`)
+- `listPdfFields({ documentId })` → renvoie zones.
+- `savePdfFields({ documentId, fields })` → upsert atomique (delete + insert).
+- `flattenPdfWithFields({ documentId })` :
+  1. Récupère le `document_files` courant + télécharge depuis Storage.
+  2. Charge avec `pdf-lib`, pour chaque zone :
+     - `text`/`date` → `page.drawText`
+     - `checkbox` → carré + croix si `value === "true"`
+     - `signature`/`initials` → `page.drawImage(embedPng(value))`
+  3. Upload nouvelle version + insère `document_files` (`is_current = true`, `version + 1`).
+  4. Log audit `document.pdf_flattened`.
 
-## 2. Accès par token (pas de RLS pour anon)
+### Bouton d'accès
+- `src/routes/_authenticated.app.documents.$id.tsx` : ajout d'un bouton **"Éditer le PDF"** à côté de `GeneratePdfButton`, visible si un PDF courant existe.
 
-Toutes les opérations invité passent par des **server functions publiques** (pas `requireSupabaseAuth`) qui :
-1. Reçoivent `magic_token`.
-2. Vérifient en base que la session existe, n'est pas révoquée, prolongent `token_expires_at = now() + 30j`, mettent à jour `last_seen_at`.
-3. Utilisent `supabaseAdmin` pour lire/écrire UNIQUEMENT les ressources de `guest_session_id = session.id`.
+## Sécurité
+- Tous les serverFn sous `requireSupabaseAuth`, scoping par organisation via RLS.
+- Validation Zod stricte (nb max de zones : 500/document, dimensions bornées).
+- Aucune exposition aux invités dans cette phase (mode auteur uniquement).
 
-Aucun accès direct depuis le navigateur à Supabase en mode invité → la RLS reste fermée à `anon`. La sécurité repose sur le token (256 bits) + scoping serveur.
+## Hors scope (phase 1)
+- Champs assignés à des signataires différents (l'auteur remplit tout).
+- Édition WYSIWYG → PDF (phase 2).
+- OCR / détection automatique de champs.
+- Variables dynamiques `{{client.nom}}`.
+- Multi-page templates réutilisables de zones.
 
-## 3. Flux
+## Fichiers touchés
+- **Migration** : `document_pdf_fields` (+ RLS + GRANTs).
+- **Nouveau** : `src/lib/pdf-editor.functions.ts`, `src/routes/_authenticated.app.documents.$id.editor.tsx`, `src/components/pdf-editor/*` (3-4 fichiers).
+- **Modifiés** : `src/routes/_authenticated.app.documents.$id.tsx` (bouton), `package.json` (`react-rnd`, `pdfjs-dist`).
+- Locales `fr.json` / `en.json` (clés UI).
 
-### Création du premier circuit
-- Route publique `/guest/new` (page) : nom, email, upload PDF, signataires, options paiement.
-- ServerFn `createGuestCircuit({ email, file, signers, ... })` :
-  - `upsert` `guest_sessions` par email, génère/rotate `magic_token`.
-  - Crée org fantôme si absente, crée `document`, `document_files`, `document_signature_requests`.
-  - Envoie email "Bienvenue, voici votre espace" avec lien `https://…/guest/{magic_token}`.
-
-### Retour sur l'espace
-- Route publique `/guest/$token` :
-  - ServerFn `getGuestDashboard({ token })` → liste des circuits + statuts.
-  - Actions disponibles : relancer un signataire, annuler une invitation, créer un nouveau circuit, télécharger le PDF signé.
-
-### Renvoi du lien
-- Page `/guest` (sans token) : champ email → ServerFn `requestGuestMagicLink({ email })` qui re-renvoie le lien si une session existe (silencieux sinon, anti-énumération).
-
-## 4. Paiement
-
-Encaisser nécessite un compte Stripe rattaché. Pour l'invité, deux niveaux :
-- **Signature et suivi** : 100 % disponibles sans compte.
-- **Encaisser** : on accepte la création du lien de paiement mais l'argent va sur le compte Stripe de la plateforme (compte central) avec note "fonds en attente de réclamation". À l'inscription/réclamation, on demande le RIB/connect Stripe pour transférer. Alternative simple : bloquer l'encaissement effectif tant que pas de compte (afficher CTA "Créez votre compte pour encaisser").
-
-À confirmer avec l'utilisateur en phase build — ici on prévoit l'option "lien de paiement actif, fonds en attente".
-
-## 5. Migration à l'inscription
-
-Trigger dans `handle_new_user` (mis à jour) :
-- Cherche `guest_sessions` où `email = NEW.email` et `claimed_by_user_id IS NULL`.
-- Pour chaque circuit/doc rattaché à la session : `organization_id := new_org_id`, `created_by := NEW.id`, `guest_session_id := NULL`.
-- Supprime l'organisation fantôme (vide).
-- Marque la session `claimed_by_user_id = NEW.id, claimed_at = now()`.
-- Révoque le `magic_token` (le user passe désormais par l'auth normale).
-
-## 6. Emails (Resend déjà branché)
-
-Trois templates :
-- `guest_welcome` (création initiale + lien magique)
-- `guest_magic_link` (renvoi sur demande)
-- `guest_circuit_update` (signature/paiement reçus — récap)
-
-Utilise `src/lib/email-sender.ts` existant.
-
-## 7. Sécurité / abuse
-
-- Rate-limit côté serverFn sur `requestGuestMagicLink` et `createGuestCircuit` (par IP + par email).
-- Tokens 32 octets, regenerables.
-- Upload PDF limité (taille, type) et stocké dans bucket `documents` existant sous préfixe `guest/{session_id}/…`.
-- Politique Storage : aucun accès direct anon ; les URLs servies via serverFn signée à la volée.
-
-## 8. UI à créer
-
-- `src/routes/guest.new.tsx` — formulaire invité (upload + signataires).
-- `src/routes/guest.$token.tsx` — dashboard invité (liste circuits, actions).
-- `src/routes/guest.index.tsx` — "j'ai déjà un espace, renvoyez-moi le lien".
-- CTA "Continuer sans compte" sur la home (`/`) et `/signup`.
-- Bandeau persistant côté invité : "Créez un compte pour sécuriser vos circuits ➜".
-
-## 9. Détails techniques (section dev)
-
-- ServerFns sans middleware d'auth → fichier `src/lib/guest.functions.ts` (PAS sous `src/server/`).
-- Validation Zod stricte sur email/token/payloads.
-- `supabaseAdmin` pour toutes les écritures + scoping par `guest_session_id`.
-- Nouvelle migration : `guest_sessions`, colonnes `guest_session_id` sur `documents`/`document_workflows`/`organizations.is_guest`, mise à jour de `handle_new_user`, GRANTs/RLS (anon : aucune ; authenticated : inchangé).
-- Pas de modification des RLS existantes sur `documents` etc. — l'org fantôme garantit l'isolation.
-
-## Hors scope (à valider plus tard)
-
-- Encaissement réel sans compte (versement différé Stripe Connect).
-- Limites d'usage (X circuits max en mode invité avant inscription forcée ?).
-- Notifications email aux signataires : déjà couvertes par `signature_requests` existant.
+Validation attendue avant lancement.
