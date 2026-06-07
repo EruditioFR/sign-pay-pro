@@ -700,6 +700,7 @@ export type Database = {
           position: number
           required: boolean
           template_id: string
+          version_id: string
           width: number
           x: number
           y: number
@@ -716,6 +717,7 @@ export type Database = {
           position?: number
           required?: boolean
           template_id: string
+          version_id: string
           width?: number
           x?: number
           y?: number
@@ -732,6 +734,7 @@ export type Database = {
           position?: number
           required?: boolean
           template_id?: string
+          version_id?: string
           width?: number
           x?: number
           y?: number
@@ -744,12 +747,70 @@ export type Database = {
             referencedRelation: "pdf_templates"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pdf_template_fields_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_template_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          file_name: string
+          id: string
+          is_current: boolean
+          notes: string | null
+          page_count: number
+          size_bytes: number | null
+          storage_path: string
+          template_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          file_name: string
+          id?: string
+          is_current?: boolean
+          notes?: string | null
+          page_count?: number
+          size_bytes?: number | null
+          storage_path: string
+          template_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          file_name?: string
+          id?: string
+          is_current?: boolean
+          notes?: string | null
+          page_count?: number
+          size_bytes?: number | null
+          storage_path?: string
+          template_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_templates"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pdf_templates: {
         Row: {
           created_at: string
           created_by: string
+          current_version_id: string | null
           description: string | null
           document_type: Database["public"]["Enums"]["document_type"]
           file_name: string
@@ -764,6 +825,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          current_version_id?: string | null
           description?: string | null
           document_type?: Database["public"]["Enums"]["document_type"]
           file_name: string
@@ -778,6 +840,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          current_version_id?: string | null
           description?: string | null
           document_type?: Database["public"]["Enums"]["document_type"]
           file_name?: string
@@ -789,7 +852,15 @@ export type Database = {
           storage_path?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pdf_templates_current_version_id_fkey"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
