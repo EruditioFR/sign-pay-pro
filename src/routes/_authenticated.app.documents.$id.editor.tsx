@@ -96,8 +96,18 @@ function PdfEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
   const [tplOpen, setTplOpen] = useState(false);
+  const [tplMode, setTplMode] = useState<"new" | "version">("new");
   const [tplName, setTplName] = useState("");
   const [tplDesc, setTplDesc] = useState("");
+  const [tplNotes, setTplNotes] = useState("");
+  const [tplTargetId, setTplTargetId] = useState<string>("");
+
+  const listTplFn = useServerFn(listPdfTemplates);
+  const tplListQ = useQuery({
+    queryKey: ["pdf-templates"],
+    queryFn: () => listTplFn(),
+    enabled: tplOpen,
+  });
 
   const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
