@@ -16,10 +16,41 @@ const DOC_TYPES = [
 
 const SaveAsTemplateSchema = z.object({
   documentId: z.string().uuid(),
-  name: z.string().min(1).max(200),
+  // If provided, append a new version to that template instead of creating one.
+  templateId: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).optional().nullable(),
   document_type: z.enum(DOC_TYPES).optional(),
+  notes: z.string().max(1000).optional().nullable(),
 });
+
+async function uploadPdfCopy(
+  supabase: any,
+  organizationId: string,
+  sourcePath: string,
+): Promise<{ bytes: Uint8Array; storagePath: string; pageCount: number; size: number }> {
+  const { data: blob, error: dlErr } = await supabase.storage
+    .from("documents")
+    .download(sourcePath);
+  if (dlErr || !blob) throw new Error("Téléchargement PDF impossible");
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+
+  let pageCount = 1;
+  try {
+    const pdf = await PDFDocument.load(bytes);
+    pageCount = pdf.getPageCount();
+  } catch {
+    // keep default
+  }
+
+  const storagePath = `${organizationId}/templates/${Date.now()}-${crypto.randomUUID()}.pdf`;
+  const { error: upErr } = await supabase.storage
+    .from("documents")
+    .upload(storagePath, bytes, { contentType: "application/pdf", upsert: false });
+  if (upErr) throw new Error(upErr.message);
+
+  return { bytes, storagePath, pageCount, size: bytes.byteLength };
+}
 
 export const saveDocumentAsPdfTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -44,48 +75,80 @@ export const saveDocumentAsPdfTemplate = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!current?.storage_path) throw new Error("Aucun PDF source");
 
-    const { data: blob, error: dlErr } = await supabase.storage
-      .from("documents")
-      .download(current.storage_path);
-    if (dlErr || !blob) throw new Error("Téléchargement PDF impossible");
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    // Resolve or create the template shell.
+    let templateId = data.templateId ?? null;
+    let nextVersion = 1;
 
-    let pageCount = 1;
-    try {
-      const pdf = await PDFDocument.load(bytes);
-      pageCount = pdf.getPageCount();
-    } catch {
-      // keep default
+    if (templateId) {
+      const { data: existing } = await supabase
+        .from("pdf_templates")
+        .select("id, organization_id")
+        .eq("id", templateId)
+        .maybeSingle();
+      if (!existing || existing.organization_id !== doc.organization_id)
+        throw new Error("Modèle introuvable");
+
+      const { data: lastV } = await supabase
+        .from("pdf_template_versions")
+        .select("version")
+        .eq("template_id", templateId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      nextVersion = (lastV?.version ?? 0) + 1;
+    } else {
+      if (!data.name) throw new Error("Nom du modèle requis");
+      // create empty template; storage_path/file_name set after first version upload
+      const { data: created, error: tplErr } = await supabase
+        .from("pdf_templates")
+        .insert({
+          organization_id: doc.organization_id,
+          name: data.name,
+          description: data.description ?? null,
+          document_type: (data.document_type ?? doc.type) as DocumentType,
+          storage_path: "pending",
+          file_name: current.file_name,
+          page_count: 1,
+          size_bytes: current.size_bytes ?? 0,
+          created_by: userId,
+        })
+        .select()
+        .single();
+      if (tplErr) throw new Error(tplErr.message);
+      templateId = created.id;
     }
 
-    const ts = Date.now();
-    const storagePath = `${doc.organization_id}/templates/${ts}-${crypto.randomUUID()}.pdf`;
-    const { error: upErr } = await supabase.storage
-      .from("documents")
-      .upload(storagePath, bytes, {
-        contentType: "application/pdf",
-        upsert: false,
-      });
-    if (upErr) throw new Error(upErr.message);
+    // Copy current PDF into a new template version blob
+    const { storagePath, pageCount, size } = await uploadPdfCopy(
+      supabase,
+      doc.organization_id,
+      current.storage_path,
+    );
 
-    const { data: tpl, error: tplErr } = await supabase
-      .from("pdf_templates")
+    // Mark previous current as not current
+    await supabase
+      .from("pdf_template_versions")
+      .update({ is_current: false })
+      .eq("template_id", templateId);
+
+    const { data: version, error: vErr } = await supabase
+      .from("pdf_template_versions")
       .insert({
-        organization_id: doc.organization_id,
-        name: data.name,
-        description: data.description ?? null,
-        document_type: (data.document_type ?? doc.type) as DocumentType,
+        template_id: templateId,
+        version: nextVersion,
         storage_path: storagePath,
         file_name: current.file_name,
         page_count: pageCount,
-        size_bytes: current.size_bytes ?? bytes.byteLength,
+        size_bytes: size,
+        notes: data.notes ?? null,
+        is_current: true,
         created_by: userId,
       })
       .select()
       .single();
-    if (tplErr) throw new Error(tplErr.message);
+    if (vErr) throw new Error(vErr.message);
 
-    // copy fields from document_pdf_fields → pdf_template_fields
+    // Copy fields snapshot
     const { data: fields } = await supabase
       .from("document_pdf_fields")
       .select("*")
@@ -94,7 +157,8 @@ export const saveDocumentAsPdfTemplate = createServerFn({ method: "POST" })
 
     if (fields && fields.length > 0) {
       const rows = fields.map((f, i) => ({
-        template_id: tpl.id,
+        template_id: templateId!,
+        version_id: version.id,
         page_index: f.page_index,
         kind: f.kind,
         x: f.x,
@@ -107,21 +171,37 @@ export const saveDocumentAsPdfTemplate = createServerFn({ method: "POST" })
         label: f.label,
         position: i,
       }));
-      const { error: fErr } = await supabase
-        .from("pdf_template_fields")
-        .insert(rows);
+      const { error: fErr } = await supabase.from("pdf_template_fields").insert(rows);
       if (fErr) throw new Error(fErr.message);
     }
+
+    // Point template at the new current version + refresh top-level metadata
+    await supabase
+      .from("pdf_templates")
+      .update({
+        current_version_id: version.id,
+        storage_path: storagePath,
+        file_name: current.file_name,
+        page_count: pageCount,
+        size_bytes: size,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", templateId);
 
     await supabase.from("audit_logs").insert({
       organization_id: doc.organization_id,
       user_id: userId,
-      action: "pdf_template.created",
-      resource: `pdf_template:${tpl.id}`,
-      metadata: { name: tpl.name, fields: fields?.length ?? 0, source_document: doc.id },
+      action: data.templateId ? "pdf_template.version_added" : "pdf_template.created",
+      resource: `pdf_template:${templateId}`,
+      metadata: {
+        version: nextVersion,
+        version_id: version.id,
+        fields: fields?.length ?? 0,
+        source_document: doc.id,
+      },
     });
 
-    return { template: tpl };
+    return { templateId, version };
   });
 
 export const listPdfTemplates = createServerFn({ method: "GET" })
@@ -130,50 +210,202 @@ export const listPdfTemplates = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("pdf_templates")
-      .select("id, name, description, document_type, page_count, created_at, created_by")
+      .select(
+        "id, name, description, document_type, page_count, created_at, created_by, current_version_id",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    // attach field counts
     const ids = (data ?? []).map((t) => t.id);
-    let counts: Record<string, number> = {};
+    let versionCounts: Record<string, number> = {};
+    let fieldCounts: Record<string, number> = {};
     if (ids.length > 0) {
-      const { data: fs } = await supabase
-        .from("pdf_template_fields")
+      const { data: vs } = await supabase
+        .from("pdf_template_versions")
         .select("template_id")
         .in("template_id", ids);
-      counts = (fs ?? []).reduce<Record<string, number>>((acc, row) => {
+      versionCounts = (vs ?? []).reduce<Record<string, number>>((acc, row) => {
         acc[row.template_id] = (acc[row.template_id] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      const currentVersionIds = (data ?? [])
+        .map((t) => t.current_version_id)
+        .filter((v): v is string => Boolean(v));
+      if (currentVersionIds.length > 0) {
+        const { data: fs } = await supabase
+          .from("pdf_template_fields")
+          .select("template_id, version_id")
+          .in("version_id", currentVersionIds);
+        fieldCounts = (fs ?? []).reduce<Record<string, number>>((acc, row) => {
+          acc[row.template_id] = (acc[row.template_id] ?? 0) + 1;
+          return acc;
+        }, {});
+      }
+    }
+    return {
+      templates: (data ?? []).map((t) => ({
+        ...t,
+        version_count: versionCounts[t.id] ?? 0,
+        field_count: fieldCounts[t.id] ?? 0,
+      })),
+    };
+  });
+
+export const listPdfTemplateVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ templateId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: versions, error } = await supabase
+      .from("pdf_template_versions")
+      .select("id, version, file_name, page_count, size_bytes, notes, is_current, created_by, created_at")
+      .eq("template_id", data.templateId)
+      .order("version", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const vIds = (versions ?? []).map((v) => v.id);
+    let counts: Record<string, number> = {};
+    if (vIds.length > 0) {
+      const { data: fs } = await supabase
+        .from("pdf_template_fields")
+        .select("version_id")
+        .in("version_id", vIds);
+      counts = (fs ?? []).reduce<Record<string, number>>((acc, row) => {
+        acc[row.version_id] = (acc[row.version_id] ?? 0) + 1;
         return acc;
       }, {});
     }
     return {
-      templates: (data ?? []).map((t) => ({ ...t, field_count: counts[t.id] ?? 0 })),
+      versions: (versions ?? []).map((v) => ({
+        ...v,
+        field_count: counts[v.id] ?? 0,
+      })),
     };
+  });
+
+export const restorePdfTemplateVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ versionId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: version, error } = await supabase
+      .from("pdf_template_versions")
+      .select("id, template_id, version, storage_path, file_name, page_count, size_bytes")
+      .eq("id", data.versionId)
+      .maybeSingle();
+    if (error || !version) throw new Error("Version introuvable");
+
+    const { data: tpl } = await supabase
+      .from("pdf_templates")
+      .select("id, organization_id")
+      .eq("id", version.template_id)
+      .maybeSingle();
+    if (!tpl) throw new Error("Modèle introuvable");
+
+    await supabase
+      .from("pdf_template_versions")
+      .update({ is_current: false })
+      .eq("template_id", version.template_id);
+
+    const { error: upErr } = await supabase
+      .from("pdf_template_versions")
+      .update({ is_current: true })
+      .eq("id", version.id);
+    if (upErr) throw new Error(upErr.message);
+
+    await supabase
+      .from("pdf_templates")
+      .update({
+        current_version_id: version.id,
+        storage_path: version.storage_path,
+        file_name: version.file_name,
+        page_count: version.page_count,
+        size_bytes: version.size_bytes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tpl.id);
+
+    await supabase.from("audit_logs").insert({
+      organization_id: tpl.organization_id,
+      user_id: userId,
+      action: "pdf_template.version_restored",
+      resource: `pdf_template:${tpl.id}`,
+      metadata: { version: version.version, version_id: version.id },
+    });
+
+    return { ok: true };
+  });
+
+export const deletePdfTemplateVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ versionId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: version } = await supabase
+      .from("pdf_template_versions")
+      .select("id, template_id, version, is_current, storage_path")
+      .eq("id", data.versionId)
+      .maybeSingle();
+    if (!version) throw new Error("Version introuvable");
+    if (version.is_current)
+      throw new Error("Impossible de supprimer la version active. Restaurez d'abord une autre version.");
+
+    const { error } = await supabase
+      .from("pdf_template_versions")
+      .delete()
+      .eq("id", version.id);
+    if (error) throw new Error(error.message);
+    if (version.storage_path) {
+      await supabase.storage.from("documents").remove([version.storage_path]);
+    }
+
+    const { data: tpl } = await supabase
+      .from("pdf_templates")
+      .select("organization_id")
+      .eq("id", version.template_id)
+      .maybeSingle();
+    if (tpl) {
+      await supabase.from("audit_logs").insert({
+        organization_id: tpl.organization_id,
+        user_id: userId,
+        action: "pdf_template.version_deleted",
+        resource: `pdf_template:${version.template_id}`,
+        metadata: { version: version.version, version_id: version.id },
+      });
+    }
+    return { ok: true };
   });
 
 export const deletePdfTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: tpl } = await supabase
-      .from("pdf_templates")
-      .select("storage_path, organization_id")
-      .eq("id", data.id)
-      .maybeSingle();
+    const { data: versions } = await supabase
+      .from("pdf_template_versions")
+      .select("storage_path")
+      .eq("template_id", data.id);
     const { error } = await supabase.from("pdf_templates").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    if (tpl?.storage_path) {
-      await supabase.storage.from("documents").remove([tpl.storage_path]);
+    const paths = (versions ?? []).map((v) => v.storage_path).filter(Boolean);
+    if (paths.length > 0) {
+      await supabase.storage.from("documents").remove(paths);
     }
     return { ok: true };
   });
 
 const CreateFromTemplateSchema = z.object({
   templateId: z.string().uuid(),
+  // Optional pinned version. Defaults to current.
+  versionId: z.string().uuid().optional(),
   title: z.string().min(1).max(200),
   reference: z.string().max(100).optional().nullable(),
   third_party_name: z.string().max(200).optional().nullable(),
@@ -204,6 +436,17 @@ export const createDocumentFromPdfTemplate = createServerFn({ method: "POST" })
     if (tplErr || !tpl) throw new Error("Modèle introuvable");
     if (tpl.organization_id !== me.organization_id) throw new Error("Accès refusé");
 
+    // Resolve version
+    const versionId = data.versionId ?? tpl.current_version_id;
+    if (!versionId) throw new Error("Aucune version disponible pour ce modèle");
+    const { data: version, error: vErr } = await supabase
+      .from("pdf_template_versions")
+      .select("*")
+      .eq("id", versionId)
+      .maybeSingle();
+    if (vErr || !version || version.template_id !== tpl.id)
+      throw new Error("Version introuvable");
+
     // 1. Create document
     const { data: doc, error: docErr } = await supabase
       .from("documents")
@@ -229,7 +472,7 @@ export const createDocumentFromPdfTemplate = createServerFn({ method: "POST" })
     // 2. Copy PDF in storage
     const { data: blob, error: dlErr } = await supabase.storage
       .from("documents")
-      .download(tpl.storage_path);
+      .download(version.storage_path);
     if (dlErr || !blob) throw new Error("Téléchargement modèle impossible");
     const bytes = new Uint8Array(await blob.arrayBuffer());
     const ts = Date.now();
@@ -243,7 +486,7 @@ export const createDocumentFromPdfTemplate = createServerFn({ method: "POST" })
       document_id: doc.id,
       version: 1,
       storage_path: newPath,
-      file_name: tpl.file_name,
+      file_name: version.file_name,
       mime_type: "application/pdf",
       size_bytes: bytes.byteLength,
       uploaded_by: userId,
@@ -251,11 +494,11 @@ export const createDocumentFromPdfTemplate = createServerFn({ method: "POST" })
     });
     if (fErr) throw new Error(fErr.message);
 
-    // 3. Copy template fields
+    // 3. Copy version fields
     const { data: tplFields } = await supabase
       .from("pdf_template_fields")
       .select("*")
-      .eq("template_id", tpl.id)
+      .eq("version_id", version.id)
       .order("position", { ascending: true });
     if (tplFields && tplFields.length > 0) {
       const rows = tplFields.map((f, i) => ({
@@ -283,7 +526,12 @@ export const createDocumentFromPdfTemplate = createServerFn({ method: "POST" })
       user_id: userId,
       action: "document.created_from_template",
       resource: `document:${doc.id}`,
-      metadata: { template_id: tpl.id, template_name: tpl.name },
+      metadata: {
+        template_id: tpl.id,
+        template_name: tpl.name,
+        version: version.version,
+        version_id: version.id,
+      },
     });
 
     return { document: doc };

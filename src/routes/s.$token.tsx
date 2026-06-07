@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import type * as PdfJs from "pdfjs-dist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,15 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick } from "lucide-react";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+let _pdfjs: typeof PdfJs | null = null;
+async function loadPdfjs() {
+  if (_pdfjs) return _pdfjs;
+  const mod = await import("pdfjs-dist");
+  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
+  mod.GlobalWorkerOptions.workerSrc = workerUrl;
+  _pdfjs = mod;
+  return mod;
+}
 
 export const Route = createFileRoute("/s/$token")({
   component: PublicSignRequestPage,
@@ -202,7 +209,7 @@ function SignWithPlacement({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
 
   const [pageCount, setPageCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
@@ -223,7 +230,8 @@ function SignWithPlacement({
     if (!pdfUrl) return;
     let cancelled = false;
     (async () => {
-      const task = pdfjsLib.getDocument({ url: pdfUrl });
+      const pdfjs = await loadPdfjs();
+      const task = pdfjs.getDocument({ url: pdfUrl });
       const doc = await task.promise;
       if (cancelled) return;
       pdfDocRef.current = doc;

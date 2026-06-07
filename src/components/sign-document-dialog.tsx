@@ -24,10 +24,17 @@ import {
   saveSignatureDraft,
   clearSignatureDraft,
 } from "@/lib/signature-drafts.functions";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import type * as PdfJs from "pdfjs-dist";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+let _pdfjs: typeof PdfJs | null = null;
+async function loadPdfjs() {
+  if (_pdfjs) return _pdfjs;
+  const mod = await import("pdfjs-dist");
+  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
+  mod.GlobalWorkerOptions.workerSrc = workerUrl;
+  _pdfjs = mod;
+  return mod;
+}
 
 type Placement = {
   page_index: number;
@@ -81,13 +88,14 @@ export function SignDocumentDialog({
   const draftLoadedRef = useRef(false);
 
   // Load PDF document when URL is available, then restore any server-side draft.
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   useEffect(() => {
     if (!open || !urlQ.data?.url) return;
     let cancelled = false;
     draftLoadedRef.current = false;
     (async () => {
-      const task = pdfjsLib.getDocument({ url: urlQ.data!.url! });
+      const pdfjs = await loadPdfjs();
+      const task = pdfjs.getDocument({ url: urlQ.data!.url! });
       const doc = await task.promise;
       if (cancelled) return;
       pdfDocRef.current = doc;

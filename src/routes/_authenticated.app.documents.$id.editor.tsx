@@ -25,7 +25,7 @@ import {
   listPdfFields, savePdfFields, flattenPdfWithFields,
   type PdfFieldKind,
 } from "@/lib/pdf-editor.functions";
-import { saveDocumentAsPdfTemplate } from "@/lib/pdf-templates.functions";
+import { saveDocumentAsPdfTemplate, listPdfTemplates } from "@/lib/pdf-templates.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { BookmarkPlus } from "lucide-react";
 
@@ -96,8 +96,18 @@ function PdfEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
   const [tplOpen, setTplOpen] = useState(false);
+  const [tplMode, setTplMode] = useState<"new" | "version">("new");
   const [tplName, setTplName] = useState("");
   const [tplDesc, setTplDesc] = useState("");
+  const [tplNotes, setTplNotes] = useState("");
+  const [tplTargetId, setTplTargetId] = useState<string>("");
+
+  const listTplFn = useServerFn(listPdfTemplates);
+  const tplListQ = useQuery({
+    queryKey: ["pdf-templates"],
+    queryFn: () => listTplFn(),
+    enabled: tplOpen,
+  });
 
   const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -263,16 +273,20 @@ function PdfEditorPage() {
       return saveTplFn({
         data: {
           documentId: id,
-          name: tplName.trim(),
-          description: tplDesc.trim() || null,
+          templateId: tplMode === "version" && tplTargetId ? tplTargetId : undefined,
+          name: tplMode === "new" ? tplName.trim() : undefined,
+          description: tplMode === "new" ? (tplDesc.trim() || null) : undefined,
+          notes: tplNotes.trim() || null,
         },
       });
     },
     onSuccess: () => {
-      toast.success("Modèle enregistré");
+      toast.success(tplMode === "new" ? "Modèle enregistré" : "Nouvelle version enregistrée");
       setTplOpen(false);
       setTplName("");
       setTplDesc("");
+      setTplNotes("");
+      setTplTargetId("");
       qc.invalidateQueries({ queryKey: ["pdf-templates"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -480,20 +494,62 @@ function PdfEditorPage() {
           <DialogHeader><DialogTitle>Enregistrer comme modèle</DialogTitle></DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-name">Nom du modèle</Label>
-              <Input id="tpl-name" value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Ex : Devis prestation standard" />
+              <Label>Mode</Label>
+              <Select value={tplMode} onValueChange={(v) => setTplMode(v as "new" | "version")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">Nouveau modèle</SelectItem>
+                  <SelectItem value="version">Nouvelle version d'un modèle existant</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {tplMode === "new" ? (
+              <>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="tpl-name">Nom du modèle</Label>
+                  <Input id="tpl-name" value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Ex : Devis prestation standard" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="tpl-desc">Description (optionnel)</Label>
+                  <Textarea id="tpl-desc" value={tplDesc} onChange={(e) => setTplDesc(e.target.value)} rows={2} />
+                </div>
+              </>
+            ) : (
+              <div className="grid gap-1.5">
+                <Label>Modèle cible</Label>
+                <Select value={tplTargetId} onValueChange={setTplTargetId}>
+                  <SelectTrigger><SelectValue placeholder="Choisir un modèle…" /></SelectTrigger>
+                  <SelectContent>
+                    {(tplListQ.data?.templates ?? []).map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name} (v{t.version_count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-desc">Description (optionnel)</Label>
-              <Textarea id="tpl-desc" value={tplDesc} onChange={(e) => setTplDesc(e.target.value)} rows={3} />
+              <Label htmlFor="tpl-notes">Notes de version (optionnel)</Label>
+              <Input id="tpl-notes" value={tplNotes} onChange={(e) => setTplNotes(e.target.value)} placeholder="Ex : ajout du champ TVA" />
             </div>
+
             <p className="text-xs text-muted-foreground">
-              Le PDF et ses {fields.length} zone(s) seront enregistrés et réutilisables depuis « Modèles PDF ».
+              Le PDF et ses {fields.length} zone(s) seront enregistrés comme {tplMode === "new" ? "version 1 d'un nouveau modèle" : "une nouvelle version"}.
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTplOpen(false)}>Annuler</Button>
-            <Button onClick={() => saveTplMut.mutate()} disabled={!tplName.trim() || saveTplMut.isPending}>
+            <Button
+              onClick={() => saveTplMut.mutate()}
+              disabled={
+                saveTplMut.isPending ||
+                (tplMode === "new" && !tplName.trim()) ||
+                (tplMode === "version" && !tplTargetId)
+              }
+            >
               {saveTplMut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Enregistrer
             </Button>

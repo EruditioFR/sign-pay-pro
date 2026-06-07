@@ -4,6 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
   listPdfTemplates,
+  listPdfTemplateVersions,
+  restorePdfTemplateVersion,
+  deletePdfTemplateVersion,
   deletePdfTemplate,
   createDocumentFromPdfTemplate,
 } from "@/lib/pdf-templates.functions";
@@ -14,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText, Trash2, Wand2, Loader2 } from "lucide-react";
+import { FileText, Trash2, Wand2, Loader2, History, RotateCcw, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/pdf-templates/")({
@@ -46,7 +49,7 @@ function PdfTemplatesPage() {
         <div>
           <h1 className="text-2xl font-semibold">Modèles PDF</h1>
           <p className="text-sm text-muted-foreground">
-            Réutilisez un document avec ses zones en un clic.
+            Réutilisez un document avec ses zones en un clic. Versions et historique conservés.
           </p>
         </div>
       </div>
@@ -78,14 +81,16 @@ function PdfTemplatesPage() {
                   <span className="rounded bg-muted px-2 py-0.5">{t.document_type}</span>
                   <span className="rounded bg-muted px-2 py-0.5">{t.page_count} page(s)</span>
                   <span className="rounded bg-muted px-2 py-0.5">{t.field_count} zone(s)</span>
+                  <span className="rounded bg-muted px-2 py-0.5">v{t.version_count}</span>
                 </div>
-                <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2 pt-1">
                   <UseTemplateDialog templateId={t.id} templateName={t.name} />
+                  <VersionHistoryDialog templateId={t.id} templateName={t.name} />
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      if (confirm("Supprimer ce modèle ?")) del.mutate(t.id);
+                      if (confirm("Supprimer ce modèle et toutes ses versions ?")) del.mutate(t.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -161,31 +166,124 @@ function UseTemplateDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="t-tpn">Destinataire</Label>
-            <Input
-              id="t-tpn"
-              value={thirdPartyName}
-              onChange={(e) => setThirdPartyName(e.target.value)}
-            />
+            <Input id="t-tpn" value={thirdPartyName} onChange={(e) => setThirdPartyName(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="t-tpe">Email destinataire</Label>
-            <Input
-              id="t-tpe"
-              type="email"
-              value={thirdPartyEmail}
-              onChange={(e) => setThirdPartyEmail(e.target.value)}
-            />
+            <Input id="t-tpe" type="email" value={thirdPartyEmail} onChange={(e) => setThirdPartyEmail(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Annuler
-          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
             {mut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
             Créer le document
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function VersionHistoryDialog({
+  templateId,
+  templateName,
+}: {
+  templateId: string;
+  templateName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const listVersionsFn = useServerFn(listPdfTemplateVersions);
+  const restoreFn = useServerFn(restorePdfTemplateVersion);
+  const delVersionFn = useServerFn(deletePdfTemplateVersion);
+
+  const versionsQ = useQuery({
+    queryKey: ["pdf-template-versions", templateId],
+    queryFn: () => listVersionsFn({ data: { templateId } }),
+    enabled: open,
+  });
+
+  const restore = useMutation({
+    mutationFn: (versionId: string) => restoreFn({ data: { versionId } }),
+    onSuccess: () => {
+      toast.success("Version restaurée");
+      qc.invalidateQueries({ queryKey: ["pdf-template-versions", templateId] });
+      qc.invalidateQueries({ queryKey: ["pdf-templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delV = useMutation({
+    mutationFn: (versionId: string) => delVersionFn({ data: { versionId } }),
+    onSuccess: () => {
+      toast.success("Version supprimée");
+      qc.invalidateQueries({ queryKey: ["pdf-template-versions", templateId] });
+      qc.invalidateQueries({ queryKey: ["pdf-templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <History className="mr-1 h-4 w-4" /> Historique
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Historique de « {templateName} »</DialogTitle>
+        </DialogHeader>
+        {versionsQ.isLoading ? (
+          <p className="text-sm text-muted-foreground">Chargement…</p>
+        ) : (versionsQ.data?.versions ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucune version.</p>
+        ) : (
+          <ul className="max-h-[60vh] divide-y divide-border overflow-auto rounded-md border border-border">
+            {versionsQ.data!.versions.map((v) => (
+              <li key={v.id} className="flex flex-col gap-2 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 font-medium">
+                    Version {v.version}
+                    {v.is_current && (
+                      <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                        <CheckCircle2 className="h-3 w-3" /> Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(v.created_at).toLocaleString()} · {v.page_count} page(s) · {v.field_count} zone(s)
+                  </div>
+                  {v.notes && <div className="mt-1 text-xs text-muted-foreground">« {v.notes} »</div>}
+                </div>
+                <div className="flex items-center gap-1">
+                  {!v.is_current && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => restore.mutate(v.id)}
+                        disabled={restore.isPending}
+                      >
+                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> Restaurer
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm(`Supprimer la version ${v.version} ?`)) delV.mutate(v.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </DialogContent>
     </Dialog>
   );
