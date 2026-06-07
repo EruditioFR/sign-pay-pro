@@ -29,7 +29,15 @@ import { saveDocumentAsPdfTemplate } from "@/lib/pdf-templates.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { BookmarkPlus } from "lucide-react";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+let _pdfjs: typeof PdfJs | null = null;
+async function loadPdfjs() {
+  if (_pdfjs) return _pdfjs;
+  const mod = await import("pdfjs-dist");
+  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
+  mod.GlobalWorkerOptions.workerSrc = workerUrl;
+  _pdfjs = mod;
+  return mod;
+}
 
 const Initials = Signature;
 
