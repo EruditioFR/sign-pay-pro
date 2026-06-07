@@ -88,13 +88,14 @@ export function SignDocumentDialog({
   const draftLoadedRef = useRef(false);
 
   // Load PDF document when URL is available, then restore any server-side draft.
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   useEffect(() => {
     if (!open || !urlQ.data?.url) return;
     let cancelled = false;
     draftLoadedRef.current = false;
     (async () => {
-      const task = pdfjsLib.getDocument({ url: urlQ.data!.url! });
+      const pdfjs = await loadPdfjs();
+      const task = pdfjs.getDocument({ url: urlQ.data!.url! });
       const doc = await task.promise;
       if (cancelled) return;
       pdfDocRef.current = doc;
