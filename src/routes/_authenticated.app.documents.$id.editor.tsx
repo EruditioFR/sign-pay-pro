@@ -273,16 +273,20 @@ function PdfEditorPage() {
       return saveTplFn({
         data: {
           documentId: id,
-          name: tplName.trim(),
-          description: tplDesc.trim() || null,
+          templateId: tplMode === "version" && tplTargetId ? tplTargetId : undefined,
+          name: tplMode === "new" ? tplName.trim() : undefined,
+          description: tplMode === "new" ? (tplDesc.trim() || null) : undefined,
+          notes: tplNotes.trim() || null,
         },
       });
     },
     onSuccess: () => {
-      toast.success("Modèle enregistré");
+      toast.success(tplMode === "new" ? "Modèle enregistré" : "Nouvelle version enregistrée");
       setTplOpen(false);
       setTplName("");
       setTplDesc("");
+      setTplNotes("");
+      setTplTargetId("");
       qc.invalidateQueries({ queryKey: ["pdf-templates"] });
     },
     onError: (e: Error) => toast.error(e.message),
