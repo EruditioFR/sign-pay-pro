@@ -99,7 +99,7 @@ function PdfEditorPage() {
   const [tplName, setTplName] = useState("");
   const [tplDesc, setTplDesc] = useState("");
 
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
