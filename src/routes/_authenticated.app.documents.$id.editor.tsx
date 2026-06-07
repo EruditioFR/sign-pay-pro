@@ -237,6 +237,39 @@ function PdfEditorPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveTplFn = useServerFn(saveDocumentAsPdfTemplate);
+  const saveTplMut = useMutation({
+    mutationFn: async () => {
+      // persist current fields first so they are part of the template
+      await saveFn({
+        data: {
+          documentId: id,
+          fields: fields.map((f, i) => ({
+            page_index: f.page_index, kind: f.kind,
+            x: f.x, y: f.y, width: f.width, height: f.height,
+            value: f.value, font_size: f.font_size,
+            required: f.required, label: f.label, position: i,
+          })),
+        },
+      });
+      return saveTplFn({
+        data: {
+          documentId: id,
+          name: tplName.trim(),
+          description: tplDesc.trim() || null,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Modèle enregistré");
+      setTplOpen(false);
+      setTplName("");
+      setTplDesc("");
+      qc.invalidateQueries({ queryKey: ["pdf-templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const pageFields = useMemo(
     () => fields.filter((f) => f.page_index === pageIndex),
     [fields, pageIndex],
