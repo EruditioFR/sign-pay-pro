@@ -63,6 +63,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         { to: "/admin", label: t("nav.dashboard"), icon: Home },
         { to: "/app/demo", label: "Démo", icon: Sparkles },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
+        { to: "/app/pdf-templates", label: "Modèles PDF", icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         {
           to: "/app/approvals",
