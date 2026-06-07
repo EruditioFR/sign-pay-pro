@@ -466,6 +466,32 @@ function PdfEditorPage() {
           }}
         />
       )}
+
+      <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Enregistrer comme modèle</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="tpl-name">Nom du modèle</Label>
+              <Input id="tpl-name" value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Ex : Devis prestation standard" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="tpl-desc">Description (optionnel)</Label>
+              <Textarea id="tpl-desc" value={tplDesc} onChange={(e) => setTplDesc(e.target.value)} rows={3} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Le PDF et ses {fields.length} zone(s) seront enregistrés et réutilisables depuis « Modèles PDF ».
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTplOpen(false)}>Annuler</Button>
+            <Button onClick={() => saveTplMut.mutate()} disabled={!tplName.trim() || saveTplMut.isPending}>
+              {saveTplMut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
