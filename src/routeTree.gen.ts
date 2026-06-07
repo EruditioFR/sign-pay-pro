@@ -13,8 +13,11 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GuestIndexRouteImport } from './routes/guest.index'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as GuestNewRouteImport } from './routes/guest.new'
+import { Route as GuestTokenRouteImport } from './routes/guest.$token'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated.super-admin.index'
 import { Route as AuthenticatedResellerIndexRouteImport } from './routes/_authenticated.reseller.index'
@@ -62,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuestIndexRoute = GuestIndexRouteImport.update({
+  id: '/guest/',
+  path: '/guest/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
@@ -70,6 +78,16 @@ const STokenRoute = STokenRouteImport.update({
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuestNewRoute = GuestNewRouteImport.update({
+  id: '/guest/new',
+  path: '/guest/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuestTokenRoute = GuestTokenRouteImport.update({
+  id: '/guest/$token',
+  path: '/guest/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -230,8 +248,11 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/guest/$token': typeof GuestTokenRoute
+  '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
   '/s/$token': typeof STokenRoute
+  '/guest/': typeof GuestIndexRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -264,8 +285,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/guest/$token': typeof GuestTokenRoute
+  '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
   '/s/$token': typeof STokenRoute
+  '/guest': typeof GuestIndexRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -300,8 +324,11 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/guest/$token': typeof GuestTokenRoute
+  '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
   '/s/$token': typeof STokenRoute
+  '/guest/': typeof GuestIndexRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -336,8 +363,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/guest/$token'
+    | '/guest/new'
     | '/p/$token'
     | '/s/$token'
+    | '/guest/'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -370,8 +400,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/guest/$token'
+    | '/guest/new'
     | '/p/$token'
     | '/s/$token'
+    | '/guest'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -405,8 +438,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_authenticated/dashboard'
+    | '/guest/$token'
+    | '/guest/new'
     | '/p/$token'
     | '/s/$token'
+    | '/guest/'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
@@ -440,8 +476,11 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  GuestTokenRoute: typeof GuestTokenRoute
+  GuestNewRoute: typeof GuestNewRoute
   PTokenRoute: typeof PTokenRoute
   STokenRoute: typeof STokenRoute
+  GuestIndexRoute: typeof GuestIndexRoute
   ApiPublicShareTokenRoute: typeof ApiPublicShareTokenRoute
   ApiPublicSignRequestTokenRoute: typeof ApiPublicSignRequestTokenRoute
 }
@@ -476,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guest/': {
+      id: '/guest/'
+      path: '/guest'
+      fullPath: '/guest/'
+      preLoaderRoute: typeof GuestIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/s/$token': {
       id: '/s/$token'
       path: '/s/$token'
@@ -488,6 +534,20 @@ declare module '@tanstack/react-router' {
       path: '/p/$token'
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guest/new': {
+      id: '/guest/new'
+      path: '/guest/new'
+      fullPath: '/guest/new'
+      preLoaderRoute: typeof GuestNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guest/$token': {
+      id: '/guest/$token'
+      path: '/guest/$token'
+      fullPath: '/guest/$token'
+      preLoaderRoute: typeof GuestTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -749,21 +809,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  GuestTokenRoute: GuestTokenRoute,
+  GuestNewRoute: GuestNewRoute,
   PTokenRoute: PTokenRoute,
   STokenRoute: STokenRoute,
+  GuestIndexRoute: GuestIndexRoute,
   ApiPublicShareTokenRoute: ApiPublicShareTokenRoute,
   ApiPublicSignRequestTokenRoute: ApiPublicSignRequestTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

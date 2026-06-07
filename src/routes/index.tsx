@@ -54,7 +54,16 @@ function Landing() {
             <Button asChild size="lg" variant="outline">
               <Link to="/login">{t("landing.cta_login")}</Link>
             </Button>
+            <Button asChild size="lg" variant="ghost">
+              <Link to="/guest/new">Continuer sans compte</Link>
+            </Button>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Déjà un circuit invité ?{" "}
+            <Link to="/guest" className="underline">
+              Recevoir mon lien d'accès
+            </Link>
+          </p>
         </section>
 
         <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-24 sm:grid-cols-3">

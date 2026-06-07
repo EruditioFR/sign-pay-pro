@@ -406,6 +406,7 @@ export type Database = {
           completed_at: string | null
           current_step: number
           document_id: string
+          guest_session_id: string | null
           id: string
           started_at: string
           status: Database["public"]["Enums"]["document_status"]
@@ -415,6 +416,7 @@ export type Database = {
           completed_at?: string | null
           current_step?: number
           document_id: string
+          guest_session_id?: string | null
           id?: string
           started_at?: string
           status?: Database["public"]["Enums"]["document_status"]
@@ -424,6 +426,7 @@ export type Database = {
           completed_at?: string | null
           current_step?: number
           document_id?: string
+          guest_session_id?: string | null
           id?: string
           started_at?: string
           status?: Database["public"]["Enums"]["document_status"]
@@ -435,6 +438,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_workflows_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -456,6 +466,7 @@ export type Database = {
           current_workflow_id: string | null
           description: string | null
           due_date: string | null
+          guest_session_id: string | null
           id: string
           issue_date: string | null
           organization_id: string
@@ -477,6 +488,7 @@ export type Database = {
           current_workflow_id?: string | null
           description?: string | null
           due_date?: string | null
+          guest_session_id?: string | null
           id?: string
           issue_date?: string | null
           organization_id: string
@@ -498,6 +510,7 @@ export type Database = {
           current_workflow_id?: string | null
           description?: string | null
           due_date?: string | null
+          guest_session_id?: string | null
           id?: string
           issue_date?: string | null
           organization_id?: string
@@ -512,6 +525,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "documents_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -520,12 +540,50 @@ export type Database = {
           },
         ]
       }
+      guest_sessions: {
+        Row: {
+          claimed_at: string | null
+          claimed_by_user_id: string | null
+          created_at: string
+          email: string
+          id: string
+          last_seen_at: string
+          magic_token: string
+          token_expires_at: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by_user_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          last_seen_at?: string
+          magic_token?: string
+          token_expires_at?: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by_user_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          last_seen_at?: string
+          magic_token?: string
+          token_expires_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           active: boolean
           country: string
           created_at: string
+          guest_session_id: string | null
           id: string
+          is_guest: boolean
           is_reseller: boolean
           name: string
           plan: string
@@ -536,7 +594,9 @@ export type Database = {
           active?: boolean
           country?: string
           created_at?: string
+          guest_session_id?: string | null
           id?: string
+          is_guest?: boolean
           is_reseller?: boolean
           name: string
           plan?: string
@@ -547,7 +607,9 @@ export type Database = {
           active?: boolean
           country?: string
           created_at?: string
+          guest_session_id?: string | null
           id?: string
+          is_guest?: boolean
           is_reseller?: boolean
           name?: string
           plan?: string
@@ -555,6 +617,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organizations_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "organizations_reseller_id_fkey"
             columns: ["reseller_id"]
