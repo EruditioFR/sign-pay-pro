@@ -1,76 +1,81 @@
-# Éditeur PDF — Phase 1 : PDF existant + zones
+# Phase 2 — Création de documents via éditeur WYSIWYG
 
 ## Objectif
-Permettre à l'auteur d'uploader un PDF existant, de placer visuellement des zones (texte, date, case à cocher, signature, paraphe), de les pré-remplir, puis d'exporter un PDF final aplati prêt à être présenté/envoyé aux signataires via le circuit existant.
-
-> Phase 2 (éditeur WYSIWYG avancé → PDF) est volontairement repoussée — livrée séparément après validation de la phase 1.
+Créer un document depuis zéro dans un éditeur de texte riche (style Word), insérer des **placeholders de champs** (texte, date, case, signature, paraphe) directement dans le flux du texte, puis générer un PDF qui s'ouvre automatiquement dans l'éditeur PDF de la phase 1 pour positionner les zones interactives finales.
 
 ## Parcours utilisateur
-1. Depuis un document : bouton **"Éditer le PDF"** → ouvre l'éditeur plein écran.
-2. L'éditeur affiche le PDF page par page (rendu via `pdfjs-dist`) avec un **canvas overlay** par page.
-3. Palette à gauche : `Texte`, `Date`, `Case à cocher`, `Signature`, `Paraphe`.
-4. Drag & drop d'un champ sur la page → zone redimensionnable/déplaçable.
-5. Panneau de droite (zone sélectionnée) : libellé, valeur pré-remplie, police/taille, requis, page.
-6. Bouton **"Enregistrer brouillon"** : persiste les zones + valeurs (JSON).
-7. Bouton **"Générer PDF final"** : aplatit les zones dans le PDF (via `pdf-lib`) → nouveau `document_files` versionné, devient le fichier courant. Réutilisable dans les flows existants (circuit, signature, envoi).
+1. **Documents → Nouveau → "Créer avec éditeur WYSIWYG"** (en plus de l'upload PDF existant).
+2. Page A4 paginée dans le navigateur, toolbar de mise en forme (titres, gras, italique, listes, alignement, tableaux simples).
+3. Bouton **"Insérer un champ"** → menu : Texte / Date / Case / Signature / Paraphe → insère un placeholder visuel inline (badge coloré avec label éditable).
+4. Bouton **"Enregistrer brouillon"** : persiste le HTML + meta des champs (réouverture/édition ultérieure).
+5. Bouton **"Générer PDF"** :
+   - Conversion côté client (html2canvas + jsPDF) → PDF A4 multipage.
+   - Upload comme `document_files` du document créé.
+   - Pré-création des `document_pdf_fields` aux coordonnées détectées (bbox des placeholders → points PDF).
+   - Redirection vers l'éditeur PDF (phase 1) pour ajuster/valider les zones.
+6. Ensuite, parcours standard : aplatissage → envoi aux signataires (déjà en place).
 
 ## Architecture technique
 
-### Données (migration)
-Nouvelle table `document_pdf_fields` rattachée au `document_id` :
-- `id`, `document_id`, `page_index` (int), `kind` (`text|date|checkbox|signature|initials`)
-- `x`, `y`, `width`, `height` (float, **coordonnées PDF en points**, origine bas-gauche)
-- `value` (text, nullable), `font_size` (int, défaut 11), `required` (bool), `label` (text)
-- `position` (int, ordre d'affichage), timestamps
-- RLS : accès via `organization_id` du document parent (helper existant).
-- GRANTs : `authenticated` + `service_role`.
-
-Aucun changement aux tables existantes.
-
 ### Librairies
-- `pdfjs-dist` (déjà compatible Worker via build worker) — **rendu** dans l'éditeur côté client uniquement.
-- `pdf-lib` (déjà installée, utilisée par `pdf.functions.ts`) — **aplatissage** côté serveur.
-- Signature/paraphe : réutilisation du composant `sign-document-dialog` (canvas → image PNG) — stockée comme `value` (data URL) sur la zone.
+- `@tiptap/react` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` (éditeur).
+- `html2canvas` + `jspdf` (rendu PDF client — pas de dépendance Worker côté serveur).
+- Custom TipTap **inline node** `field-placeholder` (attributs : `kind`, `label`, `width`, `height`).
+
+### Données
+Nouvelle table `wysiwyg_drafts` :
+- `id`, `document_id` (nullable jusqu'à génération), `organization_id`, `title`, `html` (text), `created_by`, timestamps.
+- RLS par organisation + GRANTs `authenticated`/`service_role`.
+
+Aucune modification de `document_pdf_fields` : on insère normalement après génération PDF.
 
 ### Côté client
-- Nouvelle route `_authenticated.app.documents.$id.editor.tsx` (éditeur plein écran).
-- Nouveau composant `pdf-editor/` :
-  - `PdfCanvas.tsx` : rend chaque page + overlay absolute.
-  - `FieldOverlay.tsx` : zones draggables (lib `react-rnd` ajoutée — légère, compat Workers car client-only).
-  - `FieldPalette.tsx` / `FieldInspector.tsx`.
-- Conversion coordonnées écran ↔ PDF (ratio `viewport.scale`).
+- Nouvelle route `_authenticated.app.documents.new.wysiwyg.tsx`.
+- Composant `WysiwygEditor.tsx` (TipTap + toolbar + insertion de champs).
+- Custom node React `FieldPlaceholder` qui rend un span/div positionné, avec `data-field-kind`, `data-field-label`.
+- Fonction `htmlToPdfWithFields(htmlEl)` :
+  1. `html2canvas` page par page (découpe par hauteur A4).
+  2. `jsPDF.addImage` pour chaque page.
+  3. Avant capture, lecture des `getBoundingClientRect()` de chaque placeholder → conversion mm → points PDF (origine bas-gauche).
+  4. Retourne `{ pdfBlob, fields: [{ page_index, kind, x, y, w, h, label }] }`.
 
-### Côté serveur (nouveau `src/lib/pdf-editor.functions.ts`)
-- `listPdfFields({ documentId })` → renvoie zones.
-- `savePdfFields({ documentId, fields })` → upsert atomique (delete + insert).
-- `flattenPdfWithFields({ documentId })` :
-  1. Récupère le `document_files` courant + télécharge depuis Storage.
-  2. Charge avec `pdf-lib`, pour chaque zone :
-     - `text`/`date` → `page.drawText`
-     - `checkbox` → carré + croix si `value === "true"`
-     - `signature`/`initials` → `page.drawImage(embedPng(value))`
-  3. Upload nouvelle version + insère `document_files` (`is_current = true`, `version + 1`).
-  4. Log audit `document.pdf_flattened`.
+### Côté serveur (`src/lib/wysiwyg-documents.functions.ts`)
+- `saveWysiwygDraft({ id?, title, html, documentId? })`.
+- `listWysiwygDrafts()` / `getWysiwygDraft({ id })` / `deleteWysiwygDraft({ id })`.
+- `finalizeWysiwygDocument({ draftId, pdfBytes (base64), fields })` :
+  1. Crée `documents` (+ destinataire vide) si pas encore lié.
+  2. Upload PDF dans Storage → `document_files` v1 `is_current=true`.
+  3. Insère `document_pdf_fields` pré-calculés.
+  4. Log audit `document.wysiwyg_created`.
+  5. Renvoie `documentId`.
 
-### Bouton d'accès
-- `src/routes/_authenticated.app.documents.$id.tsx` : ajout d'un bouton **"Éditer le PDF"** à côté de `GeneratePdfButton`, visible si un PDF courant existe.
+### Entrée utilisateur
+- `_authenticated.app.documents.new.tsx` : ajout d'un onglet/bouton **"Créer depuis un éditeur"** à côté de "Importer un PDF".
+- Sidebar : nouveau lien **"Brouillons"** listant `wysiwyg_drafts`.
 
 ## Sécurité
-- Tous les serverFn sous `requireSupabaseAuth`, scoping par organisation via RLS.
-- Validation Zod stricte (nb max de zones : 500/document, dimensions bornées).
-- Aucune exposition aux invités dans cette phase (mode auteur uniquement).
+- Tous serverFn sous `requireSupabaseAuth`.
+- Validation Zod : `html` max 500 ko, `fields` max 500 entrées, dimensions bornées.
+- HTML sanitization côté serveur (sanitize-html léger) avant stockage — empêche `<script>` injectés.
 
-## Hors scope (phase 1)
-- Champs assignés à des signataires différents (l'auteur remplit tout).
-- Édition WYSIWYG → PDF (phase 2).
-- OCR / détection automatique de champs.
-- Variables dynamiques `{{client.nom}}`.
-- Multi-page templates réutilisables de zones.
+## Hors scope
+- Variables dynamiques (`{{client.nom}}` auto-rempli depuis CRM) — à traiter plus tard.
+- Édition collaborative temps réel.
+- Import Word/DOCX.
+- Tableaux avancés / images uploadées dans l'éditeur (v2 si besoin).
 
 ## Fichiers touchés
-- **Migration** : `document_pdf_fields` (+ RLS + GRANTs).
-- **Nouveau** : `src/lib/pdf-editor.functions.ts`, `src/routes/_authenticated.app.documents.$id.editor.tsx`, `src/components/pdf-editor/*` (3-4 fichiers).
-- **Modifiés** : `src/routes/_authenticated.app.documents.$id.tsx` (bouton), `package.json` (`react-rnd`, `pdfjs-dist`).
-- Locales `fr.json` / `en.json` (clés UI).
+- **Migration** : `wysiwyg_drafts` + RLS + GRANTs.
+- **Nouveaux** :
+  - `src/lib/wysiwyg-documents.functions.ts`
+  - `src/components/wysiwyg/WysiwygEditor.tsx`
+  - `src/components/wysiwyg/FieldPlaceholderNode.tsx`
+  - `src/components/wysiwyg/html-to-pdf.ts`
+  - `src/routes/_authenticated.app.documents.new.wysiwyg.tsx`
+  - `src/routes/_authenticated.app.drafts.index.tsx`
+- **Modifiés** :
+  - `src/routes/_authenticated.app.documents.new.tsx` (lien)
+  - `src/components/app-shell.tsx` (Brouillons)
+  - `package.json` (tiptap, html2canvas, jspdf, sanitize-html)
 
 Validation attendue avant lancement.
