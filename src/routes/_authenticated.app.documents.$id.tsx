@@ -17,7 +17,7 @@ import { PaymentDialog } from "@/components/payment-dialog";
 import { SignDocumentDialog } from "@/components/sign-document-dialog";
 import { SignedPdfPreview } from "@/components/signed-pdf-preview";
 import { MultiSignersDialog } from "@/components/multi-signers-dialog";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Edit3 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
   component: DocumentDetailPage,
@@ -77,6 +77,13 @@ function DocumentDetailPage() {
               <DocumentStatusBadge status={doc.status} />
               {doc.status === "draft" && (
                 <SubmitDocumentButton documentId={doc.id} documentType={doc.type} />
+              )}
+              {files.length > 0 && (
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/app/documents/$id/editor" params={{ id: doc.id }}>
+                    <Edit3 className="mr-1 h-4 w-4" /> Éditer le PDF
+                  </Link>
+                </Button>
               )}
               {["validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
                 <>
