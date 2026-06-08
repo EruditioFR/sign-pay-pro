@@ -51,6 +51,13 @@ function GuestNew() {
           signers: signers
             .filter((s) => s.name.trim() && s.email.trim())
             .map((s) => ({ name: s.name.trim(), email: s.email.trim() })),
+          validators: validators
+            .filter((v) => v.name.trim() && v.email.trim())
+            .map((v) => ({
+              name: v.name.trim(),
+              email: v.email.trim(),
+              required: v.required,
+            })),
         },
       }),
     onSuccess: (res) => {
