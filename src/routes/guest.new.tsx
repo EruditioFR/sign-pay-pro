@@ -26,6 +26,7 @@ export const Route = createFileRoute("/guest/new")({
 });
 
 type SignerRow = { name: string; email: string };
+type ValidatorRow = { name: string; email: string; required: boolean };
 
 function GuestNew() {
   const nav = useNavigate();
@@ -35,6 +36,7 @@ function GuestNew() {
   const [amount, setAmount] = useState("");
   const [sequential, setSequential] = useState(false);
   const [signers, setSigners] = useState<SignerRow[]>([{ name: "", email: "" }]);
+  const [validators, setValidators] = useState<ValidatorRow[]>([]);
 
   const createFn = useServerFn(createGuestCircuit);
   const m = useMutation({
@@ -49,6 +51,13 @@ function GuestNew() {
           signers: signers
             .filter((s) => s.name.trim() && s.email.trim())
             .map((s) => ({ name: s.name.trim(), email: s.email.trim() })),
+          validators: validators
+            .filter((v) => v.name.trim() && v.email.trim())
+            .map((v) => ({
+              name: v.name.trim(),
+              email: v.email.trim(),
+              required: v.required,
+            })),
         },
       }),
     onSuccess: (res) => {
@@ -178,6 +187,84 @@ function GuestNew() {
             Signature dans l'ordre indiqué
           </label>
         </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-medium">Validateurs (optionnel)</h2>
+              <p className="text-xs text-muted-foreground">
+                Chaque validateur reçoit un email pour approuver ou rejeter le
+                document, dans l'ordre indiqué.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setValidators((p) => [
+                  ...p,
+                  { name: "", email: "", required: true },
+                ])
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Ajouter
+            </Button>
+          </div>
+          {validators.map((v, i) => (
+            <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
+              <Input
+                placeholder="Nom"
+                value={v.name}
+                onChange={(e) =>
+                  setValidators((p) =>
+                    p.map((r, idx) =>
+                      idx === i ? { ...r, name: e.target.value } : r
+                    )
+                  )
+                }
+              />
+              <Input
+                placeholder="Email"
+                type="email"
+                value={v.email}
+                onChange={(e) =>
+                  setValidators((p) =>
+                    p.map((r, idx) =>
+                      idx === i ? { ...r, email: e.target.value } : r
+                    )
+                  )
+                }
+              />
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={v.required}
+                  onCheckedChange={(c) =>
+                    setValidators((p) =>
+                      p.map((r, idx) =>
+                        idx === i ? { ...r, required: c === true } : r
+                      )
+                    )
+                  }
+                />
+                Obligatoire
+              </label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setValidators((p) => p.filter((_, idx) => idx !== i))
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+
 
         <Button type="submit" disabled={m.isPending} className="w-full sm:w-auto">
           {m.isPending ? "Création…" : "Créer le circuit"}

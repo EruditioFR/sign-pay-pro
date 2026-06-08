@@ -56,6 +56,7 @@ function GuestDashboard() {
 
   const documents = data?.documents ?? [];
   const signers = data?.signers ?? [];
+  const workflowSteps = data?.workflowSteps ?? [];
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
@@ -88,6 +89,9 @@ function GuestDashboard() {
         <ul className="space-y-3">
           {documents.map((d) => {
             const docSigners = signers.filter((s) => s.document_id === d.id);
+            const docSteps = workflowSteps
+              .filter((s) => s.document_id === d.id)
+              .sort((a, b) => a.position - b.position);
             return (
               <li
                 key={d.id}
@@ -156,6 +160,50 @@ function GuestDashboard() {
                         </li>
                       ))}
                   </ul>
+                )}
+
+                {docSteps.length > 0 && (
+                  <div className="mt-3">
+                    <div className="mb-1 text-xs font-medium text-muted-foreground">
+                      Circuit de validation
+                    </div>
+                    <ul className="divide-y divide-border rounded border border-border/60 text-sm">
+                      {docSteps.map((st, idx) => (
+                        <li
+                          key={`step-${d.id}-${idx}`}
+                          className="flex items-center justify-between gap-2 px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate">
+                              <span className="text-muted-foreground">
+                                {st.position}.
+                              </span>{" "}
+                              {st.approver_name}{" "}
+                              <span className="text-muted-foreground">
+                                · {st.approver_email}
+                              </span>
+                            </div>
+                            {st.comment && (
+                              <div className="truncate text-xs italic text-muted-foreground">
+                                « {st.comment} »
+                              </div>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              st.status === "approved"
+                                ? "default"
+                                : st.status === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {st.status}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </li>
             );

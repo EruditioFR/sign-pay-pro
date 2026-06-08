@@ -104,6 +104,7 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
     description?: string;
     amount_ttc?: number | null;
     signers: { name: string; email: string }[];
+    validators?: { name: string; email: string; required?: boolean }[];
     sequential?: boolean;
   }) =>
     z
@@ -122,12 +123,24 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
           )
           .min(1)
           .max(10),
+        validators: z
+          .array(
+            z.object({
+              name: z.string().trim().min(1).max(120),
+              email: emailSchema,
+              required: z.boolean().optional(),
+            })
+          )
+          .max(10)
+          .optional(),
       })
       .parse(data)
   )
   .handler(async ({ data }) => {
     const { session, created } = await getOrCreateSession(data.email);
     const orgId = await getOrCreateGuestOrg(session.id, data.email);
+
+    const hasValidators = (data.validators?.length ?? 0) > 0;
 
     const { data: doc, error: docErr } = await supabaseAdmin
       .from("documents")
@@ -138,7 +151,7 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
         description: data.description ?? null,
         amount_ttc: data.amount_ttc ?? null,
         type: "other",
-        status: "pending_validation",
+        status: hasValidators ? "pending_validation" : "pending_validation",
         guest_session_id: session.id,
       } as never)
       .select("id, title")
@@ -161,7 +174,57 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
       if (sigErr) throw new Error(sigErr.message);
     }
 
-    // Email
+    // Validation workflow (invité, sans utilisateur authentifié)
+    if (hasValidators) {
+      const { data: wf, error: wfErr } = await supabaseAdmin
+        .from("document_workflows")
+        .insert({
+          document_id: doc.id,
+          status: "pending_validation",
+          current_step: 1,
+          guest_session_id: session.id,
+        } as never)
+        .select("id")
+        .single();
+      if (wfErr) throw new Error(wfErr.message);
+
+      const stepRows = data.validators!.map((v, i) => ({
+        workflow_id: wf.id,
+        position: i + 1,
+        name: `Validation de ${v.name}`,
+        approver_email: v.email,
+        approver_name: v.name,
+        required: v.required ?? true,
+        status: "pending" as const,
+      }));
+      const { data: steps, error: stErr } = await supabaseAdmin
+        .from("document_workflow_steps")
+        .insert(stepRows as never)
+        .select("id, approval_token, approver_email, approver_name, name");
+      if (stErr) throw new Error(stErr.message);
+
+      // Send approval emails
+      for (const st of steps ?? []) {
+        try {
+          const approveUrl = `${originFromEnv()}/approve/${(st as { approval_token: string }).approval_token}`;
+          await sendResendEmail({
+            to: (st as { approver_email: string }).approver_email,
+            subject: `Validation requise : ${data.title}`,
+            html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#111">
+              <h2>Une validation vous est demandée</h2>
+              <p>Bonjour ${escapeHtml((st as { approver_name: string }).approver_name)},</p>
+              <p>${escapeHtml(data.email)} vous demande de valider le document « <strong>${escapeHtml(data.title)}</strong> ».</p>
+              <p><a href="${approveUrl}" style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none">Examiner et décider</a></p>
+              <p style="font-size:12px;color:#666">Lien : ${approveUrl}</p>
+            </body></html>`,
+          });
+        } catch (e) {
+          console.error("[guest] validator email failed", e);
+        }
+      }
+    }
+
+    // Email creator
     try {
       const url = magicUrl(session.magic_token);
       await sendResendEmail({
@@ -173,10 +236,10 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
           <h2>Votre circuit est en route</h2>
           <p>Bonjour,</p>
           <p>Le circuit « <strong>${escapeHtml(data.title)}</strong> » a bien été créé.
-          Vous pouvez y revenir à tout moment via le lien sécurisé ci-dessous :</p>
+          ${hasValidators ? `Vos validateurs ont reçu un email d'invitation.` : ""}
+          Vous pouvez le suivre via le lien sécurisé ci-dessous :</p>
           <p><a href="${url}" style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none">Ouvrir mon espace</a></p>
           <p style="font-size:12px;color:#666">Ou copiez ce lien : <br/>${url}</p>
-          <p style="font-size:12px;color:#666">Ce lien reste valide tant que vous êtes actif. Créez un compte pour sécuriser durablement vos circuits.</p>
         </body></html>`,
       });
     } catch (e) {
@@ -257,10 +320,34 @@ export const getGuestDashboard = createServerFn({ method: "POST" })
       signers = (sigs ?? []) as typeof signers;
     }
 
+    let workflowSteps: Array<{
+      document_id: string;
+      position: number;
+      name: string;
+      status: string;
+      approver_name: string | null;
+      approver_email: string | null;
+      decided_at: string | null;
+      comment: string | null;
+    }> = [];
+    if (docIds.length > 0) {
+      const { data: wfs } = await supabaseAdmin
+        .from("document_workflows")
+        .select("id, document_id, document_workflow_steps(position, name, status, approver_name, approver_email, decided_at, comment)")
+        .in("document_id", docIds);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const wf of (wfs ?? []) as any[]) {
+        for (const st of wf.document_workflow_steps ?? []) {
+          workflowSteps.push({ document_id: wf.document_id, ...st });
+        }
+      }
+    }
+
     return {
       session: { email: session.email },
       documents: documents ?? [],
       signers,
+      workflowSteps,
     };
   });
 
