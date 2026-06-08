@@ -404,6 +404,9 @@ export type Database = {
       }
       document_workflow_steps: {
         Row: {
+          approval_token: string | null
+          approver_email: string | null
+          approver_name: string | null
           approver_role: Database["public"]["Enums"]["app_role"] | null
           approver_user_id: string | null
           comment: string | null
@@ -418,6 +421,9 @@ export type Database = {
           workflow_id: string
         }
         Insert: {
+          approval_token?: string | null
+          approver_email?: string | null
+          approver_name?: string | null
           approver_role?: Database["public"]["Enums"]["app_role"] | null
           approver_user_id?: string | null
           comment?: string | null
@@ -432,6 +438,9 @@ export type Database = {
           workflow_id: string
         }
         Update: {
+          approval_token?: string | null
+          approver_email?: string | null
+          approver_name?: string | null
           approver_role?: Database["public"]["Enums"]["app_role"] | null
           approver_user_id?: string | null
           comment?: string | null
