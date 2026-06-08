@@ -320,10 +320,34 @@ export const getGuestDashboard = createServerFn({ method: "POST" })
       signers = (sigs ?? []) as typeof signers;
     }
 
+    let workflowSteps: Array<{
+      document_id: string;
+      position: number;
+      name: string;
+      status: string;
+      approver_name: string | null;
+      approver_email: string | null;
+      decided_at: string | null;
+      comment: string | null;
+    }> = [];
+    if (docIds.length > 0) {
+      const { data: wfs } = await supabaseAdmin
+        .from("document_workflows")
+        .select("id, document_id, document_workflow_steps(position, name, status, approver_name, approver_email, decided_at, comment)")
+        .in("document_id", docIds);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const wf of (wfs ?? []) as any[]) {
+        for (const st of wf.document_workflow_steps ?? []) {
+          workflowSteps.push({ document_id: wf.document_id, ...st });
+        }
+      }
+    }
+
     return {
       session: { email: session.email },
       documents: documents ?? [],
       signers,
+      workflowSteps,
     };
   });
 
