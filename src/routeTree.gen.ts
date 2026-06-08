@@ -18,6 +18,7 @@ import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as GuestNewRouteImport } from './routes/guest.new'
 import { Route as GuestTokenRouteImport } from './routes/guest.$token'
+import { Route as ApproveTokenRouteImport } from './routes/approve.$token'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated.super-admin.index'
 import { Route as AuthenticatedResellerIndexRouteImport } from './routes/_authenticated.reseller.index'
@@ -92,6 +93,11 @@ const GuestNewRoute = GuestNewRouteImport.update({
 const GuestTokenRoute = GuestTokenRouteImport.update({
   id: '/guest/$token',
   path: '/guest/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApproveTokenRoute = ApproveTokenRouteImport.update({
+  id: '/approve/$token',
+  path: '/approve/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/approve/$token': typeof ApproveTokenRoute
   '/guest/$token': typeof GuestTokenRoute
   '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
@@ -317,6 +324,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/approve/$token': typeof ApproveTokenRoute
   '/guest/$token': typeof GuestTokenRoute
   '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/approve/$token': typeof ApproveTokenRoute
   '/guest/$token': typeof GuestTokenRoute
   '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/approve/$token'
     | '/guest/$token'
     | '/guest/new'
     | '/p/$token'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/approve/$token'
     | '/guest/$token'
     | '/guest/new'
     | '/p/$token'
@@ -486,6 +497,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_authenticated/dashboard'
+    | '/approve/$token'
     | '/guest/$token'
     | '/guest/new'
     | '/p/$token'
@@ -528,6 +540,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApproveTokenRoute: typeof ApproveTokenRoute
   GuestTokenRoute: typeof GuestTokenRoute
   GuestNewRoute: typeof GuestNewRoute
   PTokenRoute: typeof PTokenRoute
@@ -600,6 +613,13 @@ declare module '@tanstack/react-router' {
       path: '/guest/$token'
       fullPath: '/guest/$token'
       preLoaderRoute: typeof GuestTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/approve/$token': {
+      id: '/approve/$token'
+      path: '/approve/$token'
+      fullPath: '/approve/$token'
+      preLoaderRoute: typeof ApproveTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -912,6 +932,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApproveTokenRoute: ApproveTokenRoute,
   GuestTokenRoute: GuestTokenRoute,
   GuestNewRoute: GuestNewRoute,
   PTokenRoute: PTokenRoute,

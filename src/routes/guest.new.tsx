@@ -26,6 +26,7 @@ export const Route = createFileRoute("/guest/new")({
 });
 
 type SignerRow = { name: string; email: string };
+type ValidatorRow = { name: string; email: string; required: boolean };
 
 function GuestNew() {
   const nav = useNavigate();
@@ -35,6 +36,7 @@ function GuestNew() {
   const [amount, setAmount] = useState("");
   const [sequential, setSequential] = useState(false);
   const [signers, setSigners] = useState<SignerRow[]>([{ name: "", email: "" }]);
+  const [validators, setValidators] = useState<ValidatorRow[]>([]);
 
   const createFn = useServerFn(createGuestCircuit);
   const m = useMutation({
