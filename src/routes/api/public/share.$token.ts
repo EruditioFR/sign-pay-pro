@@ -169,11 +169,13 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
           // Provider signature (right) — from document creator's profile
           try {
-            const { data: creator } = await supabaseAdmin
-              .from("profiles")
-              .select("signature_image_b64, full_name, email")
-              .eq("id", doc.created_by)
-              .maybeSingle();
+            const { data: creator } = doc.created_by
+              ? await supabaseAdmin
+                  .from("profiles")
+                  .select("signature_image_b64, full_name, email")
+                  .eq("id", doc.created_by)
+                  .maybeSingle()
+              : { data: null };
             signaturePage.drawText("SIGNATURE PRESTATAIRE", { x: 320, y: 340, size: 12 });
             signaturePage.drawText(`${creator?.full_name ?? org?.name ?? "—"}`, { x: 320, y: 320, size: 10 });
             if (creator?.email) signaturePage.drawText(`Email : ${creator.email}`, { x: 320, y: 306, size: 9 });

@@ -215,11 +215,13 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
 
         // Append a summary page with both signatures (client + provider)
         try {
-          const { data: creator } = await supabaseAdmin
-            .from("profiles")
-            .select("signature_image_b64, full_name, email")
-            .eq("id", doc.created_by)
-            .maybeSingle();
+          const { data: creator } = doc.created_by
+            ? await supabaseAdmin
+                .from("profiles")
+                .select("signature_image_b64, full_name, email")
+                .eq("id", doc.created_by)
+                .maybeSingle()
+            : { data: null };
 
           const summary = pdf.addPage([595.28, 400]);
           const dims = sigImg.scale(0.4);
