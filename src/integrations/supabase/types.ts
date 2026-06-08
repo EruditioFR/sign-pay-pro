@@ -253,7 +253,7 @@ export type Database = {
           document_id: string
           expires_at: string | null
           id: string
-          invited_by: string
+          invited_by: string | null
           order_index: number
           sequential: boolean
           signature_id: string | null
@@ -270,7 +270,7 @@ export type Database = {
           document_id: string
           expires_at?: string | null
           id?: string
-          invited_by: string
+          invited_by?: string | null
           order_index?: number
           sequential?: boolean
           signature_id?: string | null
@@ -287,7 +287,7 @@ export type Database = {
           document_id?: string
           expires_at?: string | null
           id?: string
-          invited_by?: string
+          invited_by?: string | null
           order_index?: number
           sequential?: boolean
           signature_id?: string | null
@@ -515,7 +515,7 @@ export type Database = {
           amount_ht: number | null
           amount_ttc: number | null
           created_at: string
-          created_by: string
+          created_by: string | null
           currency: string
           current_workflow_id: string | null
           description: string | null
@@ -537,7 +537,7 @@ export type Database = {
           amount_ht?: number | null
           amount_ttc?: number | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           currency?: string
           current_workflow_id?: string | null
           description?: string | null
@@ -559,7 +559,7 @@ export type Database = {
           amount_ht?: number | null
           amount_ttc?: number | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           currency?: string
           current_workflow_id?: string | null
           description?: string | null

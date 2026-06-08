@@ -133,7 +133,7 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
       .from("documents")
       .insert({
         organization_id: orgId,
-        created_by: session.id, // placeholder uuid (org owns it)
+        created_by: null,
         title: data.title,
         description: data.description ?? null,
         amount_ttc: data.amount_ttc ?? null,
@@ -153,7 +153,7 @@ export const createGuestCircuit = createServerFn({ method: "POST" })
         signer_email: s.email,
         order_index: i + 1,
         sequential: data.sequential ?? false,
-        invited_by: session.id,
+        invited_by: null,
       }));
       const { error: sigErr } = await supabaseAdmin
         .from("document_signature_requests")
