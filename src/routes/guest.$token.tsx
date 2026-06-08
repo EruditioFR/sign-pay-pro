@@ -89,6 +89,9 @@ function GuestDashboard() {
         <ul className="space-y-3">
           {documents.map((d) => {
             const docSigners = signers.filter((s) => s.document_id === d.id);
+            const docSteps = workflowSteps
+              .filter((s) => s.document_id === d.id)
+              .sort((a, b) => a.position - b.position);
             return (
               <li
                 key={d.id}
