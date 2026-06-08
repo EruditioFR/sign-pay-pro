@@ -56,6 +56,7 @@ function GuestDashboard() {
 
   const documents = data?.documents ?? [];
   const signers = data?.signers ?? [];
+  const workflowSteps = data?.workflowSteps ?? [];
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
