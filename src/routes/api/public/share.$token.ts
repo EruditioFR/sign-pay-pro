@@ -255,11 +255,12 @@ export const Route = createFileRoute("/api/public/share/$token")({
           const remaining = await computeRemainingDue(supabaseAdmin, doc);
           const clamped = clampPayableAmount(body.amount, remaining);
           if (clamped == null) return json({ error: "amount_out_of_range" }, { status: 400 });
+          const { data: payment, error: payErr } = await supabaseAdmin
             .from("document_payments")
             .insert({
               document_id: doc.id,
               share_link_id: link.id,
-              amount: body.amount,
+              amount: clamped,
               currency: doc.currency || "EUR",
               method: body.method,
               status: "succeeded",
