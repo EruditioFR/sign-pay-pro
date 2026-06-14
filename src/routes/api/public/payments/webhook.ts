@@ -105,7 +105,7 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
             type: event.type,
             mode,
             payment_id: paymentId,
-            payload: event as unknown as Record<string, unknown>,
+            payload: JSON.parse(JSON.stringify(event)),
           });
 
         if (dedupError) {
