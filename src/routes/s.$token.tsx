@@ -51,6 +51,14 @@ interface SignData {
     status: "pending" | "signed" | "declined" | "cancelled";
     expires_at: string | null;
     signed_at: string | null;
+    signature_level?: "ses" | "aes" | "qes";
+    auth_method_required?: string;
+  };
+  conformity?: {
+    signature_level: "ses" | "aes" | "qes";
+    consent_text: string;
+    consent_version: string;
+    module_version: string;
   };
   can_sign: boolean;
 }
