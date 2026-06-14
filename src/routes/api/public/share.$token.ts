@@ -393,6 +393,14 @@ export const Route = createFileRoute("/api/public/share/$token")({
             return json({ ok: true, url: session.url, payment_id: payment.id });
           } catch (e) {
             console.error("[share.stripe_checkout]", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "share.stripe_checkout",
+              category: "technical",
+              severity: "critical",
+              organizationId: doc.organization_id,
+              context: { documentId: doc.id, paymentId: payment.id },
+            });
             await supabaseAdmin
               .from("document_payments")
               .update({ status: "failed", metadata: { error: (e as Error).message } })
