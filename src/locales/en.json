@@ -109,7 +109,20 @@
     "status": {
       "draft": "Draft", "pending_validation": "Pending", "validated": "Validated",
       "rejected": "Rejected", "archived": "Archived",
-      "sent": "Sent", "signed": "Signed", "paid": "Paid", "partially_paid": "Partially paid"
+      "sent": "Sent", "signed": "Signed", "paid": "Paid", "partially_paid": "Partially paid",
+      "cancelled": "Cancelled"
+    },
+    "archive": {
+      "archive": "Archive", "unarchive": "Unarchive", "cancel": "Cancel document",
+      "include_archived": "Include archives",
+      "archived_banner": "This document is archived — read-only.",
+      "cancelled_banner": "This document has been cancelled.",
+      "retention_until": "Retain until",
+      "retention_placeholder": "YYYY-MM-DD (optional)",
+      "reason_placeholder": "Reason (optional)",
+      "confirm_archive": "Archive this document? It will become read-only.",
+      "confirm_unarchive": "Unarchive this document?",
+      "confirm_cancel": "Permanently cancel this document?"
     },
     "upload": {
       "label": "Drop a file or click", "choose": "Choose",
