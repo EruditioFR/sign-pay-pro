@@ -265,6 +265,102 @@ export const Route = createFileRoute("/api/public/share/$token")({
           return json({ ok: true, payment_id: payment.id });
         }
 
+        if (body.action === "stripe_checkout") {
+          if (!link.allow_pay) return json({ error: "payment_disabled" }, { status: 403 });
+
+          // 1) Pre-create the payment row in pending status so the webhook can
+          //    resolve it by id from session metadata / client_reference_id.
+          const { data: payment, error: payErr } = await supabaseAdmin
+            .from("document_payments")
+            .insert({
+              document_id: doc.id,
+              share_link_id: link.id,
+              amount: body.amount,
+              currency: doc.currency || "EUR",
+              method: "card",
+              status: "pending",
+              metadata: {
+                provider: "stripe",
+                payer_name: body.payer_name ?? null,
+                payer_email: body.payer_email || null,
+                ip,
+                ua,
+              },
+            })
+            .select()
+            .single();
+          if (payErr) return json({ error: payErr.message }, { status: 500 });
+
+          // 2) Create Stripe Checkout Session through the connector gateway.
+          const origin = new URL(request.url).origin;
+          const { stripeRequest, toStripeAmount } = await import("@/lib/stripe-client.server");
+          const currency = (doc.currency || "EUR").toLowerCase();
+          const productName = doc.title ?? (doc.reference ? `Document ${doc.reference}` : "Document");
+
+          try {
+            const session = await stripeRequest<{ id: string; url: string }>(
+              "/v1/checkout/sessions",
+              {
+                method: "POST",
+                body: {
+                  mode: "payment",
+                  success_url: `${origin}/pay/success?token=${encodeURIComponent(params.token)}`,
+                  cancel_url: `${origin}/pay/cancelled?token=${encodeURIComponent(params.token)}`,
+                  client_reference_id: payment.id,
+                  ...(body.payer_email ? { customer_email: body.payer_email } : {}),
+                  line_items: [
+                    {
+                      quantity: 1,
+                      price_data: {
+                        currency,
+                        unit_amount: toStripeAmount(body.amount, currency),
+                        product_data: {
+                          name: productName,
+                          ...(doc.reference ? { description: `Réf. ${doc.reference}` } : {}),
+                        },
+                      },
+                    },
+                  ],
+                  metadata: {
+                    payment_id: payment.id,
+                    document_id: doc.id,
+                    organization_id: doc.organization_id,
+                    share_link_id: link.id,
+                  },
+                  payment_intent_data: {
+                    metadata: {
+                      payment_id: payment.id,
+                      document_id: doc.id,
+                      organization_id: doc.organization_id,
+                      share_link_id: link.id,
+                    },
+                  },
+                },
+              },
+            );
+
+            await supabaseAdmin
+              .from("document_payments")
+              .update({
+                provider_ref: session.id,
+                metadata: {
+                  ...(payment.metadata as Record<string, unknown> | null),
+                  stripe_session_id: session.id,
+                },
+              })
+              .eq("id", payment.id);
+
+            return json({ ok: true, url: session.url, payment_id: payment.id });
+          } catch (e) {
+            console.error("[share.stripe_checkout]", e);
+            await supabaseAdmin
+              .from("document_payments")
+              .update({ status: "failed", metadata: { error: (e as Error).message } })
+              .eq("id", payment.id);
+            return json({ error: "stripe_session_failed" }, { status: 502 });
+          }
+        }
+
         return json({ error: "unknown_action" }, { status: 400 });
       },
     },
