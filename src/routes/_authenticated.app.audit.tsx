@@ -3,7 +3,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { listAuditLogs, listAuditActions, type AuditLogRow } from "@/lib/audit-logs.functions";
+import { listAuditLogs, listAuditActions } from "@/lib/audit-logs.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,10 +29,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Download,
   FileSearch,
   ShieldCheck,
 } from "lucide-react";
+import { ActivityExportsMenu } from "@/components/activity-exports-menu";
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
@@ -82,35 +82,6 @@ function metadataPreview(meta: unknown) {
   }
 }
 
-function toCsv(rows: AuditLogRow[]) {
-  const header = [
-    "created_at",
-    "action",
-    "resource",
-    "user_email",
-    "user_full_name",
-    "organization_name",
-    "metadata",
-  ];
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
-    return `"${s.replace(/"/g, '""')}"`;
-  };
-  const lines = rows.map((r) =>
-    [
-      r.created_at,
-      r.action,
-      r.resource ?? "",
-      r.user_email ?? "",
-      r.user_full_name ?? "",
-      r.organization_name ?? "",
-      r.metadata ?? {},
-    ]
-      .map(escape)
-      .join(","),
-  );
-  return [header.join(","), ...lines].join("\n");
-}
 
 function AuditLogsPage() {
   const { q, action, from, to, page, limit } = Route.useSearch();
@@ -156,16 +127,6 @@ function AuditLogsPage() {
   const updateSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch, page: patch.page ?? 1 }) });
 
-  const handleExport = () => {
-    const csv = toCsv(rows);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   const isSuperAdmin = me?.primaryRole === "super_admin";
 
@@ -182,10 +143,8 @@ function AuditLogsPage() {
             {isSuperAdmin ? " (toutes organisations)" : " de votre organisation"}.
           </p>
         </div>
-        <Button onClick={handleExport} variant="outline" size="sm" disabled={rows.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Exporter CSV
-        </Button>
+        <ActivityExportsMenu from={from || null} to={to || null} />
+
       </div>
 
       <Card>
