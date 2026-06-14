@@ -211,6 +211,13 @@ export const Route = createFileRoute("/api/public/share/$token")({
             }
           } catch (e) {
             console.error("provider signature stamp failed:", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "share.sign.provider_stamp",
+              category: "technical",
+              organizationId: doc.organization_id,
+              context: { documentId: doc.id, shareLinkId: link.id },
+            });
           }
 
           const signedBytes = await pdf.save();
