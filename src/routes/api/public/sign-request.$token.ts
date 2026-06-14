@@ -331,7 +331,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             consent_text: consentText,
             consent_accepted_at: consentAcceptedAt,
             original_pdf_hash_sha256: originalHashHex,
-            evidence: evidence as unknown as Record<string, unknown>,
+            evidence: JSON.parse(JSON.stringify(evidence)),
           })
           .select()
           .single();
