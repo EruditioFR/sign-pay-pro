@@ -74,6 +74,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
         },
         { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
         { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
+        { to: "/admin/business-verticals", label: "Secteurs métiers", icon: Building2 },
         { to: "/admin/users", label: t("nav.users"), icon: Users },
         { to: "/admin/roles", label: t("nav.roles"), icon: ShieldCheck },
         { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },

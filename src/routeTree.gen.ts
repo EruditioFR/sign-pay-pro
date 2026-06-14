@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppDraftsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
 import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
 import { Route as AuthenticatedAdminTemplatesIndexRouteImport } from './routes/_authenticated.admin.templates.index'
+import { Route as AuthenticatedAdminBusinessVerticalsIndexRouteImport } from './routes/_authenticated.admin.business-verticals.index'
 import { Route as ApiPublicSignRequestTokenRouteImport } from './routes/api/public/sign-request.$token'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
@@ -217,6 +218,12 @@ const AuthenticatedAdminTemplatesIndexRoute =
     path: '/admin/templates/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminBusinessVerticalsIndexRoute =
+  AuthenticatedAdminBusinessVerticalsIndexRouteImport.update({
+    id: '/admin/business-verticals/',
+    path: '/admin/business-verticals/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicSignRequestTokenRoute =
   ApiPublicSignRequestTokenRouteImport.update({
     id: '/api/public/sign-request/$token',
@@ -312,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
+  '/admin/business-verticals/': typeof AuthenticatedAdminBusinessVerticalsIndexRoute
   '/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
@@ -354,6 +362,7 @@ export interface FileRoutesByTo {
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
+  '/admin/business-verticals': typeof AuthenticatedAdminBusinessVerticalsIndexRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesIndexRoute
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
@@ -398,6 +407,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
+  '/_authenticated/admin/business-verticals/': typeof AuthenticatedAdminBusinessVerticalsIndexRoute
   '/_authenticated/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
   '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/app/documents/wysiwyg'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
+    | '/admin/business-verticals/'
     | '/admin/templates/'
     | '/admin/workflows/'
     | '/app/documents/'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/app/documents/wysiwyg'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
+    | '/admin/business-verticals'
     | '/admin/templates'
     | '/admin/workflows'
     | '/app/documents'
@@ -527,6 +539,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents/wysiwyg'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
+    | '/_authenticated/admin/business-verticals/'
     | '/_authenticated/admin/templates/'
     | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
@@ -769,6 +782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTemplatesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/business-verticals/': {
+      id: '/_authenticated/admin/business-verticals/'
+      path: '/admin/business-verticals'
+      fullPath: '/admin/business-verticals/'
+      preLoaderRoute: typeof AuthenticatedAdminBusinessVerticalsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/sign-request/$token': {
       id: '/api/public/sign-request/$token'
       path: '/api/public/sign-request/$token'
@@ -881,6 +901,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppDocumentsIdRoute: typeof AuthenticatedAppDocumentsIdRouteWithChildren
   AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
   AuthenticatedAppDocumentsWysiwygRoute: typeof AuthenticatedAppDocumentsWysiwygRoute
+  AuthenticatedAdminBusinessVerticalsIndexRoute: typeof AuthenticatedAdminBusinessVerticalsIndexRoute
   AuthenticatedAdminTemplatesIndexRoute: typeof AuthenticatedAdminTemplatesIndexRoute
   AuthenticatedAdminWorkflowsIndexRoute: typeof AuthenticatedAdminWorkflowsIndexRoute
   AuthenticatedAppDocumentsIndexRoute: typeof AuthenticatedAppDocumentsIndexRoute
@@ -915,6 +936,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAppDocumentsIdRouteWithChildren,
   AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
   AuthenticatedAppDocumentsWysiwygRoute: AuthenticatedAppDocumentsWysiwygRoute,
+  AuthenticatedAdminBusinessVerticalsIndexRoute:
+    AuthenticatedAdminBusinessVerticalsIndexRoute,
   AuthenticatedAdminTemplatesIndexRoute: AuthenticatedAdminTemplatesIndexRoute,
   AuthenticatedAdminWorkflowsIndexRoute: AuthenticatedAdminWorkflowsIndexRoute,
   AuthenticatedAppDocumentsIndexRoute: AuthenticatedAppDocumentsIndexRoute,
