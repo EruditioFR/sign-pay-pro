@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getDocument, getDocumentFileSignedUrl } from "@/lib/documents.functions";
+import { getDocument, getDocumentFileSignedUrl, isReadOnlyStatus } from "@/lib/documents.functions";
 import { listDocumentSignatures, listDocumentPayments } from "@/lib/sharing.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,8 @@ import { PaymentDialog } from "@/components/payment-dialog";
 import { SignDocumentDialog } from "@/components/sign-document-dialog";
 import { SignedPdfPreview } from "@/components/signed-pdf-preview";
 import { MultiSignersDialog } from "@/components/multi-signers-dialog";
-import { ArrowLeft, Download, Edit3 } from "lucide-react";
+import { ArchiveActions } from "@/components/archive-actions";
+import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
   component: DocumentDetailPage,
@@ -56,12 +57,32 @@ function DocumentDetailPage() {
   };
 
   const lastWorkflow = workflows[0];
+  const readOnly = isReadOnlyStatus(doc.status);
 
   return (
     <div className="space-y-4">
       <Button asChild variant="ghost" size="sm">
         <Link to="/app/documents"><ArrowLeft className="mr-1 h-4 w-4" />{t("documents.title")}</Link>
       </Button>
+
+      {doc.status === "archived" && (
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <span>{t("documents.archive.archived_banner")}</span>
+          {doc.archived_at && (
+            <span className="text-xs text-muted-foreground ml-auto">
+              {new Date(doc.archived_at).toLocaleString()}
+              {doc.retention_until && ` · ${t("documents.archive.retention_until")} ${doc.retention_until}`}
+            </span>
+          )}
+        </div>
+      )}
+      {doc.status === "cancelled" && (
+        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+          <Lock className="h-4 w-4 text-destructive" />
+          <span>{t("documents.archive.cancelled_banner")}</span>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -75,17 +96,17 @@ function DocumentDetailPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <DocumentStatusBadge status={doc.status} />
-              {doc.status === "draft" && (
+              {!readOnly && doc.status === "draft" && (
                 <SubmitDocumentButton documentId={doc.id} documentType={doc.type} />
               )}
-              {files.length > 0 && (
+              {!readOnly && files.length > 0 && (
                 <Button asChild variant="outline" size="sm">
                   <Link to="/app/documents/$id/editor" params={{ id: doc.id }}>
                     <Edit3 className="mr-1 h-4 w-4" /> Éditer le PDF
                   </Link>
                 </Button>
               )}
-              {["validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
+              {!readOnly && ["validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
                 <>
                   <GeneratePdfButton documentId={doc.id} />
                   <ShareLinkDialog documentId={doc.id} />
@@ -98,6 +119,8 @@ function DocumentDetailPage() {
                   <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
                 </>
               )}
+              {readOnly && files.length > 0 && <GeneratePdfButton documentId={doc.id} />}
+              <ArchiveActions documentId={doc.id} status={doc.status} />
             </div>
           </div>
         </CardHeader>
@@ -113,7 +136,7 @@ function DocumentDetailPage() {
       <Card>
         <CardHeader><CardTitle>{t("documents.field.title")} — fichiers</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          {me?.organizationId && (
+          {me?.organizationId && !readOnly && (
             <DocumentUploader documentId={doc.id} organizationId={me.organizationId} />
           )}
           {files.length === 0 ? (

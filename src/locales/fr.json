@@ -116,7 +116,20 @@
     "status": {
       "draft": "Brouillon", "pending_validation": "À valider",
       "validated": "Validé", "rejected": "Rejeté", "archived": "Archivé",
-      "sent": "Envoyé", "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé"
+      "sent": "Envoyé", "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé",
+      "cancelled": "Annulé"
+    },
+    "archive": {
+      "archive": "Archiver", "unarchive": "Désarchiver", "cancel": "Annuler le document",
+      "include_archived": "Inclure les archives",
+      "archived_banner": "Ce document est archivé — lecture seule.",
+      "cancelled_banner": "Ce document a été annulé.",
+      "retention_until": "Conservation jusqu'au",
+      "retention_placeholder": "AAAA-MM-JJ (optionnel)",
+      "reason_placeholder": "Motif (optionnel)",
+      "confirm_archive": "Archiver ce document ? Il deviendra en lecture seule.",
+      "confirm_unarchive": "Désarchiver ce document ?",
+      "confirm_cancel": "Annuler définitivement ce document ?"
     },
     "upload": {
       "label": "Glissez un fichier ou cliquez", "choose": "Choisir",

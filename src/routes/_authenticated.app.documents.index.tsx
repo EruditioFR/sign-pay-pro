@@ -3,14 +3,16 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { listDocuments, type DocumentType, type DocumentStatus } from "@/lib/documents.functions";
+import { listDocuments, ALL_DOCUMENT_STATUSES, type DocumentType, type DocumentStatus } from "@/lib/documents.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { DocumentStatusBadge } from "@/components/status-badge";
-import { Plus } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/")({
   component: DocumentsPage,
@@ -21,16 +23,18 @@ function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DocumentType | "all">("all");
   const [status, setStatus] = useState<DocumentStatus | "all">("all");
+  const [includeArchived, setIncludeArchived] = useState(false);
 
   const fetchDocs = useServerFn(listDocuments);
   const { data, isLoading } = useQuery({
-    queryKey: ["documents", search, type, status],
+    queryKey: ["documents", search, type, status, includeArchived],
     queryFn: () =>
       fetchDocs({
         data: {
           search: search || undefined,
           type: type === "all" ? undefined : type,
           status: status === "all" ? undefined : status,
+          includeArchived,
         },
       }),
   });
@@ -70,11 +74,19 @@ function DocumentsPage() {
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("documents.filter.all_statuses")}</SelectItem>
-              {(["draft", "pending_validation", "validated", "rejected", "archived"] as DocumentStatus[]).map((st) => (
+              {ALL_DOCUMENT_STATUSES.map((st) => (
                 <SelectItem key={st} value={st}>{t(`documents.status.${st}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <Switch id="include-archived" checked={includeArchived} onCheckedChange={setIncludeArchived} />
+          <Label htmlFor="include-archived" className="flex items-center gap-1 cursor-pointer">
+            <Archive className="h-3.5 w-3.5" />
+            {t("documents.archive.include_archived")}
+          </Label>
         </div>
 
         {isLoading ? (
