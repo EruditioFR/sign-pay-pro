@@ -249,7 +249,12 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
         if (body.action === "pay") {
           if (!link.allow_pay) return json({ error: "payment_disabled" }, { status: 403 });
-          const { data: payment, error: payErr } = await supabaseAdmin
+          // SECURITY: clamp the requested amount to the document's remaining
+          // due so a malicious caller can't mark a doc paid with $0.01 or
+          // record a fictitious overpayment from a public share token.
+          const remaining = await computeRemainingDue(supabaseAdmin, doc);
+          const clamped = clampPayableAmount(body.amount, remaining);
+          if (clamped == null) return json({ error: "amount_out_of_range" }, { status: 400 });
             .from("document_payments")
             .insert({
               document_id: doc.id,
