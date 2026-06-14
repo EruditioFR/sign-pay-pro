@@ -28,7 +28,7 @@ export type AuditExportRow = {
   user_email: string | null;
   user_full_name: string | null;
   organization_name: string | null;
-  metadata: unknown;
+  metadata: Json;
 };
 
 export const exportAuditLogs = createServerFn({ method: "POST" })
