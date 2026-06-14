@@ -71,13 +71,14 @@ export const listDocuments = createServerFn({ method: "GET" })
     let q = supabase
       .from("documents")
       .select(
-        "id, type, status, title, reference, amount_ttc, currency, third_party_name, issue_date, due_date, created_at"
+        "id, type, status, title, reference, amount_ttc, currency, third_party_name, issue_date, due_date, created_at, archived_at, retention_until"
       )
       .order("created_at", { ascending: false })
       .limit(200);
 
     if (data?.type) q = q.eq("type", data.type);
     if (data?.status) q = q.eq("status", data.status);
+    else if (!data?.includeArchived) q = q.not("status", "in", "(archived,cancelled)");
     if (data?.search) q = q.ilike("title", `%${data.search}%`);
     if (data?.fromDate) q = q.gte("issue_date", data.fromDate);
     if (data?.toDate) q = q.lte("issue_date", data.toDate);
