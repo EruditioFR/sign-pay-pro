@@ -239,11 +239,23 @@ export const Route = createFileRoute("/api/public/share/$token")({
               status: "succeeded",
               provider_ref: body.provider_ref || null,
               paid_at: new Date().toISOString(),
-              metadata: { payer_name: body.payer_name ?? null, ip, ua },
+              metadata: {
+                payer_name: body.payer_name ?? null,
+                payer_email: body.payer_email || null,
+                ip,
+                ua,
+              },
             })
             .select()
             .single();
           if (payErr) return json({ error: payErr.message }, { status: 500 });
+
+          // Fire-and-forget notification; never block the response.
+          const { notifyPaymentSucceeded } = await import("@/lib/payment-notifications.server");
+          notifyPaymentSucceeded(supabaseAdmin, payment.id).catch((e) =>
+            console.error("[share.pay] notify failed", e),
+          );
+
           return json({ ok: true, payment_id: payment.id });
         }
 
