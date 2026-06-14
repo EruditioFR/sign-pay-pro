@@ -29,10 +29,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Download,
   FileSearch,
   ShieldCheck,
 } from "lucide-react";
+import { ActivityExportsMenu } from "@/components/activity-exports-menu";
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
