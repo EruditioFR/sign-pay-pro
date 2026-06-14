@@ -55,6 +55,11 @@ async function isNextInLine(req: {
 const SignBody = z.object({
   action: z.literal("sign"),
   signature_image_b64: z.string().min(50).max(2_000_000),
+  // Consentement explicite — exigé pour la conformité SES (eIDAS art. 25).
+  consent: z.object({
+    accepted: z.literal(true),
+    text: z.string().min(20).max(2000).optional(),
+  }),
   placement: z
     .object({
       page_index: z.number().int().min(0).max(500),
