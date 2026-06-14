@@ -74,11 +74,19 @@ function DocumentsPage() {
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("documents.filter.all_statuses")}</SelectItem>
-              {(["draft", "pending_validation", "validated", "rejected", "archived"] as DocumentStatus[]).map((st) => (
+              {ALL_DOCUMENT_STATUSES.map((st) => (
                 <SelectItem key={st} value={st}>{t(`documents.status.${st}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <Switch id="include-archived" checked={includeArchived} onCheckedChange={setIncludeArchived} />
+          <Label htmlFor="include-archived" className="flex items-center gap-1 cursor-pointer">
+            <Archive className="h-3.5 w-3.5" />
+            {t("documents.archive.include_archived")}
+          </Label>
         </div>
 
         {isLoading ? (
