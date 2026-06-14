@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { INVOICE_STATUSES, canTransition, isInvoiceStatus } from "@/lib/invoice-lifecycle";
+import { INVOICE_STATUSES, canTransition, isInvoiceStatus, type InvoiceStatus } from "@/lib/invoice-lifecycle";
 
 const TransitionSchema = z.object({
   documentId: z.string().uuid(),
@@ -36,11 +36,11 @@ export const transitionInvoiceStatus = createServerFn({ method: "POST" })
     }
 
     const patch: {
-      status: string;
+      status: InvoiceStatus;
       updated_at: string;
       first_viewed_at?: string;
     } = {
-      status: data.to,
+      status: data.to as InvoiceStatus,
       updated_at: new Date().toISOString(),
     };
     if (data.to === "viewed" && !doc.first_viewed_at) {
