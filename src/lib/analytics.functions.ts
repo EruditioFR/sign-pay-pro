@@ -151,7 +151,7 @@ export const getAnalytics = createServerFn({ method: "POST" })
       .select(
         "id, title, reference, due_date, amount_ttc, currency, third_party_name, status",
       )
-      .in("status", openStatuses as unknown as string[])
+      .in("status", openStatuses)
       .not("due_date", "is", null)
       .lt("due_date", todayKey)
       .order("due_date", { ascending: true })
