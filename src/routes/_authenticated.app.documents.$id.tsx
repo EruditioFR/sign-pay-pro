@@ -8,6 +8,8 @@ import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DocumentStatusBadge } from "@/components/status-badge";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
+import { computePaymentSummary } from "@/lib/payment-status";
 import { DocumentUploader } from "@/components/document-uploader";
 import { WorkflowTimeline } from "@/components/workflow-timeline";
 import { SubmitDocumentButton } from "@/components/submit-document-button";
@@ -97,6 +99,13 @@ function DocumentDetailPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <DocumentStatusBadge status={doc.status} />
+              <PaymentStatusBadge
+                documentStatus={doc.status}
+                amountTtc={doc.amount_ttc}
+                dueDate={doc.due_date}
+                payments={pays?.payments ?? []}
+                hideWhenNotApplicable
+              />
               {!readOnly && doc.status === "draft" && (
                 <SubmitDocumentButton documentId={doc.id} documentType={doc.type} />
               )}
