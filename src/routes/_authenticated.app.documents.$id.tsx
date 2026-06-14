@@ -208,7 +208,35 @@ function DocumentDetailPage() {
 
       <Card>
         <CardHeader><CardTitle>{t("doc_detail.payments")}</CardTitle></CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {(() => {
+            const summary = computePaymentSummary({
+              documentStatus: doc.status,
+              amountTtc: doc.amount_ttc,
+              dueDate: doc.due_date,
+              payments: pays?.payments ?? [],
+            });
+            if (summary.status === "not_applicable") return null;
+            return (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                <PaymentStatusBadge
+                  documentStatus={doc.status}
+                  amountTtc={doc.amount_ttc}
+                  dueDate={doc.due_date}
+                  payments={pays?.payments ?? []}
+                />
+                <span className="text-muted-foreground">
+                  {summary.paidAmount.toLocaleString()} / {summary.dueAmount.toLocaleString()} {doc.currency}
+                </span>
+                {summary.remaining > 0 && (
+                  <span className="text-muted-foreground">
+                    · {t("payment_status.tooltip.remaining", { defaultValue: "Restant" })}:{" "}
+                    {summary.remaining.toLocaleString()} {doc.currency}
+                  </span>
+                )}
+              </div>
+            );
+          })()}
           {(pays?.payments ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("doc_detail.no_payments")}</p>
           ) : (
