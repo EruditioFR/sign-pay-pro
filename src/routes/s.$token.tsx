@@ -208,15 +208,20 @@ function SignWithPlacement({
   token,
   pdfUrl,
   signerName,
+  consentText,
+  signatureLevel,
   onSigned,
   onDeclined,
 }: {
   token: string;
   pdfUrl: string | null;
   signerName: string;
+  consentText?: string;
+  signatureLevel: "ses" | "aes" | "qes";
   onSigned: () => void;
   onDeclined: () => void;
 }) {
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
