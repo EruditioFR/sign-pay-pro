@@ -69,7 +69,7 @@ function DocumentsPage() {
 
   const onChange = (next: Partial<DocumentFiltersValue>) => {
     navigate({
-      search: (prev) => ({ ...prev, ...next, page: 1 }),
+      search: (prev: DocsSearch) => ({ ...prev, ...next, page: 1 }),
       replace: true,
     });
   };
@@ -209,14 +209,14 @@ function DocumentsPage() {
                 <Button
                   variant="outline" size="sm"
                   disabled={search.page <= 1 || isFetching}
-                  onClick={() => navigate({ search: (p) => ({ ...p, page: Math.max(1, p.page - 1) }) })}
+                  onClick={() => navigate({ search: (p: DocsSearch) => ({ ...p, page: Math.max(1, p.page - 1) }) })}
                 >
                   <ChevronLeft className="h-4 w-4" /> {t("docs_search.previous")}
                 </Button>
                 <Button
                   variant="outline" size="sm"
                   disabled={search.page >= totalPages || isFetching}
-                  onClick={() => navigate({ search: (p) => ({ ...p, page: p.page + 1 }) })}
+                  onClick={() => navigate({ search: (p: DocsSearch) => ({ ...p, page: p.page + 1 }) })}
                 >
                   {t("docs_search.next")} <ChevronRight className="h-4 w-4" />
                 </Button>
