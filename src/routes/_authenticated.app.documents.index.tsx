@@ -192,11 +192,13 @@ function DocumentsPage() {
                             {d.signers_signed}/{d.signers_total}
                           </span>
                         )}
-                        {d.has_payment && (
-                          <span className="inline-flex items-center gap-1 text-xs" title="Paiement">
-                            <Wallet className="h-3 w-3" />
-                          </span>
-                        )}
+                        <PaymentStatusBadge
+                          documentStatus={d.status}
+                          amountTtc={d.amount_ttc}
+                          dueDate={d.due_date}
+                          paidAmount={d.payments_total}
+                          hideWhenNotApplicable
+                        />
                         {d.archived_at && (
                           <span className="inline-flex items-center gap-1 text-xs" title="Archivé">
                             <Archive className="h-3 w-3" />
