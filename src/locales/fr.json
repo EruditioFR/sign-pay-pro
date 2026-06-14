@@ -117,7 +117,8 @@
     "status": {
       "draft": "Brouillon", "pending_validation": "À valider",
       "validated": "Validé", "rejected": "Rejeté", "archived": "Archivé",
-      "sent": "Envoyé", "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé",
+      "issued": "Émise", "sent": "Envoyée", "viewed": "Vue",
+      "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé",
       "cancelled": "Annulé"
     },
     "archive": {
