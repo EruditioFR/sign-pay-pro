@@ -121,6 +121,7 @@ function DocumentDetailPage() {
                 </>
               )}
               {readOnly && files.length > 0 && <GeneratePdfButton documentId={doc.id} />}
+              <DocumentActivityPdfButton documentId={doc.id} />
               <ArchiveActions documentId={doc.id} status={doc.status} />
             </div>
           </div>
