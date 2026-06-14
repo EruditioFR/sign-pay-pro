@@ -37,6 +37,8 @@ const searchSchema = z.object({
   page: fallback(z.number().int().min(1), 1).default(1),
   pageSize: fallback(z.number().int().min(10).max(100), 25).default(25),
 });
+type DocsSearch = z.infer<typeof searchSchema>;
+
 
 export const Route = createFileRoute("/_authenticated/app/documents/")({
   validateSearch: zodValidator(searchSchema),
