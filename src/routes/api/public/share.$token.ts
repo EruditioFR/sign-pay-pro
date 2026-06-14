@@ -339,7 +339,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
                       quantity: 1,
                       price_data: {
                         currency,
-                        unit_amount: toStripeAmount(body.amount, currency),
+                        unit_amount: toStripeAmount(clamped, currency),
                         product_data: {
                           name: productName,
                           ...(doc.reference ? { description: `Réf. ${doc.reference}` } : {}),
