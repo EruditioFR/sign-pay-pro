@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PDFDocument } from "pdf-lib";
-import { z } from "zod";
-import { buildDocumentPdf } from "@/lib/pdf.functions";
+import {
+  isUuidV4Like,
+  firstHopIp,
+  boundedUa,
+  computeRemainingDue,
+  clampPayableAmount,
+} from "@/lib/public-routes-security";
 
 const json = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
@@ -11,6 +16,9 @@ const json = (body: unknown, init?: ResponseInit) =>
   });
 
 async function loadByToken(token: string) {
+  // Defensive: tokens are server-generated UUIDs. Anything else cannot match
+  // and only adds DB load when scanners probe random strings.
+  if (!isUuidV4Like(token)) return null;
   const { data: link } = await supabaseAdmin
     .from("document_share_links")
     .select("*")
