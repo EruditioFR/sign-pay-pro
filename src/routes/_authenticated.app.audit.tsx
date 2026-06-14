@@ -182,10 +182,8 @@ function AuditLogsPage() {
             {isSuperAdmin ? " (toutes organisations)" : " de votre organisation"}.
           </p>
         </div>
-        <Button onClick={handleExport} variant="outline" size="sm" disabled={rows.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Exporter CSV
-        </Button>
+        <ActivityExportsMenu from={from || null} to={to || null} />
+
       </div>
 
       <Card>
