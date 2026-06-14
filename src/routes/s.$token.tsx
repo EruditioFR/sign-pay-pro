@@ -158,6 +158,8 @@ function PublicSignRequestPage() {
             token={token}
             pdfUrl={data.pdfUrl}
             signerName={data.request.signer_name}
+            consentText={data.conformity?.consent_text}
+            signatureLevel={data.conformity?.signature_level ?? "ses"}
             onSigned={() => {
               setDone("signed");
               refresh();
