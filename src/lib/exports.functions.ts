@@ -19,6 +19,8 @@ const DateRangeSchema = z.object({
   limit: z.number().int().min(1).max(10_000).default(5000),
 });
 
+import type { Json } from "@/integrations/supabase/types";
+
 export type AuditExportRow = {
   created_at: string;
   action: string;
