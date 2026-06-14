@@ -685,6 +685,7 @@ export type Database = {
           einvoice_status: Database["public"]["Enums"]["einvoice_status"]
           einvoice_submitted_at: string | null
           einvoice_xml_path: string | null
+          first_viewed_at: string | null
           guest_session_id: string | null
           id: string
           invoice_number: string | null
@@ -741,6 +742,7 @@ export type Database = {
           einvoice_status?: Database["public"]["Enums"]["einvoice_status"]
           einvoice_submitted_at?: string | null
           einvoice_xml_path?: string | null
+          first_viewed_at?: string | null
           guest_session_id?: string | null
           id?: string
           invoice_number?: string | null
@@ -799,6 +801,7 @@ export type Database = {
           einvoice_status?: Database["public"]["Enums"]["einvoice_status"]
           einvoice_submitted_at?: string | null
           einvoice_xml_path?: string | null
+          first_viewed_at?: string | null
           guest_session_id?: string | null
           id?: string
           invoice_number?: string | null
@@ -1627,6 +1630,8 @@ export type Database = {
         | "paid"
         | "partially_paid"
         | "cancelled"
+        | "issued"
+        | "viewed"
       document_type:
         | "purchase_order"
         | "quote"
@@ -1794,6 +1799,8 @@ export const Constants = {
         "paid",
         "partially_paid",
         "cancelled",
+        "issued",
+        "viewed",
       ],
       document_type: [
         "purchase_order",

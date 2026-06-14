@@ -8,7 +8,9 @@ export type DocumentStatus =
   | "pending_validation"
   | "validated"
   | "rejected"
+  | "issued"
   | "sent"
+  | "viewed"
   | "signed"
   | "paid"
   | "partially_paid"
@@ -19,7 +21,9 @@ export const ALL_DOCUMENT_STATUSES: DocumentStatus[] = [
   "draft",
   "pending_validation",
   "validated",
+  "issued",
   "sent",
+  "viewed",
   "signed",
   "partially_paid",
   "paid",
@@ -41,7 +45,9 @@ const DocumentStatusEnum = z.enum([
   "pending_validation",
   "validated",
   "rejected",
+  "issued",
   "sent",
+  "viewed",
   "signed",
   "paid",
   "partially_paid",
