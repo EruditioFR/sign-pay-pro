@@ -3,6 +3,16 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PDFDocument } from "pdf-lib";
 import { z } from "zod";
 import { buildDocumentPdf } from "@/lib/pdf.functions";
+import {
+  CONFORMITY_MODULE_VERSION,
+  CURRENT_SUPPORTED_LEVEL,
+  DEFAULT_CONSENT_TEXT_FR,
+  CONSENT_TEXT_VERSION,
+  assertAuthMethodAllowed,
+  sha256Hex,
+  tokenHint,
+  type SignatureEvidence,
+} from "@/lib/signature-conformity";
 
 const json = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
