@@ -82,35 +82,6 @@ function metadataPreview(meta: unknown) {
   }
 }
 
-function toCsv(rows: AuditLogRow[]) {
-  const header = [
-    "created_at",
-    "action",
-    "resource",
-    "user_email",
-    "user_full_name",
-    "organization_name",
-    "metadata",
-  ];
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
-    return `"${s.replace(/"/g, '""')}"`;
-  };
-  const lines = rows.map((r) =>
-    [
-      r.created_at,
-      r.action,
-      r.resource ?? "",
-      r.user_email ?? "",
-      r.user_full_name ?? "",
-      r.organization_name ?? "",
-      r.metadata ?? {},
-    ]
-      .map(escape)
-      .join(","),
-  );
-  return [header.join(","), ...lines].join("\n");
-}
 
 function AuditLogsPage() {
   const { q, action, from, to, page, limit } = Route.useSearch();
