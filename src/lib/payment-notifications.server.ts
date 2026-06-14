@@ -19,7 +19,8 @@
 
 import { sendResendEmail } from "@/lib/email-sender";
 
-type AdminClient = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
+import type { supabaseAdmin as SupabaseAdmin } from "@/integrations/supabase/client.server";
+type AdminClient = typeof SupabaseAdmin;
 
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
