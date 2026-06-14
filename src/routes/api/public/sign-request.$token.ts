@@ -12,6 +12,7 @@ import {
   sha256Hex,
   tokenHint,
   type SignatureEvidence,
+  type AuthMethod,
 } from "@/lib/signature-conformity";
 
 const json = (body: unknown, init?: ResponseInit) =>
