@@ -3,6 +3,13 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PDFDocument } from "pdf-lib";
 import { z } from "zod";
 import { buildDocumentPdf } from "@/lib/pdf.functions";
+import {
+  isUuidV4Like,
+  firstHopIp,
+  boundedUa,
+  computeRemainingDue,
+  clampPayableAmount,
+} from "@/lib/public-routes-security";
 
 const json = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
@@ -11,6 +18,9 @@ const json = (body: unknown, init?: ResponseInit) =>
   });
 
 async function loadByToken(token: string) {
+  // Defensive: tokens are server-generated UUIDs. Anything else cannot match
+  // and only adds DB load when scanners probe random strings.
+  if (!isUuidV4Like(token)) return null;
   const { data: link } = await supabaseAdmin
     .from("document_share_links")
     .select("*")
@@ -70,7 +80,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
         if (file) {
           const { data: signed } = await supabaseAdmin.storage
             .from("documents")
-            .createSignedUrl(file.storage_path, 600);
+            .createSignedUrl(file.storage_path, 120);
           pdfUrl = signed?.signedUrl ?? null;
         }
 
@@ -80,11 +90,16 @@ export const Route = createFileRoute("/api/public/share/$token")({
           .eq("id", doc.organization_id)
           .maybeSingle();
 
-        // increment view count
+        // Increment view count and re-check max_views *after* the update
+        // to make `max_views` enforcement robust against concurrent views.
+        const nextCount = (link.view_count ?? 0) + 1;
         await supabaseAdmin
           .from("document_share_links")
-          .update({ view_count: (link.view_count ?? 0) + 1 })
+          .update({ view_count: nextCount })
           .eq("id", link.id);
+        if (link.max_views && nextCount > link.max_views) {
+          return json({ error: "invalid_or_expired" }, { status: 404 });
+        }
 
         await supabaseAdmin.from("audit_logs").insert({
           organization_id: doc.organization_id,
@@ -92,8 +107,8 @@ export const Route = createFileRoute("/api/public/share/$token")({
           resource: `document:${doc.id}`,
           metadata: {
             link_id: link.id,
-            ip: request.headers.get("x-forwarded-for") ?? null,
-            ua: request.headers.get("user-agent") ?? null,
+            ip: firstHopIp(request.headers.get("x-forwarded-for")),
+            ua: boundedUa(request.headers.get("user-agent")),
           },
         });
 
@@ -117,8 +132,8 @@ export const Route = createFileRoute("/api/public/share/$token")({
         if (!parsed.success) return json({ error: "invalid_input" }, { status: 400 });
         const body = parsed.data;
 
-        const ip = request.headers.get("x-forwarded-for") ?? null;
-        const ua = request.headers.get("user-agent") ?? null;
+        const ip = firstHopIp(request.headers.get("x-forwarded-for"));
+        const ua = boundedUa(request.headers.get("user-agent"));
 
         const { data: doc } = await supabaseAdmin
           .from("documents")
@@ -234,12 +249,18 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
         if (body.action === "pay") {
           if (!link.allow_pay) return json({ error: "payment_disabled" }, { status: 403 });
+          // SECURITY: clamp the requested amount to the document's remaining
+          // due so a malicious caller can't mark a doc paid with $0.01 or
+          // record a fictitious overpayment from a public share token.
+          const remaining = await computeRemainingDue(supabaseAdmin, doc);
+          const clamped = clampPayableAmount(body.amount, remaining);
+          if (clamped == null) return json({ error: "amount_out_of_range" }, { status: 400 });
           const { data: payment, error: payErr } = await supabaseAdmin
             .from("document_payments")
             .insert({
               document_id: doc.id,
               share_link_id: link.id,
-              amount: body.amount,
+              amount: clamped,
               currency: doc.currency || "EUR",
               method: body.method,
               status: "succeeded",
@@ -267,6 +288,11 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
         if (body.action === "stripe_checkout") {
           if (!link.allow_pay) return json({ error: "payment_disabled" }, { status: 403 });
+          // SECURITY: clamp to remaining due — same rationale as the manual
+          // pay branch above. Prevents Stripe sessions for arbitrary amounts.
+          const remaining = await computeRemainingDue(supabaseAdmin, doc);
+          const clamped = clampPayableAmount(body.amount, remaining);
+          if (clamped == null) return json({ error: "amount_out_of_range" }, { status: 400 });
 
           // 1) Pre-create the payment row in pending status so the webhook can
           //    resolve it by id from session metadata / client_reference_id.
@@ -275,7 +301,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
             .insert({
               document_id: doc.id,
               share_link_id: link.id,
-              amount: body.amount,
+              amount: clamped,
               currency: doc.currency || "EUR",
               method: "card",
               status: "pending",
@@ -313,7 +339,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
                       quantity: 1,
                       price_data: {
                         currency,
-                        unit_amount: toStripeAmount(body.amount, currency),
+                        unit_amount: toStripeAmount(clamped, currency),
                         product_data: {
                           name: productName,
                           ...(doc.reference ? { description: `Réf. ${doc.reference}` } : {}),
