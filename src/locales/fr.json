@@ -92,7 +92,8 @@
     "cancel": "Annuler",
     "loading": "Chargement…",
     "error": "Erreur",
-    "language": "Langue"
+    "language": "Langue",
+    "retry": "Réessayer"
   },
   "documents": {
     "title": "Documents",
@@ -186,7 +187,31 @@
     "subtitle": "Vos étapes de validation en attente."
   },
   "nav_extra": {
-    "documents": "Documents", "approvals": "À valider", "workflows": "Workflows", "templates": "Modèles PDF"
+    "documents": "Documents", "approvals": "À valider", "workflows": "Workflows", "templates": "Modèles PDF", "analytics": "Analytics"
+  },
+  "analytics": {
+    "title": "Analytics métier",
+    "subtitle": "Indicateurs clés de votre activité documentaire.",
+    "period_days_one": "{{count}} j",
+    "period_days_other": "{{count}} j",
+    "empty": "Aucune donnée sur cette période. Créez un document pour démarrer.",
+    "empty_type": "Aucune donnée.",
+    "timeline_title": "Activité sur la période",
+    "by_type_title": "Répartition par type",
+    "overdue_title": "Documents en retard",
+    "no_overdue": "Aucun document en retard. ",
+    "days_late": "Retard",
+    "kpi": {
+      "created": "Documents créés",
+      "signature_rate": "Taux de signature",
+      "payment_rate": "Taux de paiement",
+      "avg_to_signed": "Délai moyen → signature",
+      "avg_to_paid": "Délai moyen → paiement",
+      "overdue": "En retard"
+    },
+    "series": {
+      "created": "Créés", "signed": "Signés", "paid": "Payés"
+    }
   },
   "templates": {
     "title": "Modèles PDF", "subtitle": "Personnalisez l'apparence de vos documents générés.",
