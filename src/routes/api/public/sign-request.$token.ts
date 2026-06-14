@@ -128,6 +128,14 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             status: req.status,
             expires_at: req.expires_at,
             signed_at: req.signed_at,
+            signature_level: req.signature_level ?? CURRENT_SUPPORTED_LEVEL,
+            auth_method_required: req.auth_method_required ?? "email_link",
+          },
+          conformity: {
+            signature_level: req.signature_level ?? CURRENT_SUPPORTED_LEVEL,
+            consent_text: DEFAULT_CONSENT_TEXT_FR,
+            consent_version: CONSENT_TEXT_VERSION,
+            module_version: CONFORMITY_MODULE_VERSION,
           },
           can_sign: next,
         });
