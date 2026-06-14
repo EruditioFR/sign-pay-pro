@@ -34,6 +34,7 @@ const PayBody = z.object({
   amount: z.number().positive(),
   method: z.enum(["bank_transfer", "manual", "cash", "check"]).default("manual"),
   payer_name: z.string().max(150).optional().nullable(),
+  payer_email: z.string().email().optional().nullable().or(z.literal("")),
   provider_ref: z.string().max(200).optional().nullable(),
 });
 const PostBody = z.discriminatedUnion("action", [SignBody, PayBody]);
@@ -238,11 +239,23 @@ export const Route = createFileRoute("/api/public/share/$token")({
               status: "succeeded",
               provider_ref: body.provider_ref || null,
               paid_at: new Date().toISOString(),
-              metadata: { payer_name: body.payer_name ?? null, ip, ua },
+              metadata: {
+                payer_name: body.payer_name ?? null,
+                payer_email: body.payer_email || null,
+                ip,
+                ua,
+              },
             })
             .select()
             .single();
           if (payErr) return json({ error: payErr.message }, { status: 500 });
+
+          // Fire-and-forget notification; never block the response.
+          const { notifyPaymentSucceeded } = await import("@/lib/payment-notifications.server");
+          notifyPaymentSucceeded(supabaseAdmin, payment.id).catch((e) =>
+            console.error("[share.pay] notify failed", e),
+          );
+
           return json({ ok: true, payment_id: payment.id });
         }
 

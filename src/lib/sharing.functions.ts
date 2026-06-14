@@ -181,6 +181,16 @@ export const recordManualPayment = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+
+    // Send payment confirmation email(s) — non-blocking, errors logged via audit.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { notifyPaymentSucceeded } = await import("@/lib/payment-notifications.server");
+      await notifyPaymentSucceeded(supabaseAdmin, payment.id);
+    } catch (e) {
+      console.error("[recordManualPayment] notify failed", e);
+    }
+
     return { payment };
   });
 
