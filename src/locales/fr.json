@@ -261,9 +261,17 @@
     "draw_signature": "Signez ci-dessous", "clear": "Effacer",
     "sign_now": "Signer maintenant", "signed_ok": "Document signé. Merci !",
     "need_name": "Renseignez votre nom.", "need_signature": "Veuillez signer.",
-    "amount": "Montant", "payer_name": "Nom du payeur",
+    "amount": "Montant", "payer_name": "Nom du payeur", "payer_email": "Email du payeur",
     "payment_ref": "Référence du paiement", "payment_ref_hint": "Ex: référence du virement",
-    "declare_payment": "Déclarer le paiement", "declare_payment_hint": "Renseignez les informations de votre virement.",
+    "declare_payment": "Déclarer le paiement", "declare_payment_hint": "Ou déclarez un paiement effectué hors ligne (virement, chèque…).",
+    "pay_online": "Payer en ligne par carte", "or": "ou",
     "paid_ok": "Paiement enregistré. Merci !", "need_amount": "Montant invalide."
+  },
+  "pay": {
+    "success_title": "Paiement confirmé",
+    "success_text": "Merci. Votre paiement a bien été reçu. Un reçu vous a été envoyé par email.",
+    "cancelled_title": "Paiement annulé",
+    "cancelled_text": "Vous avez annulé le paiement. Vous pouvez réessayer à tout moment.",
+    "back_to_document": "Retour au document"
   }
 }

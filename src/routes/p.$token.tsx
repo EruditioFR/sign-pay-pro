@@ -229,10 +229,35 @@ function PayPanel({
   const { t } = useTranslation();
   const [amount, setAmount] = useState(defaultAmount);
   const [payerName, setPayerName] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
   const [ref, setRef] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
-  const submit = async () => {
+  const payOnline = async () => {
+    if (!amount || amount <= 0) return toast.error(t("public.need_amount"));
+    setRedirecting(true);
+    try {
+      const res = await fetch(`/api/public/share/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "stripe_checkout",
+          amount,
+          payer_name: payerName || null,
+          payer_email: payerEmail || null,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.url) throw new Error(j.error ?? "fail");
+      window.location.href = j.url as string;
+    } catch (e) {
+      setRedirecting(false);
+      toast.error((e as Error).message);
+    }
+  };
+
+  const declareManual = async () => {
     if (!amount || amount <= 0) return toast.error(t("public.need_amount"));
     setSubmitting(true);
     try {
@@ -244,6 +269,7 @@ function PayPanel({
           amount,
           method: "bank_transfer",
           payer_name: payerName || null,
+          payer_email: payerEmail || null,
           provider_ref: ref || null,
         }),
       });
@@ -260,8 +286,7 @@ function PayPanel({
   };
 
   return (
-    <div className="space-y-3 pt-3">
-      <p className="text-sm text-muted-foreground">{t("public.declare_payment_hint")}</p>
+    <div className="space-y-4 pt-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>{t("public.amount")} ({currency})</Label>
@@ -272,13 +297,31 @@ function PayPanel({
           <Input value={payerName} onChange={(e) => setPayerName(e.target.value)} />
         </div>
         <div className="space-y-1 sm:col-span-2">
+          <Label>{t("public.payer_email")}</Label>
+          <Input type="email" value={payerEmail} onChange={(e) => setPayerEmail(e.target.value)} />
+        </div>
+      </div>
+
+      <Button onClick={payOnline} disabled={redirecting || submitting} className="w-full">
+        <CreditCard className="mr-2 h-4 w-4" />
+        {redirecting ? t("common.loading") : t("public.pay_online")}
+      </Button>
+
+      <div className="relative py-2">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t" /></div>
+        <div className="relative flex justify-center"><span className="bg-card px-2 text-xs text-muted-foreground">{t("public.or")}</span></div>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">{t("public.declare_payment_hint")}</p>
+        <div className="space-y-1">
           <Label>{t("public.payment_ref")}</Label>
           <Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={t("public.payment_ref_hint")} />
         </div>
+        <Button variant="outline" onClick={declareManual} disabled={submitting || redirecting} className="w-full">
+          {submitting ? t("common.loading") : t("public.declare_payment")}
+        </Button>
       </div>
-      <Button onClick={submit} disabled={submitting} className="w-full">
-        {submitting ? t("common.loading") : t("public.declare_payment")}
-      </Button>
     </div>
   );
 }
