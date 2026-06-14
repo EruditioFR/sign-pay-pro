@@ -130,6 +130,37 @@
       "too_large": "File too large (max 20 MB)."
     }
   },
+  "docs_search": {
+    "placeholder": "Title, reference, party, email…",
+    "filters": "Filters",
+    "period": "Issue period",
+    "amount_range": "Amount (incl.)",
+    "organization": "Organization",
+    "all_organizations": "All",
+    "reset": "Reset",
+    "no_results": "No matching documents.",
+    "results_count": "{{count}} result",
+    "results_count_plural": "{{count}} results",
+    "page_of": "Page {{page}} / {{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "signature": {
+      "title": "Signature", "any": "Any", "none": "None",
+      "pending": "Pending", "signed": "Signed"
+    },
+    "payment": {
+      "title": "Payment", "any": "Any", "none": "None",
+      "partial": "Partial", "paid": "Paid"
+    },
+    "archived": {
+      "title": "Archives", "exclude": "Hide archives",
+      "include": "Include archives", "only": "Archives only"
+    },
+    "sort": {
+      "created_at": "Created", "updated_at": "Updated",
+      "issue_date": "Issued", "due_date": "Due", "amount_ttc": "Amount"
+    }
+  },
   "workflows": {
     "title": "Workflows", "subtitle": "Validation templates for your organization.",
     "no_steps": "No steps.", "optional": "optional",
