@@ -171,6 +171,13 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
             await notifyPaymentSucceeded(supabaseAdmin, paymentId);
           } catch (e) {
             console.error("[stripe.webhook] notify failed", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "stripe.webhook.notify",
+              category: "technical",
+              severity: "critical",
+              context: { paymentId, eventId: event.id, eventType: event.type },
+            });
           }
           return new Response("ok", { status: 200 });
         }

@@ -32,7 +32,18 @@ export async function sendResendEmail(params: SendEmailParams) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(`Resend send failed [${res.status}]: ${JSON.stringify(data)}`);
+    const err = new Error(`Resend send failed [${res.status}]: ${JSON.stringify(data)}`);
+    try {
+      const { reportServerError } = await import("@/lib/observability.server");
+      void reportServerError(err, {
+        source: "email.resend",
+        category: "technical",
+        severity: res.status >= 500 ? "critical" : "error",
+        code: `RESEND_${res.status}`,
+        context: { to: params.to, subject: params.subject, status: res.status },
+      });
+    } catch { /* ignore */ }
+    throw err;
   }
   return data as { id?: string };
 }

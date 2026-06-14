@@ -211,6 +211,13 @@ export const Route = createFileRoute("/api/public/share/$token")({
             }
           } catch (e) {
             console.error("provider signature stamp failed:", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "share.sign.provider_stamp",
+              category: "technical",
+              organizationId: doc.organization_id,
+              context: { documentId: doc.id, shareLinkId: link.id },
+            });
           }
 
           const signedBytes = await pdf.save();
@@ -279,9 +286,16 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
           // Fire-and-forget notification; never block the response.
           const { notifyPaymentSucceeded } = await import("@/lib/payment-notifications.server");
-          notifyPaymentSucceeded(supabaseAdmin, payment.id).catch((e) =>
-            console.error("[share.pay] notify failed", e),
-          );
+          notifyPaymentSucceeded(supabaseAdmin, payment.id).catch(async (e) => {
+            console.error("[share.pay] notify failed", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "share.pay.notify",
+              category: "technical",
+              organizationId: doc.organization_id,
+              context: { documentId: doc.id, paymentId: payment.id },
+            });
+          });
 
           return json({ ok: true, payment_id: payment.id });
         }
@@ -379,6 +393,14 @@ export const Route = createFileRoute("/api/public/share/$token")({
             return json({ ok: true, url: session.url, payment_id: payment.id });
           } catch (e) {
             console.error("[share.stripe_checkout]", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "share.stripe_checkout",
+              category: "technical",
+              severity: "critical",
+              organizationId: doc.organization_id,
+              context: { documentId: doc.id, paymentId: payment.id },
+            });
             await supabaseAdmin
               .from("document_payments")
               .update({ status: "failed", metadata: { error: (e as Error).message } })

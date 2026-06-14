@@ -276,6 +276,13 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           }
         } catch (e) {
           console.error("provider signature stamp failed:", e);
+          const { reportServerError } = await import("@/lib/observability.server");
+          void reportServerError(e, {
+            source: "sign_request.provider_stamp",
+            category: "technical",
+            organizationId: doc.organization_id,
+            context: { documentId: doc.id, requestId: req.id },
+          });
         }
 
 
