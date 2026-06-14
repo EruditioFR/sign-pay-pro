@@ -33,6 +33,15 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { FilterPresetsMenu } from "@/components/filters/filter-presets-menu";
+import { FilterResultCount } from "@/components/filters/filter-primitives";
+
+interface PendingSignaturesPreset {
+  q: string;
+  org: string;
+  sort: SortKey;
+  dir: "asc" | "desc";
+}
 
 type SortKey = "waiting" | "expires" | "organization" | "document";
 
