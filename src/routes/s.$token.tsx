@@ -506,16 +506,41 @@ function SignWithPlacement({
           </Button>
         </div>
 
+        <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Niveau de signature
+            </span>
+            <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary uppercase">
+              {signatureLevel}
+            </span>
+          </div>
+          <label className="flex items-start gap-2 text-xs leading-relaxed">
+            <input
+              type="checkbox"
+              checked={consentAccepted}
+              onChange={(e) => setConsentAccepted(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {consentText ??
+                "Je reconnais avoir lu et compris le document, j'accepte de le signer électroniquement et reconnais à cette signature la même valeur juridique qu'une signature manuscrite (eIDAS art. 25 §1, Code civil art. 1366 et 1367)."}
+            </span>
+          </label>
+        </div>
+
         <Button
           onClick={sign}
-          disabled={submitting || (showFreePlacement && !placement)}
+          disabled={submitting || !consentAccepted || (showFreePlacement && !placement)}
           className="w-full"
         >
           {submitting
             ? "Envoi…"
-            : showFreePlacement && !placement
-              ? "Placez votre signature sur le document"
-              : "Signer maintenant"}
+            : !consentAccepted
+              ? "Acceptez le consentement pour signer"
+              : showFreePlacement && !placement
+                ? "Placez votre signature sur le document"
+                : "Signer maintenant"}
         </Button>
 
         {!showDecline ? (
