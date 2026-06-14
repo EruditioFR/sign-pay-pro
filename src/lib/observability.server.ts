@@ -97,7 +97,7 @@ export async function reportServerError(err: unknown, opts: ReportOptions): Prom
         code: code ?? null,
         message: norm.message.slice(0, 1000),
         fingerprint: fp,
-        context: ctx,
+        context: ctx as never,
         stack: norm.stack ? norm.stack.slice(0, 4000) : null,
       });
     } catch (dbErr) {
