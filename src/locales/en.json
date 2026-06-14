@@ -259,5 +259,14 @@
     "cancelled_title": "Payment cancelled",
     "cancelled_text": "You cancelled the payment. You can try again anytime.",
     "back_to_document": "Back to document"
+  },
+  "payment_status": {
+    "paid": "Paid",
+    "partially_paid": "Partially paid",
+    "unpaid": "Unpaid",
+    "overdue": "Overdue",
+    "refunded": "Refunded",
+    "not_applicable": "—",
+    "tooltip": { "paid": "Paid", "due": "Due", "remaining": "Remaining" }
   }
 }
