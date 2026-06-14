@@ -3,10 +3,51 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 export type DocumentType = "purchase_order" | "quote" | "invoice" | "contract" | "other";
-export type DocumentStatus = "draft" | "pending_validation" | "validated" | "rejected" | "archived";
+export type DocumentStatus =
+  | "draft"
+  | "pending_validation"
+  | "validated"
+  | "rejected"
+  | "sent"
+  | "signed"
+  | "paid"
+  | "partially_paid"
+  | "archived"
+  | "cancelled";
+
+export const ALL_DOCUMENT_STATUSES: DocumentStatus[] = [
+  "draft",
+  "pending_validation",
+  "validated",
+  "sent",
+  "signed",
+  "partially_paid",
+  "paid",
+  "rejected",
+  "archived",
+  "cancelled",
+];
+
+/** Statuts en lecture seule : seules les opérations d'export/consultation sont autorisées */
+export const READ_ONLY_STATUSES: DocumentStatus[] = ["archived", "cancelled"];
+
+export function isReadOnlyStatus(status: string | null | undefined): boolean {
+  return !!status && (READ_ONLY_STATUSES as string[]).includes(status);
+}
 
 const DocumentTypeEnum = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
-const DocumentStatusEnum = z.enum(["draft", "pending_validation", "validated", "rejected", "archived"]);
+const DocumentStatusEnum = z.enum([
+  "draft",
+  "pending_validation",
+  "validated",
+  "rejected",
+  "sent",
+  "signed",
+  "paid",
+  "partially_paid",
+  "archived",
+  "cancelled",
+]);
 
 const ListSchema = z
   .object({
@@ -17,6 +58,8 @@ const ListSchema = z
     toDate: z.string().optional(),
     minAmount: z.number().optional(),
     maxAmount: z.number().optional(),
+    /** Inclure les documents archivés/annulés (défaut: false sauf si status filtré) */
+    includeArchived: z.boolean().optional(),
   })
   .optional();
 
