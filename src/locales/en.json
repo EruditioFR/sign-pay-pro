@@ -88,7 +88,7 @@
     "created": "Created"
   },
   "common": {
-    "save": "Save", "cancel": "Cancel", "loading": "Loading…", "error": "Error", "language": "Language"
+    "save": "Save", "cancel": "Cancel", "loading": "Loading…", "error": "Error", "language": "Language", "retry": "Retry"
   },
   "documents": {
     "title": "Documents", "subtitle": "Manage your business documents.",
