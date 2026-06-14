@@ -21,6 +21,7 @@ import { SignedPdfPreview } from "@/components/signed-pdf-preview";
 import { MultiSignersDialog } from "@/components/multi-signers-dialog";
 import { ArchiveActions } from "@/components/archive-actions";
 import { DocumentActivityPdfButton } from "@/components/document-activity-pdf-button";
+import { ExportFacturXButton } from "@/components/export-factur-x-button";
 import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
@@ -131,6 +132,7 @@ function DocumentDetailPage() {
               )}
               {readOnly && files.length > 0 && <GeneratePdfButton documentId={doc.id} />}
               <DocumentActivityPdfButton documentId={doc.id} />
+              <ExportFacturXButton documentId={doc.id} documentType={doc.type} />
               <ArchiveActions documentId={doc.id} status={doc.status} />
             </div>
           </div>
