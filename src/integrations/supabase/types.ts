@@ -248,6 +248,7 @@ export type Database = {
       }
       document_signature_requests: {
         Row: {
+          auth_method_required: string
           created_at: string
           decline_reason: string | null
           document_id: string
@@ -257,6 +258,7 @@ export type Database = {
           order_index: number
           sequential: boolean
           signature_id: string | null
+          signature_level: Database["public"]["Enums"]["signature_level"]
           signed_at: string | null
           signer_email: string
           signer_name: string
@@ -265,6 +267,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auth_method_required?: string
           created_at?: string
           decline_reason?: string | null
           document_id: string
@@ -274,6 +277,7 @@ export type Database = {
           order_index?: number
           sequential?: boolean
           signature_id?: string | null
+          signature_level?: Database["public"]["Enums"]["signature_level"]
           signed_at?: string | null
           signer_email: string
           signer_name: string
@@ -282,6 +286,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auth_method_required?: string
           created_at?: string
           decline_reason?: string | null
           document_id?: string
@@ -291,6 +296,7 @@ export type Database = {
           order_index?: number
           sequential?: boolean
           signature_id?: string | null
+          signature_level?: Database["public"]["Enums"]["signature_level"]
           signed_at?: string | null
           signer_email?: string
           signer_name?: string
@@ -302,42 +308,66 @@ export type Database = {
       }
       document_signatures: {
         Row: {
+          auth_method: string
+          consent_accepted_at: string | null
+          consent_text: string | null
+          country: string | null
           document_id: string
+          evidence: Json
           id: string
           ip: string | null
+          original_pdf_hash_sha256: string | null
           pdf_hash_sha256: string | null
           pdf_storage_path: string | null
           share_link_id: string | null
           signature_image_b64: string
+          signature_level: Database["public"]["Enums"]["signature_level"]
           signed_at: string
           signer_email: string | null
           signer_name: string
+          timezone: string | null
           user_agent: string | null
         }
         Insert: {
+          auth_method?: string
+          consent_accepted_at?: string | null
+          consent_text?: string | null
+          country?: string | null
           document_id: string
+          evidence?: Json
           id?: string
           ip?: string | null
+          original_pdf_hash_sha256?: string | null
           pdf_hash_sha256?: string | null
           pdf_storage_path?: string | null
           share_link_id?: string | null
           signature_image_b64: string
+          signature_level?: Database["public"]["Enums"]["signature_level"]
           signed_at?: string
           signer_email?: string | null
           signer_name: string
+          timezone?: string | null
           user_agent?: string | null
         }
         Update: {
+          auth_method?: string
+          consent_accepted_at?: string | null
+          consent_text?: string | null
+          country?: string | null
           document_id?: string
+          evidence?: Json
           id?: string
           ip?: string | null
+          original_pdf_hash_sha256?: string | null
           pdf_hash_sha256?: string | null
           pdf_storage_path?: string | null
           share_link_id?: string | null
           signature_image_b64?: string
+          signature_level?: Database["public"]["Enums"]["signature_level"]
           signed_at?: string
           signer_email?: string | null
           signer_name?: string
+          timezone?: string | null
           user_agent?: string | null
         }
         Relationships: []
@@ -1231,6 +1261,7 @@ export type Database = {
         | "contract"
         | "other"
       pdf_field_kind: "text" | "date" | "checkbox" | "signature" | "initials"
+      signature_level: "ses" | "aes" | "qes"
       signature_request_status: "pending" | "signed" | "declined" | "cancelled"
       workflow_step_status: "pending" | "approved" | "rejected" | "skipped"
     }
@@ -1380,6 +1411,7 @@ export const Constants = {
         "other",
       ],
       pdf_field_kind: ["text", "date", "checkbox", "signature", "initials"],
+      signature_level: ["ses", "aes", "qes"],
       signature_request_status: ["pending", "signed", "declined", "cancelled"],
       workflow_step_status: ["pending", "approved", "rejected", "skipped"],
     },
