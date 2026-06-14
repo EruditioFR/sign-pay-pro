@@ -184,6 +184,14 @@ export const updateDocument = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { id, ...patch } = data;
+    const { data: current } = await supabase
+      .from("documents")
+      .select("status")
+      .eq("id", id)
+      .maybeSingle();
+    if (current && isReadOnlyStatus(current.status)) {
+      throw new Error("Document archivé ou annulé — désarchivez avant modification.");
+    }
     const { error } = await supabase.from("documents").update(patch).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -196,6 +204,127 @@ export const deleteDocument = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { error } = await supabase.from("documents").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ============================================================================
+// Archivage / annulation
+// ============================================================================
+
+const ArchiveSchema = z.object({
+  id: z.string().uuid(),
+  retention_until: z.string().optional().nullable(), // YYYY-MM-DD
+  reason: z.string().max(500).optional(),
+});
+
+export const archiveDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ArchiveSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: doc, error: fetchErr } = await supabase
+      .from("documents")
+      .select("id, status, organization_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !doc) throw new Error("Document introuvable");
+    if (doc.status === "archived") throw new Error("Document déjà archivé.");
+    if (doc.status === "cancelled") throw new Error("Un document annulé ne peut pas être archivé.");
+
+    const { error } = await supabase
+      .from("documents")
+      .update({
+        status: "archived",
+        previous_status: doc.status,
+        archived_at: new Date().toISOString(),
+        archived_by: userId,
+        retention_until: data.retention_until ?? null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabase.from("audit_logs").insert({
+      organization_id: doc.organization_id,
+      user_id: userId,
+      action: "document.archived",
+      resource: `document:${data.id}`,
+      metadata: {
+        previous_status: doc.status,
+        retention_until: data.retention_until ?? null,
+        reason: data.reason ?? null,
+      },
+    });
+    return { ok: true };
+  });
+
+export const unarchiveDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => IdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: doc, error: fetchErr } = await supabase
+      .from("documents")
+      .select("id, status, previous_status, organization_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !doc) throw new Error("Document introuvable");
+    if (doc.status !== "archived") throw new Error("Document non archivé.");
+
+    const restored = (doc.previous_status as DocumentStatus | null) ?? "draft";
+    const { error } = await supabase
+      .from("documents")
+      .update({
+        status: restored,
+        previous_status: null,
+        archived_at: null,
+        archived_by: null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabase.from("audit_logs").insert({
+      organization_id: doc.organization_id,
+      user_id: userId,
+      action: "document.unarchived",
+      resource: `document:${data.id}`,
+      metadata: { restored_to: restored },
+    });
+    return { ok: true, restored_to: restored };
+  });
+
+const CancelSchema = z.object({
+  id: z.string().uuid(),
+  reason: z.string().max(500).optional(),
+});
+
+export const cancelDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => CancelSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: doc, error: fetchErr } = await supabase
+      .from("documents")
+      .select("id, status, organization_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !doc) throw new Error("Document introuvable");
+    if (["paid", "signed", "archived", "cancelled"].includes(doc.status)) {
+      throw new Error("Document non annulable dans son statut actuel.");
+    }
+
+    const { error } = await supabase
+      .from("documents")
+      .update({ status: "cancelled", previous_status: doc.status })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabase.from("audit_logs").insert({
+      organization_id: doc.organization_id,
+      user_id: userId,
+      action: "document.cancelled",
+      resource: `document:${data.id}`,
+      metadata: { previous_status: doc.status, reason: data.reason ?? null },
+    });
     return { ok: true };
   });
 
