@@ -3,14 +3,16 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { listDocuments, type DocumentType, type DocumentStatus } from "@/lib/documents.functions";
+import { listDocuments, ALL_DOCUMENT_STATUSES, type DocumentType, type DocumentStatus } from "@/lib/documents.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { DocumentStatusBadge } from "@/components/status-badge";
-import { Plus } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/")({
   component: DocumentsPage,
