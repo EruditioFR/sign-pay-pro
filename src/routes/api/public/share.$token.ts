@@ -286,9 +286,16 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
           // Fire-and-forget notification; never block the response.
           const { notifyPaymentSucceeded } = await import("@/lib/payment-notifications.server");
-          notifyPaymentSucceeded(supabaseAdmin, payment.id).catch((e) =>
-            console.error("[share.pay] notify failed", e),
-          );
+          notifyPaymentSucceeded(supabaseAdmin, payment.id).catch(async (e) => {
+            console.error("[share.pay] notify failed", e);
+            const { reportServerError } = await import("@/lib/observability.server");
+            void reportServerError(e, {
+              source: "share.pay.notify",
+              category: "technical",
+              organizationId: doc.organization_id,
+              context: { documentId: doc.id, paymentId: payment.id },
+            });
+          });
 
           return json({ ok: true, payment_id: payment.id });
         }
