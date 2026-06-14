@@ -85,3 +85,53 @@ not_applicable ──► draft ──► ready ──► submitted ──► rec
 - **Lignes & ventilation TVA optionnelles** : MVP peut continuer à
   fonctionner avec montants HT/TTC globaux. Elles deviennent obligatoires
   uniquement au moment de la génération XML.
+
+## V1 — Export Factur-X (CII XML, profil BASIC)
+
+Implémenté : `src/lib/einvoice-xml.functions.ts` + bouton "Factur-X" sur la fiche facture.
+
+### Ce qui marche
+- Génération **CII XML** (Cross Industry Invoice, UN/CEFACT) — c'est le XML
+  qui s'embarque dans un Factur-X. Profil **BASIC** (`urn:factur-x.eu:1p0:basic`).
+- Mapping :
+  - **Émetteur** : snapshot `seller_*` du document, fallback sur l'organisation
+    (`legal_name`, `siret`, `vat_number`, adresse, IBAN/BIC).
+  - **Acheteur** : `buyer_*` du document, fallback sur `third_party_name`.
+  - **Lignes** : `document_invoice_lines` → `IncludedSupplyChainTradeLineItem`.
+    Si vide → une ligne unique synthétique à partir du total HT (suffit pour
+    BASIC WL).
+  - **TVA** : `document_vat_breakdown` → `ApplicableTradeTax`. Si vide → taux
+    unique dérivé de (TTC − HT) / HT.
+  - **Totaux** : LineTotal / TaxBasis / TaxTotal / GrandTotal / DuePayable.
+  - **Paiement** : code 4461 (`payment_means_code`, défaut 30 = virement) +
+    IBAN/BIC de l'organisation.
+- Marque automatiquement la facture en `einvoice_status='ready'`,
+  `einvoice_format='factur_x'`, `einvoice_profile='basic'` et journalise
+  un `einvoice_events` (source `internal`).
+- Retourne la liste des champs manquants pour conformité PDP — affichés
+  en toast warning (non bloquant).
+
+### Limites assumées
+- **Pas de PDF/A-3 Factur-X**. Le fichier livré est un `.xml` brut. L'enrobage
+  PDF/A-3 (PDF visuel + XML attaché) demande pdf-lib + reconversion en PDF/A-3
+  qui n'est pas trivial dans le runtime Cloudflare Workers. Étape suivante :
+  générer le PDF avec le module existant, l'attacher avec pdf-lib (`AFRelationship`,
+  `EmbeddedFile`), patcher les métadonnées XMP PDF/A-3.
+- **Pas de validation Schematron EN 16931**. La fonction `checkEinvoiceReadiness`
+  fait une validation structurelle minimale (champs présents). Pour la
+  conformité totale, ajouter une validation Schematron côté CI ou via PDP.
+- **Pas de dépôt PDP automatique**. Le statut passe à `ready`, l'utilisateur
+  télécharge et dépose lui-même. Le webhook PDP arrivera dans une itération
+  ultérieure (server route sous `/api/public/einvoice/webhook`).
+- **Numérotation** : si `invoice_number` est vide, fallback sur `reference`
+  puis sur l'id tronqué. Pour la prod FR, ajouter un générateur séquentiel
+  annuel par organisation.
+- **Profil unique BASIC**. EN 16931 et EXTENDED demanderont d'enrichir le
+  mapping (remises ligne, références BT-* complètes, allocations, etc.).
+
+### Prochaine itération recommandée
+1. Éditeur de **lignes** dans l'UI (sinon export = ligne unique).
+2. Recalcul automatique de `total_vat` et `document_vat_breakdown` au
+   sauvegarde des lignes.
+3. Embarquement PDF/A-3 → fichier `.pdf` Factur-X au lieu du `.xml` nu.
+4. Connecteur PDP (1 webhook + 1 server fn `submitToPdp`).
