@@ -1,24 +1,22 @@
 /**
- * Stripe gateway client — routes calls through Lovable's connector gateway.
- * Server-only. Never import from client/route modules at top-level (see
- * tanstack-supabase-integration: load inside handler with await import()).
+ * Stripe BYOK client — calls Stripe directly with STRIPE_SECRET_KEY.
+ * Server-only. Load via `await import(...)` inside route/server-fn handlers.
+ *
+ * Required env vars:
+ *  - STRIPE_SECRET_KEY     (sk_test_... or sk_live_...)
+ *  - STRIPE_WEBHOOK_SECRET (whsec_...) — for webhook signature verification
  */
 
-const GATEWAY_BASE = "https://connector-gateway.lovable.dev/stripe";
+const STRIPE_API_BASE = "https://api.stripe.com";
 
-function envFor(mode: "sandbox" | "live") {
-  const apiKey =
-    mode === "live"
-      ? process.env.STRIPE_LIVE_API_KEY
-      : process.env.STRIPE_SANDBOX_API_KEY;
-  const webhookSecret =
-    mode === "live"
-      ? process.env.PAYMENTS_LIVE_WEBHOOK_SECRET
-      : process.env.PAYMENTS_SANDBOX_WEBHOOK_SECRET;
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error(`[stripe] missing STRIPE_${mode.toUpperCase()}_API_KEY`);
-  if (!lovableKey) throw new Error("[stripe] missing LOVABLE_API_KEY");
-  return { apiKey, webhookSecret, lovableKey };
+function getSecretKey(): string {
+  const k = process.env.STRIPE_SECRET_KEY;
+  if (!k) throw new Error("[stripe] missing STRIPE_SECRET_KEY");
+  return k;
+}
+
+function getWebhookSecret(): string | null {
+  return process.env.STRIPE_WEBHOOK_SECRET ?? null;
 }
 
 /** Flatten nested objects into Stripe's form-encoded format (a[b][c]=...) */
@@ -48,16 +46,15 @@ export async function stripeRequest<T = unknown>(
   path: string,
   init: { method?: "GET" | "POST" | "DELETE"; body?: Record<string, unknown>; mode?: "sandbox" | "live" } = {},
 ): Promise<T> {
-  const mode = init.mode ?? "sandbox";
-  const { apiKey, lovableKey } = envFor(mode);
-  const url = `${GATEWAY_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  const apiKey = getSecretKey();
+  const url = `${STRIPE_API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
   const method = init.method ?? "POST";
   const body = init.body ? toFormBody(init.body).join("&") : undefined;
   const res = await fetch(url, {
     method,
     headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": apiKey,
+      Authorization: `Bearer ${apiKey}`,
+      "Stripe-Version": "2025-08-27.basil",
       ...(body ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
     },
     body,
@@ -80,14 +77,13 @@ export async function stripeRequest<T = unknown>(
 export async function verifyStripeSignature(
   rawBody: string,
   sigHeader: string | null,
-  mode: "sandbox" | "live" = "sandbox",
+  _mode: "sandbox" | "live" = "sandbox",
   toleranceSec = 300,
 ): Promise<{ ok: true; event: Record<string, unknown> } | { ok: false; reason: string }> {
   if (!sigHeader) return { ok: false, reason: "missing_signature" };
-  const { webhookSecret } = envFor(mode);
+  const webhookSecret = getWebhookSecret();
   if (!webhookSecret) return { ok: false, reason: "missing_webhook_secret" };
 
-  // Parse "t=...,v1=...,v1=..."
   const parts = Object.create(null) as Record<string, string[]>;
   for (const seg of sigHeader.split(",")) {
     const [k, v] = seg.split("=");
