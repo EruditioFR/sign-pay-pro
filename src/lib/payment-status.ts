@@ -28,7 +28,7 @@ const READ_ONLY_DOC_STATUSES = new Set(["archived", "cancelled"]);
 export interface PaymentRowLike {
   amount: number | string;
   status: string;
-  metadata?: Record<string, unknown> | null;
+  metadata?: unknown;
 }
 
 /**
@@ -47,7 +47,10 @@ export function computePaidAmount(payments: PaymentRowLike[] | null | undefined)
     if (p.status === "succeeded") {
       total += amount;
     } else if (p.status === "partially_refunded") {
-      const refunded = Number((p.metadata as Record<string, unknown> | undefined)?.refunded_amount ?? 0) || 0;
+      const meta = (p.metadata && typeof p.metadata === "object")
+        ? (p.metadata as Record<string, unknown>)
+        : {};
+      const refunded = Number(meta.refunded_amount ?? 0) || 0;
       total += Math.max(0, amount - refunded);
     }
     // 'refunded', 'pending', 'failed', 'canceled' → contribute 0
