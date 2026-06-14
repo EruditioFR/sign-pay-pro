@@ -15,6 +15,8 @@ import {
   type AuthMethod,
 } from "@/lib/signature-conformity";
 
+import { isUuidV4Like, firstHopIp, boundedUa } from "@/lib/public-routes-security";
+
 const json = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
     ...init,
@@ -22,6 +24,9 @@ const json = (body: unknown, init?: ResponseInit) =>
   });
 
 async function loadRequest(token: string) {
+  // Reject obviously-malformed tokens before touching the DB. Tokens are
+  // server-generated UUIDs; anything else can't match and only burns IO.
+  if (!isUuidV4Like(token)) return null;
   const { data: req } = await supabaseAdmin
     .from("document_signature_requests")
     .select("*")
@@ -104,7 +109,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         if (file) {
           const { data: signed } = await supabaseAdmin.storage
             .from("documents")
-            .createSignedUrl(file.storage_path, 600);
+            .createSignedUrl(file.storage_path, 120);
           pdfUrl = signed?.signedUrl ?? null;
         }
 
@@ -166,8 +171,8 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         const next = await isNextInLine(req);
         if (!next) return json({ error: "not_your_turn" }, { status: 409 });
 
-        const ip = request.headers.get("x-forwarded-for") ?? null;
-        const ua = request.headers.get("user-agent") ?? null;
+        const ip = firstHopIp(request.headers.get("x-forwarded-for"));
+        const ua = boundedUa(request.headers.get("user-agent"));
 
         const { data: doc } = await supabaseAdmin
           .from("documents")
