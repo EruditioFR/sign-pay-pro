@@ -78,6 +78,12 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
       );
     } catch (e) {
       console.error("signature email batch failed:", e);
+      const { reportServerError } = await import("@/lib/observability.server");
+      void reportServerError(e, {
+        source: "signature_request.email_batch",
+        category: "technical",
+        context: { documentId: data.document_id, count: inserted?.length ?? 0 },
+      });
     }
 
     return { requests: inserted ?? [] };
