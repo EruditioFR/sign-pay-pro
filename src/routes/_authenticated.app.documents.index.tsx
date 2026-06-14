@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { DocumentStatusBadge } from "@/components/status-badge";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
 import { DocumentFiltersBar, type DocumentFiltersValue } from "@/components/document-filters-bar";
 import { searchDocuments } from "@/lib/documents-search.functions";
 import type { DocumentStatus, DocumentType } from "@/lib/documents.functions";
-import { Plus, ChevronLeft, ChevronRight, FileSignature, Wallet, Archive } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, FileSignature, Archive } from "lucide-react";
 
 const DocType = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
 const DocStatus = z.enum([
