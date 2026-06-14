@@ -23,16 +23,18 @@ function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DocumentType | "all">("all");
   const [status, setStatus] = useState<DocumentStatus | "all">("all");
+  const [includeArchived, setIncludeArchived] = useState(false);
 
   const fetchDocs = useServerFn(listDocuments);
   const { data, isLoading } = useQuery({
-    queryKey: ["documents", search, type, status],
+    queryKey: ["documents", search, type, status, includeArchived],
     queryFn: () =>
       fetchDocs({
         data: {
           search: search || undefined,
           type: type === "all" ? undefined : type,
           status: status === "all" ? undefined : status,
+          includeArchived,
         },
       }),
   });
