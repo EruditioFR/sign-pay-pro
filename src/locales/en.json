@@ -175,7 +175,29 @@
     "title": "To approve", "subtitle": "Your pending validation steps."
   },
   "nav_extra": {
-    "documents": "Documents", "approvals": "To approve", "workflows": "Workflows", "templates": "PDF templates"
+    "documents": "Documents", "approvals": "To approve", "workflows": "Workflows", "templates": "PDF templates", "analytics": "Analytics"
+  },
+  "analytics": {
+    "title": "Business analytics",
+    "subtitle": "Key indicators for your document activity.",
+    "period_days_one": "{{count}} d",
+    "period_days_other": "{{count}} d",
+    "empty": "No data for this period. Create a document to get started.",
+    "empty_type": "No data.",
+    "timeline_title": "Activity over the period",
+    "by_type_title": "Breakdown by type",
+    "overdue_title": "Overdue documents",
+    "no_overdue": "No overdue documents. ",
+    "days_late": "Late",
+    "kpi": {
+      "created": "Documents created",
+      "signature_rate": "Signature rate",
+      "payment_rate": "Payment rate",
+      "avg_to_signed": "Avg. time → signature",
+      "avg_to_paid": "Avg. time → payment",
+      "overdue": "Overdue"
+    },
+    "series": { "created": "Created", "signed": "Signed", "paid": "Paid" }
   },
   "pdf": { "generate": "Generate PDF", "generated": "PDF generated." },
   "sharing": {
