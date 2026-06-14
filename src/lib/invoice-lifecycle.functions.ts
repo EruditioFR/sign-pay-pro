@@ -35,7 +35,11 @@ export const transitionInvoiceStatus = createServerFn({ method: "POST" })
       throw new Error(`Transition non autorisée: ${doc.status} → ${data.to}`);
     }
 
-    const patch: Record<string, unknown> = {
+    const patch: {
+      status: string;
+      updated_at: string;
+      first_viewed_at?: string;
+    } = {
       status: data.to,
       updated_at: new Date().toISOString(),
     };
