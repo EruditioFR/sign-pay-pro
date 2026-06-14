@@ -37,7 +37,13 @@ const PayBody = z.object({
   payer_email: z.string().email().optional().nullable().or(z.literal("")),
   provider_ref: z.string().max(200).optional().nullable(),
 });
-const PostBody = z.discriminatedUnion("action", [SignBody, PayBody]);
+const StripeCheckoutBody = z.object({
+  action: z.literal("stripe_checkout"),
+  amount: z.number().positive(),
+  payer_name: z.string().max(150).optional().nullable(),
+  payer_email: z.string().email().optional().nullable().or(z.literal("")),
+});
+const PostBody = z.discriminatedUnion("action", [SignBody, PayBody, StripeCheckoutBody]);
 
 export const Route = createFileRoute("/api/public/share/$token")({
   server: {

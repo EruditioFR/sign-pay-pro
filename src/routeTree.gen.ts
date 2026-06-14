@@ -15,6 +15,8 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GuestIndexRouteImport } from './routes/guest.index'
 import { Route as STokenRouteImport } from './routes/s.$token'
+import { Route as PaySuccessRouteImport } from './routes/pay.success'
+import { Route as PayCancelledRouteImport } from './routes/pay.cancelled'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as GuestNewRouteImport } from './routes/guest.new'
 import { Route as GuestTokenRouteImport } from './routes/guest.$token'
@@ -44,6 +46,7 @@ import { Route as AuthenticatedAdminTemplatesIndexRouteImport } from './routes/_
 import { Route as AuthenticatedAdminBusinessVerticalsIndexRouteImport } from './routes/_authenticated.admin.business-verticals.index'
 import { Route as ApiPublicSignRequestTokenRouteImport } from './routes/api/public/sign-request.$token'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
@@ -80,6 +83,16 @@ const GuestIndexRoute = GuestIndexRouteImport.update({
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaySuccessRoute = PaySuccessRouteImport.update({
+  id: '/pay/success',
+  path: '/pay/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayCancelledRoute = PayCancelledRouteImport.update({
+  id: '/pay/cancelled',
+  path: '/pay/cancelled',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PTokenRoute = PTokenRouteImport.update({
@@ -242,6 +255,12 @@ const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
   path: '/api/public/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppDocumentsWysiwygRoute =
   AuthenticatedAppDocumentsWysiwygRouteImport.update({
     id: '/app/documents/wysiwyg',
@@ -300,6 +319,8 @@ export interface FileRoutesByFullPath {
   '/guest/$token': typeof GuestTokenRoute
   '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
+  '/pay/cancelled': typeof PayCancelledRoute
+  '/pay/success': typeof PaySuccessRoute
   '/s/$token': typeof STokenRoute
   '/guest/': typeof GuestIndexRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
@@ -325,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/admin/business-verticals/': typeof AuthenticatedAdminBusinessVerticalsIndexRoute
@@ -344,6 +366,8 @@ export interface FileRoutesByTo {
   '/guest/$token': typeof GuestTokenRoute
   '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
+  '/pay/cancelled': typeof PayCancelledRoute
+  '/pay/success': typeof PaySuccessRoute
   '/s/$token': typeof STokenRoute
   '/guest': typeof GuestIndexRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
@@ -369,6 +393,7 @@ export interface FileRoutesByTo {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/admin/business-verticals': typeof AuthenticatedAdminBusinessVerticalsIndexRoute
@@ -390,6 +415,8 @@ export interface FileRoutesById {
   '/guest/$token': typeof GuestTokenRoute
   '/guest/new': typeof GuestNewRoute
   '/p/$token': typeof PTokenRoute
+  '/pay/cancelled': typeof PayCancelledRoute
+  '/pay/success': typeof PaySuccessRoute
   '/s/$token': typeof STokenRoute
   '/guest/': typeof GuestIndexRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
@@ -415,6 +442,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
   '/_authenticated/admin/business-verticals/': typeof AuthenticatedAdminBusinessVerticalsIndexRoute
@@ -436,6 +464,8 @@ export interface FileRouteTypes {
     | '/guest/$token'
     | '/guest/new'
     | '/p/$token'
+    | '/pay/cancelled'
+    | '/pay/success'
     | '/s/$token'
     | '/guest/'
     | '/admin/roles'
@@ -461,6 +491,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/api/public/payments/webhook'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
     | '/admin/business-verticals/'
@@ -480,6 +511,8 @@ export interface FileRouteTypes {
     | '/guest/$token'
     | '/guest/new'
     | '/p/$token'
+    | '/pay/cancelled'
+    | '/pay/success'
     | '/s/$token'
     | '/guest'
     | '/admin/roles'
@@ -505,6 +538,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/api/public/payments/webhook'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
     | '/admin/business-verticals'
@@ -525,6 +559,8 @@ export interface FileRouteTypes {
     | '/guest/$token'
     | '/guest/new'
     | '/p/$token'
+    | '/pay/cancelled'
+    | '/pay/success'
     | '/s/$token'
     | '/guest/'
     | '/_authenticated/admin/roles'
@@ -550,6 +586,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
     | '/_authenticated/app/documents/wysiwyg'
+    | '/api/public/payments/webhook'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
     | '/_authenticated/admin/business-verticals/'
@@ -570,8 +607,11 @@ export interface RootRouteChildren {
   GuestTokenRoute: typeof GuestTokenRoute
   GuestNewRoute: typeof GuestNewRoute
   PTokenRoute: typeof PTokenRoute
+  PayCancelledRoute: typeof PayCancelledRoute
+  PaySuccessRoute: typeof PaySuccessRoute
   STokenRoute: typeof STokenRoute
   GuestIndexRoute: typeof GuestIndexRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicShareTokenRoute: typeof ApiPublicShareTokenRoute
   ApiPublicSignRequestTokenRoute: typeof ApiPublicSignRequestTokenRoute
 }
@@ -618,6 +658,20 @@ declare module '@tanstack/react-router' {
       path: '/s/$token'
       fullPath: '/s/$token'
       preLoaderRoute: typeof STokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/success': {
+      id: '/pay/success'
+      path: '/pay/success'
+      fullPath: '/pay/success'
+      preLoaderRoute: typeof PaySuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/cancelled': {
+      id: '/pay/cancelled'
+      path: '/pay/cancelled'
+      fullPath: '/pay/cancelled'
+      preLoaderRoute: typeof PayCancelledRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$token': {
@@ -823,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/documents/wysiwyg': {
       id: '/_authenticated/app/documents/wysiwyg'
       path: '/app/documents/wysiwyg'
@@ -981,8 +1042,11 @@ const rootRouteChildren: RootRouteChildren = {
   GuestTokenRoute: GuestTokenRoute,
   GuestNewRoute: GuestNewRoute,
   PTokenRoute: PTokenRoute,
+  PayCancelledRoute: PayCancelledRoute,
+  PaySuccessRoute: PaySuccessRoute,
   STokenRoute: STokenRoute,
   GuestIndexRoute: GuestIndexRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicShareTokenRoute: ApiPublicShareTokenRoute,
   ApiPublicSignRequestTokenRoute: ApiPublicSignRequestTokenRoute,
 }
