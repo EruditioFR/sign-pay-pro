@@ -345,7 +345,13 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           })
           .eq("id", req.id);
 
-        return json({ ok: true, signature_id: sig.id, hash: hashHex });
+        return json({
+          ok: true,
+          signature_id: sig.id,
+          hash: signedHashHex,
+          original_hash: originalHashHex,
+          signature_level: signatureLevel,
+        });
       },
     },
   },
