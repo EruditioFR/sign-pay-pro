@@ -135,7 +135,14 @@ function DocumentsPage() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <DocumentFiltersBar value={filters} onChange={onChange} onReset={onReset} />
+        <DocumentFiltersBar
+          value={filters}
+          onChange={onChange}
+          onReset={onReset}
+          totalCount={total}
+          loading={isFetching}
+          presetScope="documents-v1"
+        />
 
         {isFetching && rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
