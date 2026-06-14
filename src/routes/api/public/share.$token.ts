@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
         if (file) {
           const { data: signed } = await supabaseAdmin.storage
             .from("documents")
-            .createSignedUrl(file.storage_path, 600);
+            .createSignedUrl(file.storage_path, 120);
           pdfUrl = signed?.signedUrl ?? null;
         }
 
@@ -90,11 +90,16 @@ export const Route = createFileRoute("/api/public/share/$token")({
           .eq("id", doc.organization_id)
           .maybeSingle();
 
-        // increment view count
+        // Increment view count and re-check max_views *after* the update
+        // to make `max_views` enforcement robust against concurrent views.
+        const nextCount = (link.view_count ?? 0) + 1;
         await supabaseAdmin
           .from("document_share_links")
-          .update({ view_count: (link.view_count ?? 0) + 1 })
+          .update({ view_count: nextCount })
           .eq("id", link.id);
+        if (link.max_views && nextCount > link.max_views) {
+          return json({ error: "invalid_or_expired" }, { status: 404 });
+        }
 
         await supabaseAdmin.from("audit_logs").insert({
           organization_id: doc.organization_id,
@@ -102,8 +107,8 @@ export const Route = createFileRoute("/api/public/share/$token")({
           resource: `document:${doc.id}`,
           metadata: {
             link_id: link.id,
-            ip: request.headers.get("x-forwarded-for") ?? null,
-            ua: request.headers.get("user-agent") ?? null,
+            ip: firstHopIp(request.headers.get("x-forwarded-for")),
+            ua: boundedUa(request.headers.get("user-agent")),
           },
         });
 
@@ -127,8 +132,8 @@ export const Route = createFileRoute("/api/public/share/$token")({
         if (!parsed.success) return json({ error: "invalid_input" }, { status: 400 });
         const body = parsed.data;
 
-        const ip = request.headers.get("x-forwarded-for") ?? null;
-        const ua = request.headers.get("user-agent") ?? null;
+        const ip = firstHopIp(request.headers.get("x-forwarded-for"));
+        const ua = boundedUa(request.headers.get("user-agent"));
 
         const { data: doc } = await supabaseAdmin
           .from("documents")
