@@ -159,7 +159,10 @@
     "sort": {
       "created_at": "Created", "updated_at": "Updated",
       "issue_date": "Issued", "due_date": "Due", "amount_ttc": "Amount"
-    }
+    },
+    "presets": "Saved filters",
+    "presets_save": "Save current filter",
+    "presets_empty": "No saved filters."
   },
   "workflows": {
     "title": "Workflows", "subtitle": "Validation templates for your organization.",

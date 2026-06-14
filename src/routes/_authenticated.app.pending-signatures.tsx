@@ -33,6 +33,15 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { FilterPresetsMenu } from "@/components/filters/filter-presets-menu";
+import { FilterResultCount } from "@/components/filters/filter-primitives";
+
+interface PendingSignaturesPreset {
+  q: string;
+  org: string;
+  sort: SortKey;
+  dir: "asc" | "desc";
+}
 
 type SortKey = "waiting" | "expires" | "organization" | "document";
 
@@ -196,6 +205,22 @@ function PendingSignaturesPage() {
                 </option>
               ))}
             </select>
+            <FilterPresetsMenu<PendingSignaturesPreset>
+              scope="pending-signatures-v1"
+              current={{ q, org, sort, dir }}
+              onApply={(v) => setSearch({ ...v })}
+              isEqual={(a, b) =>
+                a.q === b.q && a.org === b.org && a.sort === b.sort && a.dir === b.dir
+              }
+              canSave={!!(q || org || sort !== "waiting" || dir !== "asc")}
+            />
+            <FilterResultCount
+              count={total}
+              loading={pageQuery.isFetching}
+              zeroLabel="0 document"
+              oneLabel="1 document"
+              manyLabel={(n) => `${n} documents`}
+            />
           </div>
         </CardHeader>
         <CardContent className="p-0">

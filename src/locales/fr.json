@@ -166,7 +166,10 @@
     "sort": {
       "created_at": "Création", "updated_at": "Modification",
       "issue_date": "Émission", "due_date": "Échéance", "amount_ttc": "Montant"
-    }
+    },
+    "presets": "Filtres enregistrés",
+    "presets_save": "Enregistrer ce filtre",
+    "presets_empty": "Aucun filtre enregistré."
   },
   "workflows": {
     "title": "Workflows",
