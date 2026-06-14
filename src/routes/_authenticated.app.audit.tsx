@@ -3,7 +3,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { listAuditLogs, listAuditActions, type AuditLogRow } from "@/lib/audit-logs.functions";
+import { listAuditLogs, listAuditActions } from "@/lib/audit-logs.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
