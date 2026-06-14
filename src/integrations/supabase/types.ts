@@ -694,6 +694,8 @@ export type Database = {
           organization_id: string
           payment_means_code: string | null
           payment_terms: string | null
+          pdp_provider: string | null
+          pdp_transmission_id: string | null
           previous_status: Database["public"]["Enums"]["document_status"] | null
           reference: string | null
           retention_until: string | null
@@ -751,6 +753,8 @@ export type Database = {
           organization_id: string
           payment_means_code?: string | null
           payment_terms?: string | null
+          pdp_provider?: string | null
+          pdp_transmission_id?: string | null
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
             | null
@@ -810,6 +814,8 @@ export type Database = {
           organization_id?: string
           payment_means_code?: string | null
           payment_terms?: string | null
+          pdp_provider?: string | null
+          pdp_transmission_id?: string | null
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
             | null
@@ -851,6 +857,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "documents_pdp_transmission_id_fkey"
+            columns: ["pdp_transmission_id"]
+            isOneToOne: false
+            referencedRelation: "einvoice_transmissions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       einvoice_events: {
@@ -890,6 +903,78 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      einvoice_transmissions: {
+        Row: {
+          acknowledged_at: string | null
+          attempts: number
+          created_at: string
+          created_by: string | null
+          document_id: string
+          format: string | null
+          id: string
+          last_error: string | null
+          organization_id: string
+          payload_ref: string | null
+          provider: string
+          remote_id: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["einvoice_transmission_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          format?: string | null
+          id?: string
+          last_error?: string | null
+          organization_id: string
+          payload_ref?: string | null
+          provider?: string
+          remote_id?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["einvoice_transmission_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          format?: string | null
+          id?: string
+          last_error?: string | null
+          organization_id?: string
+          payload_ref?: string | null
+          provider?: string
+          remote_id?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["einvoice_transmission_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "einvoice_transmissions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_transmissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1656,6 +1741,12 @@ export type Database = {
         | "in_dispute"
         | "paid"
         | "archived"
+      einvoice_transmission_status:
+        | "queued"
+        | "sending"
+        | "transmitted"
+        | "error"
+        | "cancelled"
       pdf_field_kind: "text" | "date" | "checkbox" | "signature" | "initials"
       signature_level: "ses" | "aes" | "qes"
       signature_request_status: "pending" | "signed" | "declined" | "cancelled"
@@ -1822,6 +1913,13 @@ export const Constants = {
         "in_dispute",
         "paid",
         "archived",
+      ],
+      einvoice_transmission_status: [
+        "queued",
+        "sending",
+        "transmitted",
+        "error",
+        "cancelled",
       ],
       pdf_field_kind: ["text", "date", "checkbox", "signature", "initials"],
       signature_level: ["ses", "aes", "qes"],
