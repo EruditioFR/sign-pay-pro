@@ -137,6 +137,37 @@
       "too_large": "Fichier trop volumineux (max 20 Mo)."
     }
   },
+  "docs_search": {
+    "placeholder": "Titre, référence, tiers, email…",
+    "filters": "Filtres",
+    "period": "Période d'émission",
+    "amount_range": "Montant (TTC)",
+    "organization": "Organisation",
+    "all_organizations": "Toutes",
+    "reset": "Réinitialiser",
+    "no_results": "Aucun document correspondant.",
+    "results_count": "{{count}} résultat",
+    "results_count_plural": "{{count}} résultats",
+    "page_of": "Page {{page}} / {{total}}",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "signature": {
+      "title": "Signature", "any": "Toutes", "none": "Aucune",
+      "pending": "En attente", "signed": "Signé"
+    },
+    "payment": {
+      "title": "Paiement", "any": "Tous", "none": "Aucun",
+      "partial": "Partiel", "paid": "Payé"
+    },
+    "archived": {
+      "title": "Archives", "exclude": "Sans archives",
+      "include": "Avec archives", "only": "Archives uniquement"
+    },
+    "sort": {
+      "created_at": "Création", "updated_at": "Modification",
+      "issue_date": "Émission", "due_date": "Échéance", "amount_ttc": "Montant"
+    }
+  },
   "workflows": {
     "title": "Workflows",
     "subtitle": "Modèles de validation de votre organisation.",
