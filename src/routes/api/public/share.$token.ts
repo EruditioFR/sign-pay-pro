@@ -288,6 +288,11 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
         if (body.action === "stripe_checkout") {
           if (!link.allow_pay) return json({ error: "payment_disabled" }, { status: 403 });
+          // SECURITY: clamp to remaining due — same rationale as the manual
+          // pay branch above. Prevents Stripe sessions for arbitrary amounts.
+          const remaining = await computeRemainingDue(supabaseAdmin, doc);
+          const clamped = clampPayableAmount(body.amount, remaining);
+          if (clamped == null) return json({ error: "amount_out_of_range" }, { status: 400 });
 
           // 1) Pre-create the payment row in pending status so the webhook can
           //    resolve it by id from session metadata / client_reference_id.
@@ -296,7 +301,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
             .insert({
               document_id: doc.id,
               share_link_id: link.id,
-              amount: body.amount,
+              amount: clamped,
               currency: doc.currency || "EUR",
               method: "card",
               status: "pending",
