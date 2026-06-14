@@ -4,9 +4,17 @@ import { z } from "zod";
 
 const DocumentTypeEnum = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
 
+const BusinessVerticalEnum = z.enum([
+  "real_estate",
+  "car_rental",
+  "services",
+  "goods_sales",
+]);
+
 const TemplateSchema = z.object({
   name: z.string().min(1).max(120),
   document_type: DocumentTypeEnum.optional().nullable(),
+  business_vertical: BusinessVerticalEnum.optional().nullable(),
   logo_url: z.string().url().optional().nullable().or(z.literal("")),
   primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
   header_html: z.string().max(5000).optional().nullable(),

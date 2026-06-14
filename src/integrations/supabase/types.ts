@@ -346,6 +346,7 @@ export type Database = {
         Row: {
           active: boolean
           bic: string | null
+          business_vertical: string | null
           created_at: string
           document_type: Database["public"]["Enums"]["document_type"] | null
           footer_html: string | null
@@ -365,6 +366,7 @@ export type Database = {
         Insert: {
           active?: boolean
           bic?: string | null
+          business_vertical?: string | null
           created_at?: string
           document_type?: Database["public"]["Enums"]["document_type"] | null
           footer_html?: string | null
@@ -384,6 +386,7 @@ export type Database = {
         Update: {
           active?: boolean
           bic?: string | null
+          business_vertical?: string | null
           created_at?: string
           document_type?: Database["public"]["Enums"]["document_type"] | null
           footer_html?: string | null
@@ -1036,6 +1039,7 @@ export type Database = {
       workflow_templates: {
         Row: {
           active: boolean
+          business_vertical: string | null
           created_at: string
           document_type: Database["public"]["Enums"]["document_type"] | null
           id: string
@@ -1045,6 +1049,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          business_vertical?: string | null
           created_at?: string
           document_type?: Database["public"]["Enums"]["document_type"] | null
           id?: string
@@ -1054,6 +1059,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          business_vertical?: string | null
           created_at?: string
           document_type?: Database["public"]["Enums"]["document_type"] | null
           id?: string
