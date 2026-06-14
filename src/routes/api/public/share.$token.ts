@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PDFDocument } from "pdf-lib";
+import { z } from "zod";
+import { buildDocumentPdf } from "@/lib/pdf.functions";
 import {
   isUuidV4Like,
   firstHopIp,
