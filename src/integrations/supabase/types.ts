@@ -556,6 +556,8 @@ export type Database = {
         Row: {
           amount_ht: number | null
           amount_ttc: number | null
+          archived_at: string | null
+          archived_by: string | null
           created_at: string
           created_by: string | null
           currency: string
@@ -566,7 +568,9 @@ export type Database = {
           id: string
           issue_date: string | null
           organization_id: string
+          previous_status: Database["public"]["Enums"]["document_status"] | null
           reference: string | null
+          retention_until: string | null
           status: Database["public"]["Enums"]["document_status"]
           tags: string[]
           third_party_email: string | null
@@ -578,6 +582,8 @@ export type Database = {
         Insert: {
           amount_ht?: number | null
           amount_ttc?: number | null
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -588,7 +594,11 @@ export type Database = {
           id?: string
           issue_date?: string | null
           organization_id: string
+          previous_status?:
+            | Database["public"]["Enums"]["document_status"]
+            | null
           reference?: string | null
+          retention_until?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           tags?: string[]
           third_party_email?: string | null
@@ -600,6 +610,8 @@ export type Database = {
         Update: {
           amount_ht?: number | null
           amount_ttc?: number | null
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -610,7 +622,11 @@ export type Database = {
           id?: string
           issue_date?: string | null
           organization_id?: string
+          previous_status?:
+            | Database["public"]["Enums"]["document_status"]
+            | null
           reference?: string | null
+          retention_until?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           tags?: string[]
           third_party_email?: string | null
@@ -1254,6 +1270,7 @@ export type Database = {
         | "signed"
         | "paid"
         | "partially_paid"
+        | "cancelled"
       document_type:
         | "purchase_order"
         | "quote"
@@ -1402,6 +1419,7 @@ export const Constants = {
         "signed",
         "paid",
         "partially_paid",
+        "cancelled",
       ],
       document_type: [
         "purchase_order",
