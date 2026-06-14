@@ -7,7 +7,7 @@ const search = z.object({ token: z.string().optional() });
 
 export const Route = createFileRoute("/pay/cancelled")({
   validateSearch: (raw) => search.parse(raw),
-  component: PayCancelled;
+  component: PayCancelled,
 });
 
 function PayCancelled() {
