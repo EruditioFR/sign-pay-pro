@@ -1257,6 +1257,54 @@ export type Database = {
           pending_signers: number
         }[]
       }
+      search_documents: {
+        Args: {
+          p_archived?: string
+          p_currencies?: string[]
+          p_dir?: string
+          p_from_date?: string
+          p_limit?: number
+          p_max_amount?: number
+          p_min_amount?: number
+          p_offset?: number
+          p_organization?: string
+          p_payment?: string
+          p_q?: string
+          p_signature?: string
+          p_sort?: string
+          p_statuses?: string[]
+          p_to_date?: string
+          p_types?: string[]
+        }
+        Returns: {
+          amount_ht: number
+          amount_ttc: number
+          archived_at: string
+          created_at: string
+          currency: string
+          due_date: string
+          has_payment: boolean
+          has_signed: boolean
+          id: string
+          issue_date: string
+          organization_id: string
+          organization_name: string
+          payments_total: number
+          reference: string
+          retention_until: string
+          signers_signed: number
+          signers_total: number
+          status: string
+          third_party_email: string
+          third_party_name: string
+          title: string
+          total_count: number
+          type: string
+          updated_at: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "super_admin" | "reseller" | "admin_client" | "manager" | "user"
