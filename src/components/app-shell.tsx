@@ -34,6 +34,7 @@ import {
   Settings,
   ShieldCheck,
   Store,
+  TrendingUp,
   User as UserIcon,
   Users,
 } from "lucide-react";
