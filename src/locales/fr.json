@@ -92,7 +92,8 @@
     "cancel": "Annuler",
     "loading": "Chargement…",
     "error": "Erreur",
-    "language": "Langue"
+    "language": "Langue",
+    "retry": "Réessayer"
   },
   "documents": {
     "title": "Documents",
