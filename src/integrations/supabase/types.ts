@@ -979,6 +979,59 @@ export type Database = {
           },
         ]
       }
+      error_logs: {
+        Row: {
+          category: string
+          code: string | null
+          context: Json
+          created_at: string
+          fingerprint: string | null
+          id: string
+          message: string
+          organization_id: string | null
+          severity: string
+          source: string
+          stack: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          code?: string | null
+          context?: Json
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          message: string
+          organization_id?: string | null
+          severity: string
+          source: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          code?: string | null
+          context?: Json
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          message?: string
+          organization_id?: string | null
+          severity?: string
+          source?: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_sessions: {
         Row: {
           claimed_at: string | null
