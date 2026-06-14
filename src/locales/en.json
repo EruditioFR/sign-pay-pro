@@ -247,9 +247,17 @@
     "draw_signature": "Sign below", "clear": "Clear",
     "sign_now": "Sign now", "signed_ok": "Document signed. Thank you!",
     "need_name": "Please enter your name.", "need_signature": "Please sign.",
-    "amount": "Amount", "payer_name": "Payer name",
+    "amount": "Amount", "payer_name": "Payer name", "payer_email": "Payer email",
     "payment_ref": "Payment reference", "payment_ref_hint": "e.g. transfer reference",
-    "declare_payment": "Declare payment", "declare_payment_hint": "Enter your transfer details.",
+    "declare_payment": "Declare payment", "declare_payment_hint": "Or declare a payment made offline (transfer, check…).",
+    "pay_online": "Pay online by card", "or": "or",
     "paid_ok": "Payment recorded. Thank you!", "need_amount": "Invalid amount."
+  },
+  "pay": {
+    "success_title": "Payment confirmed",
+    "success_text": "Thank you. Your payment was received. A receipt has been emailed to you.",
+    "cancelled_title": "Payment cancelled",
+    "cancelled_text": "You cancelled the payment. You can try again anytime.",
+    "back_to_document": "Back to document"
   }
 }
