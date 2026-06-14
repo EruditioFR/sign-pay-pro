@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { DocumentStatusBadge } from "@/components/status-badge";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
 import { DocumentFiltersBar, type DocumentFiltersValue } from "@/components/document-filters-bar";
 import { searchDocuments } from "@/lib/documents-search.functions";
 import type { DocumentStatus, DocumentType } from "@/lib/documents.functions";
-import { Plus, ChevronLeft, ChevronRight, FileSignature, Wallet, Archive } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, FileSignature, Archive } from "lucide-react";
 
 const DocType = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
 const DocStatus = z.enum([
@@ -191,11 +192,13 @@ function DocumentsPage() {
                             {d.signers_signed}/{d.signers_total}
                           </span>
                         )}
-                        {d.has_payment && (
-                          <span className="inline-flex items-center gap-1 text-xs" title="Paiement">
-                            <Wallet className="h-3 w-3" />
-                          </span>
-                        )}
+                        <PaymentStatusBadge
+                          documentStatus={d.status}
+                          amountTtc={d.amount_ttc}
+                          dueDate={d.due_date}
+                          paidAmount={d.payments_total}
+                          hideWhenNotApplicable
+                        />
                         {d.archived_at && (
                           <span className="inline-flex items-center gap-1 text-xs" title="Archivé">
                             <Archive className="h-3 w-3" />

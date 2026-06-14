@@ -8,6 +8,8 @@ import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DocumentStatusBadge } from "@/components/status-badge";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
+import { computePaymentSummary } from "@/lib/payment-status";
 import { DocumentUploader } from "@/components/document-uploader";
 import { WorkflowTimeline } from "@/components/workflow-timeline";
 import { SubmitDocumentButton } from "@/components/submit-document-button";
@@ -97,6 +99,13 @@ function DocumentDetailPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <DocumentStatusBadge status={doc.status} />
+              <PaymentStatusBadge
+                documentStatus={doc.status}
+                amountTtc={doc.amount_ttc}
+                dueDate={doc.due_date}
+                payments={pays?.payments ?? []}
+                hideWhenNotApplicable
+              />
               {!readOnly && doc.status === "draft" && (
                 <SubmitDocumentButton documentId={doc.id} documentType={doc.type} />
               )}
@@ -199,7 +208,35 @@ function DocumentDetailPage() {
 
       <Card>
         <CardHeader><CardTitle>{t("doc_detail.payments")}</CardTitle></CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {(() => {
+            const summary = computePaymentSummary({
+              documentStatus: doc.status,
+              amountTtc: doc.amount_ttc,
+              dueDate: doc.due_date,
+              payments: pays?.payments ?? [],
+            });
+            if (summary.status === "not_applicable") return null;
+            return (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                <PaymentStatusBadge
+                  documentStatus={doc.status}
+                  amountTtc={doc.amount_ttc}
+                  dueDate={doc.due_date}
+                  payments={pays?.payments ?? []}
+                />
+                <span className="text-muted-foreground">
+                  {summary.paidAmount.toLocaleString()} / {summary.dueAmount.toLocaleString()} {doc.currency}
+                </span>
+                {summary.remaining > 0 && (
+                  <span className="text-muted-foreground">
+                    · {t("payment_status.tooltip.remaining", { defaultValue: "Restant" })}:{" "}
+                    {summary.remaining.toLocaleString()} {doc.currency}
+                  </span>
+                )}
+              </div>
+            );
+          })()}
           {(pays?.payments ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("doc_detail.no_payments")}</p>
           ) : (
