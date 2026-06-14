@@ -120,6 +120,19 @@
       "sent": "Envoyé", "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé",
       "cancelled": "Annulé"
     },
+    "payment_status_legacy_anchor": {},
+    "_payment_status_block": {}
+  },
+  "payment_status": {
+    "paid": "Payé",
+    "partially_paid": "Partiellement payé",
+    "unpaid": "Impayé",
+    "overdue": "En retard",
+    "refunded": "Remboursé",
+    "not_applicable": "—",
+    "tooltip": { "paid": "Payé", "due": "Dû", "remaining": "Restant" }
+  },
+  "documents_continue": {
     "archive": {
       "archive": "Archiver", "unarchive": "Désarchiver", "cancel": "Annuler le document",
       "include_archived": "Inclure les archives",
