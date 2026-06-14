@@ -1,43 +1,117 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { listDocuments, ALL_DOCUMENT_STATUSES, type DocumentType, type DocumentStatus } from "@/lib/documents.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { DocumentStatusBadge } from "@/components/status-badge";
-import { Archive, Plus } from "lucide-react";
+import { DocumentFiltersBar, type DocumentFiltersValue } from "@/components/document-filters-bar";
+import { searchDocuments } from "@/lib/documents-search.functions";
+import type { DocumentStatus, DocumentType } from "@/lib/documents.functions";
+import { Plus, ChevronLeft, ChevronRight, FileSignature, Wallet, Archive } from "lucide-react";
+
+const DocType = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
+const DocStatus = z.enum([
+  "draft", "pending_validation", "validated", "rejected",
+  "sent", "signed", "paid", "partially_paid", "archived", "cancelled",
+]);
+
+const searchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  types: fallback(z.array(DocType), []).default([]),
+  statuses: fallback(z.array(DocStatus), []).default([]),
+  currencies: fallback(z.array(z.string().length(3)), []).default([]),
+  organization_id: z.string().uuid().optional(),
+  from_date: z.string().optional(),
+  to_date: z.string().optional(),
+  min_amount: z.number().optional(),
+  max_amount: z.number().optional(),
+  signature: fallback(z.enum(["any", "none", "pending", "signed"]), "any").default("any"),
+  payment: fallback(z.enum(["any", "none", "partial", "paid"]), "any").default("any"),
+  archived: fallback(z.enum(["exclude", "include", "only"]), "exclude").default("exclude"),
+  sort: fallback(z.enum(["created_at", "updated_at", "issue_date", "due_date", "amount_ttc"]), "created_at").default("created_at"),
+  dir: fallback(z.enum(["asc", "desc"]), "desc").default("desc"),
+  page: fallback(z.number().int().min(1), 1).default(1),
+  pageSize: fallback(z.number().int().min(10).max(100), 25).default(25),
+});
 
 export const Route = createFileRoute("/_authenticated/app/documents/")({
+  validateSearch: zodValidator(searchSchema),
   component: DocumentsPage,
 });
 
 function DocumentsPage() {
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<DocumentType | "all">("all");
-  const [status, setStatus] = useState<DocumentStatus | "all">("all");
-  const [includeArchived, setIncludeArchived] = useState(false);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
 
-  const fetchDocs = useServerFn(listDocuments);
-  const { data, isLoading } = useQuery({
-    queryKey: ["documents", search, type, status, includeArchived],
+  const filters: DocumentFiltersValue = {
+    q: search.q,
+    types: search.types as DocumentType[],
+    statuses: search.statuses as DocumentStatus[],
+    currencies: search.currencies,
+    organization_id: search.organization_id,
+    from_date: search.from_date,
+    to_date: search.to_date,
+    min_amount: search.min_amount,
+    max_amount: search.max_amount,
+    signature: search.signature,
+    payment: search.payment,
+    archived: search.archived,
+    sort: search.sort,
+    dir: search.dir,
+  };
+
+  const onChange = (next: Partial<DocumentFiltersValue>) => {
+    navigate({
+      search: (prev) => ({ ...prev, ...next, page: 1 }),
+      replace: true,
+    });
+  };
+
+  const onReset = () => {
+    navigate({
+      search: () => ({
+        q: "", types: [], statuses: [], currencies: [],
+        signature: "any", payment: "any", archived: "exclude",
+        sort: "created_at", dir: "desc", page: 1, pageSize: search.pageSize,
+      }),
+    });
+  };
+
+  const fetchSearch = useServerFn(searchDocuments);
+  const { data, isFetching } = useQuery({
+    queryKey: ["documents_search", search],
     queryFn: () =>
-      fetchDocs({
+      fetchSearch({
         data: {
-          search: search || undefined,
-          type: type === "all" ? undefined : type,
-          status: status === "all" ? undefined : status,
-          includeArchived,
+          q: search.q || undefined,
+          types: search.types.length ? search.types : undefined,
+          statuses: search.statuses.length ? search.statuses : undefined,
+          currencies: search.currencies.length ? search.currencies : undefined,
+          organization_id: search.organization_id,
+          from_date: search.from_date,
+          to_date: search.to_date,
+          min_amount: search.min_amount,
+          max_amount: search.max_amount,
+          signature: search.signature,
+          payment: search.payment,
+          archived: search.archived,
+          sort: search.sort,
+          dir: search.dir,
+          limit: search.pageSize,
+          offset: (search.page - 1) * search.pageSize,
         },
       }),
+    placeholderData: keepPreviousData,
   });
+
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / search.pageSize));
 
   return (
     <Card>
@@ -45,7 +119,11 @@ function DocumentsPage() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle>{t("documents.title")}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t("documents.subtitle")}</p>
+            <p className="text-sm text-muted-foreground">
+              {total > 0
+                ? t("docs_search.results_count", { count: total })
+                : t("documents.subtitle")}
+            </p>
           </div>
           <Button asChild>
             <Link to="/app/documents/new">
@@ -55,76 +133,94 @@ function DocumentsPage() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-2 md:grid-cols-3">
-          <Input
-            placeholder={t("documents.search_placeholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <Select value={type} onValueChange={(v) => setType(v as DocumentType | "all")}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("documents.filter.all_types")}</SelectItem>
-              {(["purchase_order", "quote", "invoice", "contract", "other"] as DocumentType[]).map((tp) => (
-                <SelectItem key={tp} value={tp}>{t(`documents.types.${tp}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={status} onValueChange={(v) => setStatus(v as DocumentStatus | "all")}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("documents.filter.all_statuses")}</SelectItem>
-              {ALL_DOCUMENT_STATUSES.map((st) => (
-                <SelectItem key={st} value={st}>{t(`documents.status.${st}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DocumentFiltersBar value={filters} onChange={onChange} onReset={onReset} />
 
-        <div className="flex items-center gap-2 text-sm">
-          <Switch id="include-archived" checked={includeArchived} onCheckedChange={setIncludeArchived} />
-          <Label htmlFor="include-archived" className="flex items-center gap-1 cursor-pointer">
-            <Archive className="h-3.5 w-3.5" />
-            {t("documents.archive.include_archived")}
-          </Label>
-        </div>
-
-        {isLoading ? (
+        {isFetching && rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-        ) : !data?.documents.length ? (
-          <p className="text-sm text-muted-foreground">{t("documents.empty")}</p>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("docs_search.no_results")}</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("documents.field.title")}</TableHead>
-                <TableHead>{t("documents.field.type")}</TableHead>
-                <TableHead>{t("documents.field.third_party")}</TableHead>
-                <TableHead>{t("documents.field.amount")}</TableHead>
-                <TableHead>{t("documents.field.status")}</TableHead>
-                <TableHead>{t("documents.field.issue_date")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.documents.map((d) => (
-                <TableRow key={d.id} className="cursor-pointer hover:bg-muted/40">
-                  <TableCell className="font-medium">
-                    <Link to="/app/documents/$id" params={{ id: d.id }}>
-                      {d.title}
-                      {d.reference && <span className="ml-2 text-xs text-muted-foreground">{d.reference}</span>}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{t(`documents.types.${d.type}`)}</TableCell>
-                  <TableCell>{d.third_party_name ?? "—"}</TableCell>
-                  <TableCell>
-                    {d.amount_ttc != null ? `${d.amount_ttc.toLocaleString()} ${d.currency}` : "—"}
-                  </TableCell>
-                  <TableCell><DocumentStatusBadge status={d.status} /></TableCell>
-                  <TableCell>{d.issue_date ?? "—"}</TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("documents.field.title")}</TableHead>
+                  <TableHead>{t("documents.field.type")}</TableHead>
+                  <TableHead>{t("documents.field.third_party")}</TableHead>
+                  <TableHead className="text-right">{t("documents.field.amount")}</TableHead>
+                  <TableHead>{t("documents.field.status")}</TableHead>
+                  <TableHead>{t("documents.field.issue_date")}</TableHead>
+                  <TableHead className="text-right">·</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map((d) => (
+                  <TableRow key={d.id} className="cursor-pointer hover:bg-muted/40">
+                    <TableCell className="font-medium">
+                      <Link to="/app/documents/$id" params={{ id: d.id }} className="hover:underline">
+                        {d.title}
+                        {d.reference && <span className="ml-2 text-xs text-muted-foreground">{d.reference}</span>}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{t(`documents.types.${d.type}`)}</TableCell>
+                    <TableCell>
+                      <div className="truncate max-w-[180px]">{d.third_party_name ?? "—"}</div>
+                      {d.third_party_email && (
+                        <div className="text-xs text-muted-foreground truncate max-w-[180px]">{d.third_party_email}</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {d.amount_ttc != null ? `${Number(d.amount_ttc).toLocaleString()} ${d.currency}` : "—"}
+                    </TableCell>
+                    <TableCell><DocumentStatusBadge status={d.status} /></TableCell>
+                    <TableCell>{d.issue_date ?? "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex items-center gap-2 text-muted-foreground">
+                        {d.signers_total > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs" title="Signatures">
+                            <FileSignature className="h-3 w-3" />
+                            {d.signers_signed}/{d.signers_total}
+                          </span>
+                        )}
+                        {d.has_payment && (
+                          <span className="inline-flex items-center gap-1 text-xs" title="Paiement">
+                            <Wallet className="h-3 w-3" />
+                          </span>
+                        )}
+                        {d.archived_at && (
+                          <span className="inline-flex items-center gap-1 text-xs" title="Archivé">
+                            <Archive className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <span className="text-xs text-muted-foreground">
+                {t("docs_search.page_of", { page: search.page, total: totalPages })}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline" size="sm"
+                  disabled={search.page <= 1 || isFetching}
+                  onClick={() => navigate({ search: (p) => ({ ...p, page: Math.max(1, p.page - 1) }) })}
+                >
+                  <ChevronLeft className="h-4 w-4" /> {t("docs_search.previous")}
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  disabled={search.page >= totalPages || isFetching}
+                  onClick={() => navigate({ search: (p) => ({ ...p, page: p.page + 1 }) })}
+                >
+                  {t("docs_search.next")} <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
