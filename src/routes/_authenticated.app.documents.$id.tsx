@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getDocument, getDocumentFileSignedUrl } from "@/lib/documents.functions";
+import { getDocument, getDocumentFileSignedUrl, isReadOnlyStatus } from "@/lib/documents.functions";
 import { listDocumentSignatures, listDocumentPayments } from "@/lib/sharing.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,8 @@ import { PaymentDialog } from "@/components/payment-dialog";
 import { SignDocumentDialog } from "@/components/sign-document-dialog";
 import { SignedPdfPreview } from "@/components/signed-pdf-preview";
 import { MultiSignersDialog } from "@/components/multi-signers-dialog";
-import { ArrowLeft, Download, Edit3 } from "lucide-react";
+import { ArchiveActions } from "@/components/archive-actions";
+import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id")({
   component: DocumentDetailPage,
