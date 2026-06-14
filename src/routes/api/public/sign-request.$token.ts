@@ -3,6 +3,17 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PDFDocument } from "pdf-lib";
 import { z } from "zod";
 import { buildDocumentPdf } from "@/lib/pdf.functions";
+import {
+  CONFORMITY_MODULE_VERSION,
+  CURRENT_SUPPORTED_LEVEL,
+  DEFAULT_CONSENT_TEXT_FR,
+  CONSENT_TEXT_VERSION,
+  assertAuthMethodAllowed,
+  sha256Hex,
+  tokenHint,
+  type SignatureEvidence,
+  type AuthMethod,
+} from "@/lib/signature-conformity";
 
 const json = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
@@ -45,6 +56,11 @@ async function isNextInLine(req: {
 const SignBody = z.object({
   action: z.literal("sign"),
   signature_image_b64: z.string().min(50).max(2_000_000),
+  // Consentement explicite — exigé pour la conformité SES (eIDAS art. 25).
+  consent: z.object({
+    accepted: z.literal(true),
+    text: z.string().min(20).max(2000).optional(),
+  }),
   placement: z
     .object({
       page_index: z.number().int().min(0).max(500),
@@ -113,6 +129,14 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             status: req.status,
             expires_at: req.expires_at,
             signed_at: req.signed_at,
+            signature_level: req.signature_level ?? CURRENT_SUPPORTED_LEVEL,
+            auth_method_required: req.auth_method_required ?? "email_link",
+          },
+          conformity: {
+            signature_level: req.signature_level ?? CURRENT_SUPPORTED_LEVEL,
+            consent_text: DEFAULT_CONSENT_TEXT_FR,
+            consent_version: CONSENT_TEXT_VERSION,
+            module_version: CONFORMITY_MODULE_VERSION,
           },
           can_sign: next,
         });
@@ -176,6 +200,9 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         } else {
           basePdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
         }
+
+        // Empreinte du PDF AVANT apposition — preuve d'intégrité du contrat soumis.
+        const originalHashHex = await sha256Hex(basePdfBytes);
 
         const pdf = await PDFDocument.load(basePdfBytes);
         const signedAt = new Date();
@@ -248,16 +275,44 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
 
 
         const signedBytes = await pdf.save();
-        const hashBuf = await crypto.subtle.digest("SHA-256", signedBytes as BufferSource);
-        const hashHex = Array.from(new Uint8Array(hashBuf))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
+        const signedHashHex = await sha256Hex(signedBytes);
 
         const path = `${doc.organization_id}/${doc.id}/req-${req.id}-${signedAt.getTime()}.pdf`;
         const { error: upErr } = await supabaseAdmin.storage
           .from("signed-documents")
           .upload(path, signedBytes, { contentType: "application/pdf" });
         if (upErr) return json({ error: upErr.message }, { status: 500 });
+
+        // Bloc de conformité : niveau + auth + consentement + evidence.
+        const signatureLevel = req.signature_level ?? CURRENT_SUPPORTED_LEVEL;
+        const authMethod = (req.auth_method_required ?? "email_link") as AuthMethod;
+        try {
+          assertAuthMethodAllowed(signatureLevel, authMethod);
+        } catch (e) {
+          return json({ error: (e as Error).message }, { status: 400 });
+        }
+
+        const consentText = body.consent.text ?? DEFAULT_CONSENT_TEXT_FR;
+        const consentAcceptedAt = signedAt.toISOString();
+
+        const evidence: SignatureEvidence = {
+          signature_level: signatureLevel,
+          auth_method: authMethod,
+          request_token_hint: tokenHint(params.token),
+          request_id: req.id,
+          signer: { name: req.signer_name, email: req.signer_email },
+          consent: {
+            text: consentText,
+            version: CONSENT_TEXT_VERSION,
+            accepted_at: consentAcceptedAt,
+          },
+          signed_at: consentAcceptedAt,
+          original_pdf_hash_sha256: originalHashHex,
+          signed_pdf_hash_sha256: signedHashHex,
+          network: { ip, user_agent: ua },
+          placement: body.placement ?? null,
+          conformity_module_version: CONFORMITY_MODULE_VERSION,
+        };
 
         const { data: sig, error: sigErr } = await supabaseAdmin
           .from("document_signatures")
@@ -269,8 +324,14 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             signature_image_b64: body.signature_image_b64.slice(0, 500_000),
             ip,
             user_agent: ua,
-            pdf_hash_sha256: hashHex,
+            pdf_hash_sha256: signedHashHex,
             pdf_storage_path: path,
+            signature_level: signatureLevel,
+            auth_method: authMethod,
+            consent_text: consentText,
+            consent_accepted_at: consentAcceptedAt,
+            original_pdf_hash_sha256: originalHashHex,
+            evidence: JSON.parse(JSON.stringify(evidence)),
           })
           .select()
           .single();
@@ -285,7 +346,13 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           })
           .eq("id", req.id);
 
-        return json({ ok: true, signature_id: sig.id, hash: hashHex });
+        return json({
+          ok: true,
+          signature_id: sig.id,
+          hash: signedHashHex,
+          original_hash: originalHashHex,
+          signature_level: signatureLevel,
+        });
       },
     },
   },

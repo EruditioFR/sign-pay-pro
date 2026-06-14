@@ -51,6 +51,14 @@ interface SignData {
     status: "pending" | "signed" | "declined" | "cancelled";
     expires_at: string | null;
     signed_at: string | null;
+    signature_level?: "ses" | "aes" | "qes";
+    auth_method_required?: string;
+  };
+  conformity?: {
+    signature_level: "ses" | "aes" | "qes";
+    consent_text: string;
+    consent_version: string;
+    module_version: string;
   };
   can_sign: boolean;
 }
@@ -150,6 +158,8 @@ function PublicSignRequestPage() {
             token={token}
             pdfUrl={data.pdfUrl}
             signerName={data.request.signer_name}
+            consentText={data.conformity?.consent_text}
+            signatureLevel={data.conformity?.signature_level ?? "ses"}
             onSigned={() => {
               setDone("signed");
               refresh();
@@ -198,15 +208,20 @@ function SignWithPlacement({
   token,
   pdfUrl,
   signerName,
+  consentText,
+  signatureLevel,
   onSigned,
   onDeclined,
 }: {
   token: string;
   pdfUrl: string | null;
   signerName: string;
+  consentText?: string;
+  signatureLevel: "ses" | "aes" | "qes";
   onSigned: () => void;
   onDeclined: () => void;
 }) {
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
@@ -333,11 +348,16 @@ function SignWithPlacement({
   };
 
   const sign = async () => {
+    if (!consentAccepted) return toast.error("Vous devez accepter les conditions de signature électronique.");
     if (sigRef.current?.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
     setSubmitting(true);
     try {
       const dataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
-      const body: Record<string, unknown> = { action: "sign", signature_image_b64: dataUrl };
+      const body: Record<string, unknown> = {
+        action: "sign",
+        signature_image_b64: dataUrl,
+        consent: { accepted: true, text: consentText },
+      };
       if (showFreePlacement && placement) {
         body.placement = placement;
       }
@@ -486,16 +506,41 @@ function SignWithPlacement({
           </Button>
         </div>
 
+        <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Niveau de signature
+            </span>
+            <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary uppercase">
+              {signatureLevel}
+            </span>
+          </div>
+          <label className="flex items-start gap-2 text-xs leading-relaxed">
+            <input
+              type="checkbox"
+              checked={consentAccepted}
+              onChange={(e) => setConsentAccepted(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {consentText ??
+                "Je reconnais avoir lu et compris le document, j'accepte de le signer électroniquement et reconnais à cette signature la même valeur juridique qu'une signature manuscrite (eIDAS art. 25 §1, Code civil art. 1366 et 1367)."}
+            </span>
+          </label>
+        </div>
+
         <Button
           onClick={sign}
-          disabled={submitting || (showFreePlacement && !placement)}
+          disabled={submitting || !consentAccepted || (showFreePlacement && !placement)}
           className="w-full"
         >
           {submitting
             ? "Envoi…"
-            : showFreePlacement && !placement
-              ? "Placez votre signature sur le document"
-              : "Signer maintenant"}
+            : !consentAccepted
+              ? "Acceptez le consentement pour signer"
+              : showFreePlacement && !placement
+                ? "Placez votre signature sur le document"
+                : "Signer maintenant"}
         </Button>
 
         {!showDecline ? (
