@@ -34,6 +34,7 @@ const PayBody = z.object({
   amount: z.number().positive(),
   method: z.enum(["bank_transfer", "manual", "cash", "check"]).default("manual"),
   payer_name: z.string().max(150).optional().nullable(),
+  payer_email: z.string().email().optional().nullable().or(z.literal("")),
   provider_ref: z.string().max(200).optional().nullable(),
 });
 const PostBody = z.discriminatedUnion("action", [SignBody, PayBody]);
