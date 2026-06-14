@@ -99,6 +99,68 @@ export type Database = {
           },
         ]
       }
+      document_invoice_lines: {
+        Row: {
+          created_at: string
+          description: string
+          discount_pct: number | null
+          document_id: string
+          id: string
+          line_total_ht: number
+          line_total_ttc: number
+          metadata: Json
+          position: number
+          quantity: number
+          unit_code: string | null
+          unit_price_ht: number
+          updated_at: string
+          vat_category: string
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_pct?: number | null
+          document_id: string
+          id?: string
+          line_total_ht?: number
+          line_total_ttc?: number
+          metadata?: Json
+          position?: number
+          quantity?: number
+          unit_code?: string | null
+          unit_price_ht?: number
+          updated_at?: string
+          vat_category?: string
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_pct?: number | null
+          document_id?: string
+          id?: string
+          line_total_ht?: number
+          line_total_ttc?: number
+          metadata?: Json
+          position?: number
+          quantity?: number
+          unit_code?: string | null
+          unit_price_ht?: number
+          updated_at?: string
+          vat_category?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_invoice_lines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_payments: {
         Row: {
           amount: number
@@ -435,6 +497,47 @@ export type Database = {
         }
         Relationships: []
       }
+      document_vat_breakdown: {
+        Row: {
+          base_ht: number
+          created_at: string
+          document_id: string
+          exemption_reason: string | null
+          id: string
+          vat_amount: number
+          vat_category: string
+          vat_rate: number
+        }
+        Insert: {
+          base_ht?: number
+          created_at?: string
+          document_id: string
+          exemption_reason?: string | null
+          id?: string
+          vat_amount?: number
+          vat_category?: string
+          vat_rate: number
+        }
+        Update: {
+          base_ht?: number
+          created_at?: string
+          document_id?: string
+          exemption_reason?: string | null
+          id?: string
+          vat_amount?: number
+          vat_category?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_vat_breakdown_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_workflow_steps: {
         Row: {
           approval_token: string | null
@@ -558,24 +661,52 @@ export type Database = {
           amount_ttc: number | null
           archived_at: string | null
           archived_by: string | null
+          buyer_address: Json | null
+          buyer_chorus_service: string | null
+          buyer_legal_name: string | null
+          buyer_peppol_id: string | null
+          buyer_siret: string | null
+          buyer_vat_number: string | null
+          corrected_invoice_id: string | null
           created_at: string
           created_by: string | null
           currency: string
           current_workflow_id: string | null
+          delivery_date: string | null
           description: string | null
           due_date: string | null
+          einvoice_format: Database["public"]["Enums"]["einvoice_format"] | null
+          einvoice_last_event_at: string | null
+          einvoice_payload: Json | null
+          einvoice_pdp_id: string | null
+          einvoice_profile:
+            | Database["public"]["Enums"]["einvoice_profile"]
+            | null
+          einvoice_status: Database["public"]["Enums"]["einvoice_status"]
+          einvoice_submitted_at: string | null
+          einvoice_xml_path: string | null
           guest_session_id: string | null
           id: string
+          invoice_number: string | null
+          invoice_type_code: string | null
           issue_date: string | null
           organization_id: string
+          payment_means_code: string | null
+          payment_terms: string | null
           previous_status: Database["public"]["Enums"]["document_status"] | null
           reference: string | null
           retention_until: string | null
+          seller_address: Json | null
+          seller_legal_name: string | null
+          seller_siret: string | null
+          seller_vat_number: string | null
           status: Database["public"]["Enums"]["document_status"]
           tags: string[]
           third_party_email: string | null
           third_party_name: string | null
           title: string
+          total_discount: number | null
+          total_vat: number | null
           type: Database["public"]["Enums"]["document_type"]
           updated_at: string
         }
@@ -584,26 +715,56 @@ export type Database = {
           amount_ttc?: number | null
           archived_at?: string | null
           archived_by?: string | null
+          buyer_address?: Json | null
+          buyer_chorus_service?: string | null
+          buyer_legal_name?: string | null
+          buyer_peppol_id?: string | null
+          buyer_siret?: string | null
+          buyer_vat_number?: string | null
+          corrected_invoice_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           current_workflow_id?: string | null
+          delivery_date?: string | null
           description?: string | null
           due_date?: string | null
+          einvoice_format?:
+            | Database["public"]["Enums"]["einvoice_format"]
+            | null
+          einvoice_last_event_at?: string | null
+          einvoice_payload?: Json | null
+          einvoice_pdp_id?: string | null
+          einvoice_profile?:
+            | Database["public"]["Enums"]["einvoice_profile"]
+            | null
+          einvoice_status?: Database["public"]["Enums"]["einvoice_status"]
+          einvoice_submitted_at?: string | null
+          einvoice_xml_path?: string | null
           guest_session_id?: string | null
           id?: string
+          invoice_number?: string | null
+          invoice_type_code?: string | null
           issue_date?: string | null
           organization_id: string
+          payment_means_code?: string | null
+          payment_terms?: string | null
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
             | null
           reference?: string | null
           retention_until?: string | null
+          seller_address?: Json | null
+          seller_legal_name?: string | null
+          seller_siret?: string | null
+          seller_vat_number?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           tags?: string[]
           third_party_email?: string | null
           third_party_name?: string | null
           title: string
+          total_discount?: number | null
+          total_vat?: number | null
           type?: Database["public"]["Enums"]["document_type"]
           updated_at?: string
         }
@@ -612,30 +773,67 @@ export type Database = {
           amount_ttc?: number | null
           archived_at?: string | null
           archived_by?: string | null
+          buyer_address?: Json | null
+          buyer_chorus_service?: string | null
+          buyer_legal_name?: string | null
+          buyer_peppol_id?: string | null
+          buyer_siret?: string | null
+          buyer_vat_number?: string | null
+          corrected_invoice_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           current_workflow_id?: string | null
+          delivery_date?: string | null
           description?: string | null
           due_date?: string | null
+          einvoice_format?:
+            | Database["public"]["Enums"]["einvoice_format"]
+            | null
+          einvoice_last_event_at?: string | null
+          einvoice_payload?: Json | null
+          einvoice_pdp_id?: string | null
+          einvoice_profile?:
+            | Database["public"]["Enums"]["einvoice_profile"]
+            | null
+          einvoice_status?: Database["public"]["Enums"]["einvoice_status"]
+          einvoice_submitted_at?: string | null
+          einvoice_xml_path?: string | null
           guest_session_id?: string | null
           id?: string
+          invoice_number?: string | null
+          invoice_type_code?: string | null
           issue_date?: string | null
           organization_id?: string
+          payment_means_code?: string | null
+          payment_terms?: string | null
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
             | null
           reference?: string | null
           retention_until?: string | null
+          seller_address?: Json | null
+          seller_legal_name?: string | null
+          seller_siret?: string | null
+          seller_vat_number?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           tags?: string[]
           third_party_email?: string | null
           third_party_name?: string | null
           title?: string
+          total_discount?: number | null
+          total_vat?: number | null
           type?: Database["public"]["Enums"]["document_type"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_corrected_invoice_id_fkey"
+            columns: ["corrected_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_guest_session_id_fkey"
             columns: ["guest_session_id"]
@@ -648,6 +846,47 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      einvoice_events: {
+        Row: {
+          created_at: string
+          document_id: string
+          from_status: Database["public"]["Enums"]["einvoice_status"] | null
+          id: string
+          payload: Json
+          reason: string | null
+          source: string
+          to_status: Database["public"]["Enums"]["einvoice_status"]
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          from_status?: Database["public"]["Enums"]["einvoice_status"] | null
+          id?: string
+          payload?: Json
+          reason?: string | null
+          source?: string
+          to_status: Database["public"]["Enums"]["einvoice_status"]
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          from_status?: Database["public"]["Enums"]["einvoice_status"] | null
+          id?: string
+          payload?: Json
+          reason?: string | null
+          source?: string
+          to_status?: Database["public"]["Enums"]["einvoice_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "einvoice_events_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -691,42 +930,84 @@ export type Database = {
       organizations: {
         Row: {
           active: boolean
+          address_line1: string | null
+          address_line2: string | null
+          bic: string | null
+          city: string | null
           country: string
+          country_code: string | null
           created_at: string
           guest_session_id: string | null
+          iban: string | null
           id: string
           is_guest: boolean
           is_reseller: boolean
+          legal_form: string | null
+          legal_name: string | null
+          naf_code: string | null
           name: string
+          peppol_id: string | null
           plan: string
+          postal_code: string | null
           reseller_id: string | null
+          siren: string | null
+          siret: string | null
           updated_at: string
+          vat_number: string | null
         }
         Insert: {
           active?: boolean
+          address_line1?: string | null
+          address_line2?: string | null
+          bic?: string | null
+          city?: string | null
           country?: string
+          country_code?: string | null
           created_at?: string
           guest_session_id?: string | null
+          iban?: string | null
           id?: string
           is_guest?: boolean
           is_reseller?: boolean
+          legal_form?: string | null
+          legal_name?: string | null
+          naf_code?: string | null
           name: string
+          peppol_id?: string | null
           plan?: string
+          postal_code?: string | null
           reseller_id?: string | null
+          siren?: string | null
+          siret?: string | null
           updated_at?: string
+          vat_number?: string | null
         }
         Update: {
           active?: boolean
+          address_line1?: string | null
+          address_line2?: string | null
+          bic?: string | null
+          city?: string | null
           country?: string
+          country_code?: string | null
           created_at?: string
           guest_session_id?: string | null
+          iban?: string | null
           id?: string
           is_guest?: boolean
           is_reseller?: boolean
+          legal_form?: string | null
+          legal_name?: string | null
+          naf_code?: string | null
           name?: string
+          peppol_id?: string | null
           plan?: string
+          postal_code?: string | null
           reseller_id?: string | null
+          siren?: string | null
+          siret?: string | null
           updated_at?: string
+          vat_number?: string | null
         }
         Relationships: [
           {
@@ -1352,6 +1633,24 @@ export type Database = {
         | "invoice"
         | "contract"
         | "other"
+      einvoice_format: "factur_x" | "ubl" | "cii"
+      einvoice_profile:
+        | "minimum"
+        | "basic_wl"
+        | "basic"
+        | "en16931"
+        | "extended"
+      einvoice_status:
+        | "not_applicable"
+        | "draft"
+        | "ready"
+        | "submitted"
+        | "received"
+        | "accepted"
+        | "rejected"
+        | "in_dispute"
+        | "paid"
+        | "archived"
       pdf_field_kind: "text" | "date" | "checkbox" | "signature" | "initials"
       signature_level: "ses" | "aes" | "qes"
       signature_request_status: "pending" | "signed" | "declined" | "cancelled"
@@ -1502,6 +1801,20 @@ export const Constants = {
         "invoice",
         "contract",
         "other",
+      ],
+      einvoice_format: ["factur_x", "ubl", "cii"],
+      einvoice_profile: ["minimum", "basic_wl", "basic", "en16931", "extended"],
+      einvoice_status: [
+        "not_applicable",
+        "draft",
+        "ready",
+        "submitted",
+        "received",
+        "accepted",
+        "rejected",
+        "in_dispute",
+        "paid",
+        "archived",
       ],
       pdf_field_kind: ["text", "date", "checkbox", "signature", "initials"],
       signature_level: ["ses", "aes", "qes"],
