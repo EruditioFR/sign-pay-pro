@@ -145,13 +145,13 @@ export const getAnalytics = createServerFn({ method: "POST" })
       "sent",
       "signed",
       "partially_paid",
-    ];
+    ] as const;
     const { data: overdueDocs } = await supabase
       .from("documents")
       .select(
         "id, title, reference, due_date, amount_ttc, currency, third_party_name, status",
       )
-      .in("status", openStatuses)
+      .in("status", openStatuses as unknown as string[])
       .not("due_date", "is", null)
       .lt("due_date", todayKey)
       .order("due_date", { ascending: true })

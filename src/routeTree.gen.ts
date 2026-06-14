@@ -32,6 +32,7 @@ import { Route as AuthenticatedAppDemoRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppChatbotRouteImport } from './routes/_authenticated.app.chatbot'
 import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated.app.audit'
 import { Route as AuthenticatedAppApprovalsRouteImport } from './routes/_authenticated.app.approvals'
+import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authenticated.app.analytics'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated.admin.settings'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
@@ -172,6 +173,12 @@ const AuthenticatedAppApprovalsRoute =
     path: '/app/approvals',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppAnalyticsRoute =
+  AuthenticatedAppAnalyticsRouteImport.update({
+    id: '/app/analytics',
+    path: '/app/analytics',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -298,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/chatbot': typeof AuthenticatedAppChatbotRoute
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/chatbot': typeof AuthenticatedAppChatbotRoute
@@ -386,6 +395,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/app/analytics': typeof AuthenticatedAppAnalyticsRoute
   '/_authenticated/app/approvals': typeof AuthenticatedAppApprovalsRoute
   '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
   '/_authenticated/app/chatbot': typeof AuthenticatedAppChatbotRoute
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
+    | '/app/analytics'
     | '/app/approvals'
     | '/app/audit'
     | '/app/chatbot'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
+    | '/app/analytics'
     | '/app/approvals'
     | '/app/audit'
     | '/app/chatbot'
@@ -518,6 +530,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
+    | '/_authenticated/app/analytics'
     | '/_authenticated/app/approvals'
     | '/_authenticated/app/audit'
     | '/_authenticated/app/chatbot'
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppApprovalsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/analytics': {
+      id: '/_authenticated/app/analytics'
+      path: '/app/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AuthenticatedAppAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -882,6 +902,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAppAnalyticsRoute: typeof AuthenticatedAppAnalyticsRoute
   AuthenticatedAppApprovalsRoute: typeof AuthenticatedAppApprovalsRoute
   AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
   AuthenticatedAppChatbotRoute: typeof AuthenticatedAppChatbotRoute
@@ -914,6 +935,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAppAnalyticsRoute: AuthenticatedAppAnalyticsRoute,
   AuthenticatedAppApprovalsRoute: AuthenticatedAppApprovalsRoute,
   AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
   AuthenticatedAppChatbotRoute: AuthenticatedAppChatbotRoute,
