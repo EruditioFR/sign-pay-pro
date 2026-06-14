@@ -284,7 +284,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
 
         // Bloc de conformité : niveau + auth + consentement + evidence.
         const signatureLevel = req.signature_level ?? CURRENT_SUPPORTED_LEVEL;
-        const authMethod = req.auth_method_required ?? "email_link";
+        const authMethod = (req.auth_method_required ?? "email_link") as AuthMethod;
         try {
           assertAuthMethodAllowed(signatureLevel, authMethod);
         } catch (e) {
