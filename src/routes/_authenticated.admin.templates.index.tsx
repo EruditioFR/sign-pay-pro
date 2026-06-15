@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ConfirmAction } from "@/components/confirm-action";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -123,15 +124,16 @@ function TemplatesPage() {
                       <Pencil className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (window.confirm(t("templates.delete_confirm"))) delMut.mutate(tpl.id);
-                    }}
+                  <ConfirmAction
+                    title="Supprimer ce modèle ?"
+                    description={t("templates.delete_confirm")}
+                    confirmLabel="Supprimer"
+                    onConfirm={() => delMut.mutateAsync(tpl.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Button size="sm" variant="ghost" aria-label="Supprimer">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </ConfirmAction>
                 </div>
               </CardContent>
             </Card>

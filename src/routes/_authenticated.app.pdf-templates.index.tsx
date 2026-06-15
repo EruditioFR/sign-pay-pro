@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ConfirmAction } from "@/components/confirm-action";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -86,15 +87,16 @@ function PdfTemplatesPage() {
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <UseTemplateDialog templateId={t.id} templateName={t.name} />
                   <VersionHistoryDialog templateId={t.id} templateName={t.name} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm("Supprimer ce modèle et toutes ses versions ?")) del.mutate(t.id);
-                    }}
+                  <ConfirmAction
+                    title="Supprimer ce modèle ?"
+                    description="Toutes les versions de ce modèle seront supprimées définitivement."
+                    confirmLabel="Supprimer"
+                    onConfirm={() => del.mutateAsync(t.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Button variant="ghost" size="sm" aria-label="Supprimer le modèle">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </ConfirmAction>
                 </div>
               </CardContent>
             </Card>
@@ -268,15 +270,16 @@ function VersionHistoryDialog({
                       >
                         <RotateCcw className="mr-1 h-3.5 w-3.5" /> Restaurer
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          if (confirm(`Supprimer la version ${v.version} ?`)) delV.mutate(v.id);
-                        }}
+                      <ConfirmAction
+                        title={`Supprimer la version ${v.version} ?`}
+                        description="Cette version sera supprimée définitivement et ne pourra plus être restaurée."
+                        confirmLabel="Supprimer"
+                        onConfirm={() => delV.mutateAsync(v.id)}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                        <Button size="sm" variant="ghost" aria-label="Supprimer la version">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </ConfirmAction>
                     </>
                   )}
                 </div>

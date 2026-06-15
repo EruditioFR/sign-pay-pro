@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmAction } from "@/components/confirm-action";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -83,17 +84,19 @@ export function ArchiveActions({ documentId, status }: Props) {
 
   if (status === "archived") {
     return (
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          if (confirm(t("documents.archive.confirm_unarchive"))) unarchiveMut.mutate();
-        }}
+      <ConfirmAction
+        title={t("documents.archive.unarchive")}
+        description={t("documents.archive.confirm_unarchive")}
+        confirmLabel={t("documents.archive.unarchive")}
+        destructive={false}
+        onConfirm={() => unarchiveMut.mutateAsync()}
         disabled={unarchiveMut.isPending}
       >
-        <ArchiveRestore className="mr-1 h-4 w-4" />
-        {t("documents.archive.unarchive")}
-      </Button>
+        <Button size="sm" variant="outline">
+          <ArchiveRestore className="mr-1 h-4 w-4" />
+          {t("documents.archive.unarchive")}
+        </Button>
+      </ConfirmAction>
     );
   }
 

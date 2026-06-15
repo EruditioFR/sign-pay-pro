@@ -6,7 +6,9 @@ import {
   cancelGuestSignerRequest,
 } from "@/lib/guest.functions";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { DocumentStatusBadge, SignerStatusBadge, StepStatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Inbox } from "lucide-react";
 import { Ban } from "lucide-react";
 import { toast } from "sonner";
 
@@ -82,9 +84,16 @@ function GuestDashboard() {
       </div>
 
       {documents.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-          Aucun circuit pour le moment.
-        </div>
+        <EmptyState
+          icon={Inbox}
+          title="Aucun circuit pour le moment"
+          description="Les documents qui vous sont envoyés apparaîtront ici. Vous pouvez aussi initier un nouveau circuit."
+          action={
+            <Button asChild>
+              <Link to="/guest/new">Nouveau circuit</Link>
+            </Button>
+          }
+        />
       ) : (
         <ul className="space-y-3">
           {documents.map((d) => {
@@ -107,7 +116,7 @@ function GuestDashboard() {
                       )}
                     </div>
                   </div>
-                  <Badge variant="outline">{d.status}</Badge>
+                  <DocumentStatusBadge status={d.status} />
                 </div>
 
                 {docSigners.length > 0 && (
@@ -128,17 +137,7 @@ function GuestDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                s.status === "signed"
-                                  ? "default"
-                                  : s.status === "pending"
-                                    ? "secondary"
-                                    : "outline"
-                              }
-                            >
-                              {s.status}
-                            </Badge>
+                            <SignerStatusBadge status={s.status} />
                             {s.status === "pending" && (
                               <Button
                                 size="icon"
@@ -189,17 +188,7 @@ function GuestDashboard() {
                               </div>
                             )}
                           </div>
-                          <Badge
-                            variant={
-                              st.status === "approved"
-                                ? "default"
-                                : st.status === "rejected"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                          >
-                            {st.status}
-                          </Badge>
+                          <StepStatusBadge status={st.status} />
                         </li>
                       ))}
                     </ul>

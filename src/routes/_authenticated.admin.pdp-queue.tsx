@@ -18,7 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { PdpStatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -35,21 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin/pdp-queue")({
 
 type StatusFilter = "pending" | "submitted" | "acknowledged" | "rejected" | "error" | "all";
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "En attente",
-  submitted: "Transmise",
-  acknowledged: "Acquittée",
-  rejected: "Rejetée",
-  error: "Erreur",
-};
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  pending: "secondary",
-  submitted: "default",
-  acknowledged: "default",
-  rejected: "destructive",
-  error: "destructive",
-};
+// Labels/colors centralisés dans PdpStatusBadge (status-badge.tsx).
 
 function PdpQueuePage() {
   const [status, setStatus] = useState<StatusFilter>("pending");
@@ -122,41 +109,41 @@ function PdpQueuePage() {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Chargement…
             </div>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-              <Inbox className="mb-2 h-8 w-8" />
-              Aucune facture dans cette file.
-            </div>
+            <EmptyState
+              icon={Inbox}
+              title="Aucune facture dans cette file"
+              description="Les factures émises seront listées ici dès qu'elles seront mises en file pour transmission PDP."
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>N° facture</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead className="text-right">Montant TTC</TableHead>
-                  <TableHead>Statut PDP</TableHead>
-                  <TableHead>Connecteur</TableHead>
-                  <TableHead>Dernière erreur</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.documentId}>
-                    <TableCell className="font-mono text-xs">
-                      {item.invoiceNumber ?? "—"}
-                    </TableCell>
-                    <TableCell>{item.buyerName ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat("fr-FR", {
-                        style: "currency",
-                        currency: item.currency,
-                      }).format(item.amountTtc)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[item.pdpStatus] ?? "outline"}>
-                        {STATUS_LABEL[item.pdpStatus] ?? item.pdpStatus}
-                      </Badge>
-                    </TableCell>
+            <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° facture</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead className="text-right">Montant TTC</TableHead>
+                    <TableHead>Statut PDP</TableHead>
+                    <TableHead>Connecteur</TableHead>
+                    <TableHead>Dernière erreur</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow key={item.documentId}>
+                      <TableCell className="font-mono text-xs">
+                        {item.invoiceNumber ?? "—"}
+                      </TableCell>
+                      <TableCell>{item.buyerName ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        {new Intl.NumberFormat("fr-FR", {
+                          style: "currency",
+                          currency: item.currency,
+                        }).format(item.amountTtc)}
+                      </TableCell>
+                      <TableCell>
+                        <PdpStatusBadge status={item.pdpStatus} />
+                      </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {item.pdpProvider ?? "noop"}
                     </TableCell>
@@ -200,6 +187,7 @@ function PdpQueuePage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
