@@ -48,93 +48,166 @@ interface NavItem {
   badgeKey?: "approvals";
 }
 
-function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
   switch (role) {
     case "super_admin":
       return [
-        { to: "/super-admin", label: t("nav.dashboard"), icon: Home },
-        { to: "/super-admin/tenants", label: t("nav.tenants"), icon: Building2 },
-        { to: "/super-admin/admin-clients", label: "Comptes admin client", icon: Users },
-        { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },
+        {
+          title: t("nav_group.overview"),
+          items: [{ to: "/super-admin", label: t("nav.dashboard"), icon: Home }],
+        },
+        {
+          title: t("nav_group.organizations"),
+          items: [
+            { to: "/super-admin/tenants", label: t("nav.tenants"), icon: Building2 },
+            { to: "/super-admin/admin-clients", label: "Comptes admin client", icon: Users },
+          ],
+        },
+        {
+          title: t("nav_group.security"),
+          items: [{ to: "/app/audit", label: "Journal d'audit", icon: ScrollText }],
+        },
       ];
     case "reseller":
-      return [{ to: "/reseller", label: t("nav.clients"), icon: Store }];
+      return [
+        {
+          title: t("nav_group.overview"),
+          items: [{ to: "/reseller", label: t("nav.clients"), icon: Store }],
+        },
+      ];
     case "admin_client":
       return [
-        { to: "/admin", label: t("nav.dashboard"), icon: Home },
-        { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
-        { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
-        { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         {
-          to: "/app/approvals",
-          label: t("nav_extra.approvals"),
-          icon: CheckSquare,
-          badgeKey: "approvals",
+          title: t("nav_group.overview"),
+          items: [
+            { to: "/admin", label: t("nav.dashboard"), icon: Home },
+            { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
+          ],
         },
-        { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
-        { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
-        { to: "/admin/business-verticals", label: "Secteurs métiers", icon: Building2 },
-        { to: "/admin/users", label: t("nav.users"), icon: Users },
-        { to: "/admin/roles", label: t("nav.roles"), icon: ShieldCheck },
-        { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },
-        { to: "/admin/settings", label: t("nav.settings"), icon: Settings },
+        {
+          title: t("nav_group.documents"),
+          items: [
+            { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
+            { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
+            { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
+          ],
+        },
+        {
+          title: t("nav_group.workflows"),
+          items: [
+            {
+              to: "/app/approvals",
+              label: t("nav_extra.approvals"),
+              icon: CheckSquare,
+              badgeKey: "approvals",
+            },
+            { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
+          ],
+        },
+        {
+          title: t("nav_group.organization"),
+          items: [
+            { to: "/admin/users", label: t("nav.users"), icon: Users },
+            { to: "/admin/roles", label: t("nav.roles"), icon: ShieldCheck },
+            { to: "/admin/business-verticals", label: "Secteurs métiers", icon: Building2 },
+          ],
+        },
+        {
+          title: t("nav_group.admin"),
+          items: [
+            { to: "/app/audit", label: "Journal d'audit", icon: ScrollText },
+            { to: "/admin/settings", label: t("nav.settings"), icon: Settings },
+          ],
+        },
       ];
     case "manager":
     case "user":
     default:
       return [
-        { to: "/app", label: t("nav.dashboard"), icon: Home },
-        { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
-        { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
-        { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         {
-          to: "/app/approvals",
-          label: t("nav_extra.approvals"),
-          icon: CheckSquare,
-          badgeKey: "approvals",
+          title: t("nav_group.overview"),
+          items: [
+            { to: "/app", label: t("nav.dashboard"), icon: Home },
+            { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
+          ],
         },
-        { to: "/app/profile", label: t("nav.profile"), icon: UserIcon },
+        {
+          title: t("nav_group.documents"),
+          items: [
+            { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
+            { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
+          ],
+        },
+        {
+          title: t("nav_group.workflows"),
+          items: [
+            {
+              to: "/app/approvals",
+              label: t("nav_extra.approvals"),
+              icon: CheckSquare,
+              badgeKey: "approvals",
+            },
+          ],
+        },
+        {
+          title: t("nav_group.profile"),
+          items: [{ to: "/app/profile", label: t("nav.profile"), icon: UserIcon }],
+        },
       ];
   }
 }
 
 function NavList({
-  items,
+  groups,
   pathname,
   approvalsCount,
   onItemClick,
 }: {
-  items: NavItem[];
+  groups: NavGroup[];
   pathname: string;
   approvalsCount: number;
   onItemClick?: () => void;
 }) {
   return (
-    <nav className="flex-1 space-y-1 p-3">
-      {items.map((item) => {
-        const active = pathname === item.to;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              active
-                ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            <span className="flex-1">{item.label}</span>
-            {item.badgeKey === "approvals" && approvalsCount > 0 && (
-              <Badge variant="default" className="h-5 px-1.5 text-[10px]">
-                {approvalsCount}
-              </Badge>
-            )}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 space-y-6 overflow-y-auto p-3">
+      {groups.map((group) => (
+        <div key={group.title}>
+          <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {group.title}
+          </div>
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const active = pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={onItemClick}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
+                    active
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badgeKey === "approvals" && approvalsCount > 0 && (
+                    <Badge variant="default" className="h-5 px-1.5 text-[10px]">
+                      {approvalsCount}
+                    </Badge>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }
@@ -162,7 +235,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const approvalsCount = approvals?.steps.length ?? 0;
 
-  const items = me ? navForRole(me.primaryRole, t) : [];
+  const groups = me ? navGroupsForRole(me.primaryRole, t) : [];
 
   const onLogout = async () => {
     await supabase.auth.signOut();
@@ -186,7 +259,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {t("app.name")}
           </Link>
         </div>
-        <NavList items={items} pathname={location.pathname} approvalsCount={approvalsCount} />
+        <NavList groups={groups} pathname={location.pathname} approvalsCount={approvalsCount} />
         {me && (
           <div className="border-t border-border p-3 text-xs text-muted-foreground">
             <div className="font-medium text-foreground">{me.organizationName}</div>
@@ -218,7 +291,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </Link>
                   </div>
                   <NavList
-                    items={items}
+                    groups={groups}
                     pathname={location.pathname}
                     approvalsCount={approvalsCount}
                     onItemClick={() => setMobileOpen(false)}
