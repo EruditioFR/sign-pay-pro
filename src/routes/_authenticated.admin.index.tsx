@@ -145,7 +145,7 @@ function AdminDashboard() {
               {stats && stats.byStatus.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={stats.byStatus} dataKey="count" nameKey="status" innerRadius={50} outerRadius={85} paddingAngle={2}>
+                    <Pie data={stats.byStatus.map(s => ({ ...s, status: t(`documents.status.${s.status}`, { defaultValue: s.status }) }))} dataKey="count" nameKey="status" innerRadius={50} outerRadius={85} paddingAngle={2}>
                       {stats.byStatus.map((_, i) => (
                         <Cell key={i} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />
                       ))}
