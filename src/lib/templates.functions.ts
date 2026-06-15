@@ -232,7 +232,7 @@ export const instantiateTemplate = createServerFn({ method: "POST" })
         organization_id: me.organization_id,
         created_by: userId,
         title,
-        type: (tpl.document_type as string | null) ?? "other",
+        type: ((tpl.document_type as "contract" | "invoice" | "other" | "purchase_order" | "quote" | null) ?? "other"),
         status: "draft",
       })
       .select("id")
