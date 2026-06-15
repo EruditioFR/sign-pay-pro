@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OrgLogoUploader } from "@/components/org-logo-uploader";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   component: SettingsPage,
@@ -41,12 +42,14 @@ function SettingsPage() {
       toast.success("Organisation mise à jour.");
       qc.invalidateQueries({ queryKey: ["my-organization"] });
       qc.invalidateQueries({ queryKey: ["me"] });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erreur lors de la mise à jour.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la mise à jour.");
     } finally {
       setSaving(false);
     }
   };
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ["my-organization"] });
 
   return (
     <div className="space-y-6">
@@ -80,6 +83,22 @@ function SettingsPage() {
                 </Button>
               </div>
             </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Logo & identité visuelle</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Ce logo apparaît automatiquement dans l'en-tête des documents et PDF générés.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Chargement…</p>
+          ) : (
+            <OrgLogoUploader logoUrl={org?.logo_url ?? null} onChange={refresh} />
           )}
         </CardContent>
       </Card>

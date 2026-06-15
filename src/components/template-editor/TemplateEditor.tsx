@@ -43,7 +43,7 @@ export function TemplateEditor({
     setSelectedId(null);
   }, []);
 
-  const addBlock = useCallback((kind: Block["type"]) => {
+  const addBlock = useCallback((kind: Block["type"], preset?: "org_logo") => {
     const base = { id: newId(), x: 20, y: 20, width: 80, height: 20 };
     let block: Block;
     switch (kind) {
@@ -51,7 +51,11 @@ export function TemplateEditor({
         block = { ...base, type: "text", text: "Nouveau texte", fontSize: 12 };
         break;
       case "image":
-        block = { ...base, width: 50, height: 50, type: "image", src: "" };
+        if (preset === "org_logo") {
+          block = { ...base, width: 40, height: 20, type: "image", src: "{{issuer.logo_url}}", alt: "Logo", fit: "contain" };
+        } else {
+          block = { ...base, width: 50, height: 50, type: "image", src: "" };
+        }
         break;
       case "table":
         block = { ...base, width: 160, height: 60, type: "table", columns: 3, rows: 3, headers: [], data: [], fontSize: 10 };

@@ -1194,6 +1194,8 @@ export type Database = {
           is_reseller: boolean
           legal_form: string | null
           legal_name: string | null
+          logo_storage_path: string | null
+          logo_url: string | null
           naf_code: string | null
           name: string
           peppol_id: string | null
@@ -1221,6 +1223,8 @@ export type Database = {
           is_reseller?: boolean
           legal_form?: string | null
           legal_name?: string | null
+          logo_storage_path?: string | null
+          logo_url?: string | null
           naf_code?: string | null
           name: string
           peppol_id?: string | null
@@ -1248,6 +1252,8 @@ export type Database = {
           is_reseller?: boolean
           legal_form?: string | null
           legal_name?: string | null
+          logo_storage_path?: string | null
+          logo_url?: string | null
           naf_code?: string | null
           name?: string
           peppol_id?: string | null

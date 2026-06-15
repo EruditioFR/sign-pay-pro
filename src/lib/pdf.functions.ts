@@ -46,6 +46,7 @@ interface TemplateRecord {
 interface OrgRecord {
   name: string;
   country: string;
+  logo_storage_path?: string | null;
 }
 
 // Strip very basic HTML tags for plain-text rendering
@@ -58,6 +59,7 @@ export async function buildDocumentPdf(
   doc: DocRecord,
   org: OrgRecord,
   template: TemplateRecord | null,
+  opts: { logoBytes?: Uint8Array | null; logoMime?: string | null } = {},
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const rawPage = pdfDoc.addPage([595.28, 841.89]); // A4
@@ -78,9 +80,27 @@ export async function buildDocumentPdf(
 
   // Header bar
   page.drawRectangle({ x: 0, y: 800, width: 595.28, height: 42, color: accent });
-  page.drawText(org.name, { x: left, y: 815, size: 14, font: fontBold, color: rgb(1, 1, 1) });
+
+  // Logo (left of header), fall back to org name in bold.
+  let headerTextX = left;
+  if (opts.logoBytes && opts.logoBytes.length > 0) {
+    try {
+      const img = (opts.logoMime ?? "").includes("png")
+        ? await pdfDoc.embedPng(opts.logoBytes)
+        : await pdfDoc.embedJpg(opts.logoBytes);
+      const maxH = 32;
+      const ratio = img.width / img.height;
+      const h = Math.min(maxH, img.height);
+      const w = h * ratio;
+      page.drawImage(img, { x: left, y: 805, width: w, height: h });
+      headerTextX = left + w + 10;
+    } catch {
+      // unsupported format (e.g. SVG) — fall back silently
+    }
+  }
+  page.drawText(org.name, { x: headerTextX, y: 815, size: 14, font: fontBold, color: rgb(1, 1, 1) });
   page.drawText(stripHtml(template?.header_html) || "", {
-    x: left, y: 802, size: 8, font, color: rgb(1, 1, 1),
+    x: headerTextX, y: 802, size: 8, font, color: rgb(1, 1, 1),
   });
 
   y = 760;
@@ -235,7 +255,7 @@ export const generateDocumentPdf = createServerFn({ method: "POST" })
 
     const { data: org } = await supabase
       .from("organizations")
-      .select("name, country")
+      .select("name, country, logo_storage_path")
       .eq("id", doc.organization_id)
       .maybeSingle();
 
@@ -259,7 +279,24 @@ export const generateDocumentPdf = createServerFn({ method: "POST" })
       template = t?.[0] ?? null;
     }
 
-    const bytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, template);
+    // Best-effort: download the organization logo so it can be embedded.
+    let logoBytes: Uint8Array | null = null;
+    let logoMime: string | null = null;
+    const logoPath = (org as { logo_storage_path?: string | null } | null)?.logo_storage_path ?? null;
+    if (logoPath && !logoPath.endsWith(".svg")) {
+      const { data: blob } = await supabase.storage.from("org-logos").download(logoPath);
+      if (blob) {
+        logoBytes = new Uint8Array(await blob.arrayBuffer());
+        logoMime = blob.type || (logoPath.endsWith(".png") ? "image/png" : "image/jpeg");
+      }
+    }
+
+    const bytes = await buildDocumentPdf(
+      doc,
+      org ?? { name: "—", country: "FR" },
+      template,
+      { logoBytes, logoMime },
+    );
 
     // Upload as new version
     const ts = Date.now();

@@ -7,11 +7,12 @@ import {
   PenLine,
   Eye,
   Save,
+  Building2,
 } from "lucide-react";
 import type { Block } from "@/lib/template-canvas/schema";
 
 export interface ToolbarProps {
-  onAdd: (kind: Block["type"]) => void;
+  onAdd: (kind: Block["type"], preset?: "org_logo") => void;
   onSave: () => void;
   onPreview: () => void;
   saving?: boolean;
@@ -26,6 +27,9 @@ export function Toolbar({ onAdd, onSave, onPreview, saving }: ToolbarProps) {
       </Button>
       <Button size="sm" variant="outline" onClick={() => onAdd("image")}>
         <ImageIcon className="h-4 w-4 mr-1.5" /> Image
+      </Button>
+      <Button size="sm" variant="outline" onClick={() => onAdd("image", "org_logo")}>
+        <Building2 className="h-4 w-4 mr-1.5" /> Logo organisation
       </Button>
       <Button size="sm" variant="outline" onClick={() => onAdd("table")}>
         <TableIcon className="h-4 w-4 mr-1.5" /> Tableau

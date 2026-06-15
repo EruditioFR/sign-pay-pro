@@ -204,9 +204,17 @@ export const instantiateTemplate = createServerFn({ method: "POST" })
 
     const { data: org } = await supabase
       .from("organizations")
-      .select("name, siret, vat_number, address_line1, iban, bic")
+      .select("name, siret, vat_number, address_line1, iban, bic, logo_storage_path")
       .eq("id", me.organization_id)
       .maybeSingle();
+
+    let logoUrl = "";
+    if (org?.logo_storage_path) {
+      const { data: signed } = await supabase.storage
+        .from("org-logos")
+        .createSignedUrl(org.logo_storage_path, 60 * 60 * 24 * 7);
+      logoUrl = signed?.signedUrl ?? "";
+    }
 
     const now = new Date();
     const values: Record<string, string> = {
@@ -218,6 +226,7 @@ export const instantiateTemplate = createServerFn({ method: "POST" })
       "issuer.bic": org?.bic ?? "",
       "issuer.email": "",
       "issuer.phone": "",
+      "issuer.logo_url": logoUrl,
       "system.today": now.toISOString().slice(0, 10),
       "system.now": now.toISOString(),
       ...(data.values ?? {} as Record<string, string>),
