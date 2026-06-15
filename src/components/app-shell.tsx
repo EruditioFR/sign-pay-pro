@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
-  Bot,
+  
   Building2,
   CheckSquare,
   FileText,
