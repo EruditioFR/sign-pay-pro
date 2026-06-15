@@ -354,16 +354,51 @@ function PdfEditorPage() {
         {/* Palette */}
         <Card>
           <CardContent className="space-y-2 p-3">
-            <p className="text-xs font-semibold text-muted-foreground">Ajouter un champ</p>
+            <p className="text-xs font-semibold text-muted-foreground">Outil</p>
+            <Button
+              variant={activeTool === "select" ? "default" : "outline"}
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => setActiveTool("select")}
+            >
+              <MousePointer2 className="mr-2 h-4 w-4" /> Sélection
+            </Button>
+
+            <p className="pt-2 text-xs font-semibold text-muted-foreground">Tracer une zone</p>
             {(Object.keys(KIND_META) as PdfFieldKind[]).map((k) => {
               const m = KIND_META[k];
               const Icon = m.icon;
+              const isActive = activeTool === k;
               return (
-                <Button key={k} variant="outline" size="sm" className="w-full justify-start" onClick={() => addField(k)}>
-                  <Icon className="mr-2 h-4 w-4" /> {m.label}
-                </Button>
+                <div key={k} className="flex gap-1">
+                  <Button
+                    variant={isActive ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 justify-start"
+                    onClick={() => setActiveTool(isActive ? "select" : k)}
+                    title="Cliquer-glisser sur le PDF pour tracer la zone"
+                  >
+                    <Icon className="mr-2 h-4 w-4" /> {m.label}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="px-2"
+                    onClick={() => addField(k)}
+                    title="Insérer une zone par défaut au centre de la page"
+                  >
+                    +
+                  </Button>
+                </div>
               );
             })}
+
+            {activeTool !== "select" && (
+              <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
+                Cliquez-glissez sur le PDF pour tracer la zone «&nbsp;{KIND_META[activeTool as PdfFieldKind].label}&nbsp;».
+              </p>
+            )}
+
             <div className="pt-3">
               <Label className="text-xs">Page</Label>
               {pageCount > 0 && (
@@ -387,8 +422,55 @@ function PdfEditorPage() {
             {pageCount > 0 && pageDims.h > 0 && (
               <div
                 className="absolute inset-0"
+                style={{ cursor: activeTool !== "select" ? "crosshair" : "default" }}
                 onMouseDown={(e) => {
-                  if (e.target === e.currentTarget) setSelectedId(null);
+                  if (activeTool === "select") {
+                    if (e.target === e.currentTarget) setSelectedId(null);
+                    return;
+                  }
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  draftStartRef.current = { x, y };
+                  setDraft({ x, y, w: 0, h: 0 });
+                }}
+                onMouseMove={(e) => {
+                  if (!draftStartRef.current) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const cx = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                  const cy = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+                  const sx = draftStartRef.current.x;
+                  const sy = draftStartRef.current.y;
+                  setDraft({
+                    x: Math.min(sx, cx),
+                    y: Math.min(sy, cy),
+                    w: Math.abs(cx - sx),
+                    h: Math.abs(cy - sy),
+                  });
+                }}
+                onMouseUp={() => {
+                  const d = draft;
+                  draftStartRef.current = null;
+                  setDraft(null);
+                  if (!d || activeTool === "select") return;
+                  const kind = activeTool as PdfFieldKind;
+                  if (d.w < 8 || d.h < 8) {
+                    // tracé trop petit → insertion par défaut autour du clic
+                    const meta = KIND_META[kind];
+                    createField(kind, {
+                      x: d.x,
+                      y: d.y,
+                      w: meta.w,
+                      h: meta.h,
+                    });
+                  } else {
+                    createField(kind, d);
+                  }
+                  setActiveTool("select");
+                }}
+                onMouseLeave={() => {
+                  draftStartRef.current = null;
+                  setDraft(null);
                 }}
               >
                 {pageFields.map((f) => {
@@ -398,15 +480,19 @@ function PdfEditorPage() {
                   const cssW = f.width * renderScale;
                   const cssH = f.height * renderScale;
                   const isSelected = selectedId === f.tempId;
+                  const drawingMode = activeTool !== "select";
                   return (
                     <Rnd
                       key={f.tempId}
                       size={{ width: cssW, height: cssH }}
                       position={{ x: cssLeft, y: cssTop }}
                       bounds="parent"
-                      onDragStop={(_, d) => {
-                        const newX = d.x / renderScale;
-                        const newTop = d.y / renderScale;
+                      disableDragging={drawingMode}
+                      enableResizing={!drawingMode}
+                      style={{ pointerEvents: drawingMode ? "none" : "auto" }}
+                      onDragStop={(_, dd) => {
+                        const newX = dd.x / renderScale;
+                        const newTop = dd.y / renderScale;
                         updateField(f.tempId, { x: newX, y: pageDims.h - newTop - f.height });
                       }}
                       onResizeStop={(_, __, ref, ___, pos) => {
@@ -428,10 +514,19 @@ function PdfEditorPage() {
                     </Rnd>
                   );
                 })}
+
+                {draft && (
+                  <div
+                    className="pointer-events-none absolute border-2 border-dashed border-primary bg-primary/10"
+                    style={{ left: draft.x, top: draft.y, width: draft.w, height: draft.h }}
+                  />
+                )}
               </div>
             )}
           </div>
         </div>
+
+
 
         {/* Inspector */}
         <Card>
