@@ -28,6 +28,21 @@ export const createShareLink = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CreateLinkSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+
+    // State machine guard: pas de nouveau lien sur document archivé / annulé
+    const { isReadOnlyStatus } = await import("@/lib/document-state-machine");
+    const { data: docState } = await supabase
+      .from("documents")
+      .select("status")
+      .eq("id", data.document_id)
+      .maybeSingle();
+    if (!docState) throw new Error("Document introuvable");
+    if (isReadOnlyStatus(docState.status)) {
+      throw new Error(
+        `Partage impossible : document au statut « ${docState.status} » (lecture seule).`,
+      );
+    }
+
     const expiresAt = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
 
     const { data: link, error } = await supabase
