@@ -292,13 +292,16 @@ export const unarchiveDocument = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      organization_id: doc.organization_id,
-      user_id: userId,
-      action: "document.unarchived",
-      resource: `document:${data.id}`,
-      metadata: { restored_to: restored },
-    });
+    await supabase.from("audit_logs").insert(
+      buildTransitionAuditEntry({
+        organization_id: doc.organization_id,
+        user_id: userId,
+        document_id: data.id,
+        from: "archived",
+        to: restored,
+        extra: { unarchive: true },
+      }),
+    );
     return { ok: true, restored_to: restored };
   });
 
