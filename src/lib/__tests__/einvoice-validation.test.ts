@@ -135,7 +135,7 @@ describe("validateFacturXInput — facture B2B avec TVA", () => {
 
   it("reports SIRET émetteur invalide", () => {
     const r = validateFacturXInput(
-      baseInput({ doc: { ...baseInput().doc, seller_siret: "00000000000000" } }),
+      baseInput({ doc: { ...baseInput().doc, seller_siret: "12345678900012" } }),
     );
     expect(r.errors.some((e) => e.code === "FR-SIRET-SELLER")).toBe(true);
   });
