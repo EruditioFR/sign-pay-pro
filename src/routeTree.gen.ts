@@ -63,6 +63,7 @@ import { Route as AuthenticatedAppTemplatesIdPreviewRouteImport } from './routes
 import { Route as AuthenticatedAppTemplatesIdFillRouteImport } from './routes/_authenticated.app.templates.$id.fill'
 import { Route as AuthenticatedAppTemplatesIdEditRouteImport } from './routes/_authenticated.app.templates.$id.edit'
 import { Route as AuthenticatedAppDocumentsIdEditorRouteImport } from './routes/_authenticated.app.documents.$id.editor'
+import { Route as AuthenticatedAppDocumentsIdConfigureRouteImport } from './routes/_authenticated.app.documents.$id.configure'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -365,6 +366,12 @@ const AuthenticatedAppDocumentsIdEditorRoute =
     path: '/editor',
     getParentRoute: () => AuthenticatedAppDocumentsIdRoute,
   } as any)
+const AuthenticatedAppDocumentsIdConfigureRoute =
+  AuthenticatedAppDocumentsIdConfigureRouteImport.update({
+    id: '/configure',
+    path: '/configure',
+    getParentRoute: () => AuthenticatedAppDocumentsIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/app/drafts/': typeof AuthenticatedAppDraftsIndexRoute
   '/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
+  '/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
@@ -471,6 +479,7 @@ export interface FileRoutesByTo {
   '/app/drafts': typeof AuthenticatedAppDraftsIndexRoute
   '/app/pdf-templates': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/templates': typeof AuthenticatedAppTemplatesIndexRoute
+  '/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
@@ -528,6 +537,7 @@ export interface FileRoutesById {
   '/_authenticated/app/drafts/': typeof AuthenticatedAppDraftsIndexRoute
   '/_authenticated/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/_authenticated/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
+  '/_authenticated/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
   '/_authenticated/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/_authenticated/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/_authenticated/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
     | '/app/drafts/'
     | '/app/pdf-templates/'
     | '/app/templates/'
+    | '/app/documents/$id/configure'
     | '/app/documents/$id/editor'
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
@@ -640,6 +651,7 @@ export interface FileRouteTypes {
     | '/app/drafts'
     | '/app/pdf-templates'
     | '/app/templates'
+    | '/app/documents/$id/configure'
     | '/app/documents/$id/editor'
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
@@ -696,6 +708,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/drafts/'
     | '/_authenticated/app/pdf-templates/'
     | '/_authenticated/app/templates/'
+    | '/_authenticated/app/documents/$id/configure'
     | '/_authenticated/app/documents/$id/editor'
     | '/_authenticated/app/templates/$id/edit'
     | '/_authenticated/app/templates/$id/fill'
@@ -1101,15 +1114,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDocumentsIdEditorRouteImport
       parentRoute: typeof AuthenticatedAppDocumentsIdRoute
     }
+    '/_authenticated/app/documents/$id/configure': {
+      id: '/_authenticated/app/documents/$id/configure'
+      path: '/configure'
+      fullPath: '/app/documents/$id/configure'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsIdConfigureRouteImport
+      parentRoute: typeof AuthenticatedAppDocumentsIdRoute
+    }
   }
 }
 
 interface AuthenticatedAppDocumentsIdRouteChildren {
+  AuthenticatedAppDocumentsIdConfigureRoute: typeof AuthenticatedAppDocumentsIdConfigureRoute
   AuthenticatedAppDocumentsIdEditorRoute: typeof AuthenticatedAppDocumentsIdEditorRoute
 }
 
 const AuthenticatedAppDocumentsIdRouteChildren: AuthenticatedAppDocumentsIdRouteChildren =
   {
+    AuthenticatedAppDocumentsIdConfigureRoute:
+      AuthenticatedAppDocumentsIdConfigureRoute,
     AuthenticatedAppDocumentsIdEditorRoute:
       AuthenticatedAppDocumentsIdEditorRoute,
   }
