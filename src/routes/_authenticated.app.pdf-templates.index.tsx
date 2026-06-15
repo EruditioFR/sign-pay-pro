@@ -60,7 +60,7 @@ function PdfTemplatesPage() {
             Réutilisez un document avec ses zones en un clic. Versions et historique conservés.
           </p>
         </div>
-        <NewPdfTemplateDialog />
+        <NewPdfTemplateDialog openEditorAfterImport={false} />
       </div>
 
       {isLoading ? (
