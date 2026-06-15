@@ -84,6 +84,51 @@ function UserDashboard() {
         </Button>
       </div>
 
+
+      {/* 1. Nouveau document — point d'entrée principal */}
+      <QuickStartActions />
+
+      {/* 2. Documents récents et leur état */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Documents récents</CardTitle>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/app/documents">Voir tout</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {stats && stats.recent.length > 0 ? (
+            <ul className="divide-y divide-border text-sm">
+              {stats.recent.map((d) => (
+                <li key={d.id} className="flex items-center justify-between gap-4 py-2.5">
+                  <Link
+                    to="/app/documents/$id"
+                    params={{ id: d.id }}
+                    className="min-w-0 flex-1 truncate font-medium hover:underline"
+                  >
+                    {d.title}
+                  </Link>
+                  <span className="hidden text-xs uppercase text-muted-foreground sm:inline">
+                    {t(`documents.types.${d.type}`, { defaultValue: d.type })}
+                  </span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                    {t(`documents.status.${d.status}`, { defaultValue: d.status })}
+                  </span>
+                  <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
+                    {d.amount_ttc ? fmtAmount(d.amount_ttc) : "—"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {isLoading ? "Chargement…" : "Aucun document pour l'instant."}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 3. Statistiques */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
           icon={FileText}
