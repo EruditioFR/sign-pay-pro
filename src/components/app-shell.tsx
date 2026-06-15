@@ -30,7 +30,7 @@ import {
   Menu,
   PenLine,
   ScrollText,
-  Sparkles,
+  
   Settings,
   ShieldCheck,
   Store,
