@@ -1,4 +1,5 @@
 import { ActivityExportsMenu } from "@/components/activity-exports-menu";
+import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
