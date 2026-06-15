@@ -5,8 +5,8 @@
  *   - public sign-request endpoint (signed / declined / next-in-sequence)
  *   - cron reminder endpoint (/api/public/cron/signature-reminders)
  *
- * All failures are caught and logged; the caller HTTP path is never broken
- * by a notification error.
+ * Idempotency: we use audit_logs as the source of truth (no schema change).
+ * Failures are caught and logged; the caller HTTP path is never broken.
  */
 import {
   sendResendEmail,
@@ -28,6 +28,16 @@ async function safeReport(source: string, e: unknown, ctx: Record<string, unknow
   }
 }
 
+async function alreadyAudited(admin: AdminClient, action: string, resource: string): Promise<boolean> {
+  const { data } = await admin
+    .from("audit_logs")
+    .select("id")
+    .eq("action", action)
+    .eq("resource", resource)
+    .limit(1);
+  return !!(data && data.length > 0);
+}
+
 async function loadDoc(admin: AdminClient, documentId: string) {
   const { data: doc } = await admin
     .from("documents")
@@ -35,18 +45,18 @@ async function loadDoc(admin: AdminClient, documentId: string) {
     .eq("id", documentId)
     .maybeSingle();
   if (!doc) return null;
-  const [{ data: org }, { data: creator }] = await Promise.all([
+  const [{ data: org }, creatorRes] = await Promise.all([
     admin.from("organizations").select("name").eq("id", doc.organization_id).maybeSingle(),
     doc.created_by
       ? admin.from("profiles").select("email, full_name").eq("id", doc.created_by).maybeSingle()
-      : Promise.resolve({ data: null as { email: string | null; full_name: string | null } | null }),
+      : Promise.resolve({ data: null }),
   ]);
+  const creator = (creatorRes.data ?? null) as { email: string | null; full_name: string | null } | null;
   return { doc, org, creator };
 }
 
 /**
  * Send "document fully signed" emails to creator + every signer.
- * Idempotent: stamps documents.metadata.signature_completed_notified_at.
  */
 export async function notifySignatureCompleted(
   admin: AdminClient,
@@ -54,19 +64,14 @@ export async function notifySignatureCompleted(
   origin: string | null,
 ): Promise<{ sent: boolean; recipients: string[]; reason?: string }> {
   try {
+    const resource = `document:${documentId}`;
+    if (await alreadyAudited(admin, "signature.notified_completed", resource)) {
+      return { sent: false, recipients: [], reason: "already_notified" };
+    }
+
     const loaded = await loadDoc(admin, documentId);
     if (!loaded) return { sent: false, recipients: [], reason: "document_not_found" };
     const { doc, org, creator } = loaded;
-
-    const { data: docMeta } = await admin
-      .from("documents")
-      .select("metadata")
-      .eq("id", documentId)
-      .maybeSingle();
-    const meta = ((docMeta?.metadata ?? {}) as Record<string, unknown>) || {};
-    if (meta.signature_completed_notified_at) {
-      return { sent: false, recipients: [], reason: "already_notified" };
-    }
 
     const { data: requests } = await admin
       .from("document_signature_requests")
@@ -74,14 +79,17 @@ export async function notifySignatureCompleted(
       .eq("document_id", documentId)
       .order("order_index", { ascending: true });
 
-    const signers = (requests ?? [])
-      .filter((r) => r.status === "signed")
-      .map((r) => ({ name: r.signer_name, email: r.signer_email, signed_at: r.signed_at }));
+    const signed = (requests ?? []).filter((r) => r.status === "signed");
+    if (signed.length === 0) return { sent: false, recipients: [], reason: "no_signers" };
 
-    if (signers.length === 0) return { sent: false, recipients: [], reason: "no_signers" };
+    const signers = signed.map((r) => ({
+      name: r.signer_name,
+      email: r.signer_email,
+      signed_at: r.signed_at,
+    }));
 
     const recipients = new Map<string, "signer" | "creator">();
-    for (const s of signers) recipients.set(s.signer_email.toLowerCase(), "signer");
+    for (const s of signers) recipients.set(s.email.toLowerCase(), "signer");
     if (creator?.email) {
       const k = creator.email.toLowerCase();
       if (!recipients.has(k)) recipients.set(k, "creator");
@@ -112,22 +120,10 @@ export async function notifySignatureCompleted(
       }
     }
 
-    await admin
-      .from("documents")
-      .update({
-        metadata: {
-          ...meta,
-          signature_completed_notified_at: new Date().toISOString(),
-          signature_completed_recipients: sent,
-          ...(failed.length ? { signature_completed_failed: failed } : {}),
-        },
-      } as never)
-      .eq("id", documentId);
-
     await admin.from("audit_logs").insert({
       organization_id: doc.organization_id,
       action: sent.length ? "signature.notified_completed" : "signature.notify_failed",
-      resource: `document:${doc.id}`,
+      resource,
       metadata: { recipients: sent, failed },
     });
 
@@ -149,6 +145,8 @@ export async function notifySignatureDeclined(
     const loaded = await loadDoc(admin, documentId);
     if (!loaded?.creator?.email) return { sent: false };
     const { doc, org, creator } = loaded;
+    const creatorEmail = creator.email;
+    if (!creatorEmail) return { sent: false };
     const html = renderSignatureDeclinedEmail({
       recipientName: creator.full_name,
       documentTitle: doc.title,
@@ -158,7 +156,7 @@ export async function notifySignatureDeclined(
       senderOrg: org?.name ?? null,
     });
     await sendResendEmail({
-      to: creator.email,
+      to: creatorEmail,
       subject: `Signature refusée — ${doc.reference ?? doc.title}`,
       html,
     });
@@ -216,7 +214,7 @@ export async function notifyNextSequentialSigner(
 
 /**
  * Cron-driven: send a reminder for signature requests expiring within `withinHours`.
- * Idempotent: a reminder is sent at most once per request (reminder_sent_at metadata).
+ * Idempotent via audit_logs (resource = signature_request:{id}).
  */
 export async function sendSignatureReminders(
   admin: AdminClient,
@@ -229,9 +227,7 @@ export async function sendSignatureReminders(
 
   const { data: rows } = await admin
     .from("document_signature_requests")
-    .select(
-      "id, document_id, signer_name, signer_email, token, expires_at, status, metadata, order_index, sequential",
-    )
+    .select("id, document_id, signer_name, signer_email, token, expires_at, status, order_index, sequential")
     .eq("status", "pending")
     .gte("expires_at", lower)
     .lte("expires_at", upper)
@@ -240,10 +236,9 @@ export async function sendSignatureReminders(
   let sent = 0;
   let failed = 0;
   for (const r of rows ?? []) {
-    const meta = ((r as { metadata?: Record<string, unknown> }).metadata ?? {}) || {};
-    if ((meta as Record<string, unknown>).reminder_sent_at) continue;
+    const resource = `signature_request:${r.id}`;
+    if (await alreadyAudited(admin, "signature.reminder_sent", resource)) continue;
 
-    // In sequential mode, only remind the current next-in-line signer.
     if (r.sequential) {
       const { data: ahead } = await admin
         .from("document_signature_requests")
@@ -269,12 +264,12 @@ export async function sendSignatureReminders(
           senderOrg: loaded.org?.name ?? null,
         }),
       });
-      await admin
-        .from("document_signature_requests")
-        .update({
-          metadata: { ...(meta as Record<string, unknown>), reminder_sent_at: new Date().toISOString() },
-        } as never)
-        .eq("id", r.id);
+      await admin.from("audit_logs").insert({
+        organization_id: loaded.doc.organization_id,
+        action: "signature.reminder_sent",
+        resource,
+        metadata: { signer_email: r.signer_email, expires_at: r.expires_at },
+      });
       sent++;
     } catch (e) {
       failed++;
