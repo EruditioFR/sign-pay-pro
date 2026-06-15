@@ -1,95 +1,64 @@
-# Enrichissement des verticals métiers
+# Refonte de la page « Nouveau document »
 
-## Constat
+Transformer `/app/documents/new` en un sélecteur de point d'entrée clair, inspiré du bloc "Execution Actions" de Signova, avant d'arriver au formulaire détaillé.
 
-Le système existe déjà (`business-verticals.ts` + `seedBusinessVerticalTemplates`), mais :
-- Certains modèles demandés manquent (état des lieux immobilier, NDA, CGV)
-- Les templates n'ont que header/footer/mentions légales — pas de **corps de document** avec placeholders prêts à l'emploi
-- Pas de notion de **champs requis** par template
-- L'UI admin n'affiche qu'un compteur, pas la liste des modèles ni leur statut individuel
+## Objectif UX
 
-## Livrables
+Au lieu d'ouvrir directement un long formulaire, l'utilisateur arrive sur un écran qui présente **3 cartes d'action** côte à côte, chacune menant à un flux dédié :
 
-### 1. Enrichir `src/lib/business-verticals.ts`
+1. **Partir d'un modèle existant** — choisir parmi les modèles PDF déjà importés (groupés par type métier comme sur `/app/pdf-templates`).
+2. **Importer un modèle** — uploader un PDF/DOCX (facture, CERFA, contrat…) puis y poser les champs dynamiques + zones de signature.
+3. **Créer depuis l'éditeur** — partir d'une page blanche dans l'éditeur WYSIWYG.
 
-Ajouter à chaque preset deux champs :
-- `body_html` : corps de document pré-rempli avec placeholders `{{var}}` (clauses, tableaux, signatures)
-- `required_fields: string[]` : variables obligatoires à saisir lors de l'instanciation
+Le formulaire métier actuel (titre, montants, tiers, dates…) reste accessible comme **4ᵉ option « Saisie manuelle »** (ou via "Voir toutes les options") pour ne rien casser, mais n'est plus l'écran d'accueil.
 
-Compléter les modèles manquants par vertical :
+## Structure de la page
 
-| Vertical | Templates finaux |
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  NOUVEAU DOCUMENT                                            │
+│  Choisissez comment démarrer votre document                  │
+├──────────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
+│  │  📄      │  │  ⬆️       │  │  ✨      │  │  📝      │     │
+│  │ Depuis   │  │ Importer │  │ Éditeur  │  │ Saisie   │     │
+│  │ modèle   │  │ un PDF   │  │ WYSIWYG  │  │ manuelle │     │
+│  │          │  │ /DOCX    │  │          │  │          │     │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │
+├──────────────────────────────────────────────────────────────┤
+│  MODÈLES DISPONIBLES (si option 1 sélectionnée)              │
+│  Groupés par type métier : Devis · Factures · Contrats…      │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- Style cohérent avec les cartes existantes (mêmes `Card` shadcn, icônes `lucide-react`, fond sombre pour la carte mise en avant à la Signova).
+- En dessous : aperçu inline de la liste des modèles existants (toujours visible), regroupés par `document_type`, pour pouvoir cliquer directement sur un modèle sans passer par l'étape intermédiaire.
+
+## Comportement des cartes
+
+| Carte | Action |
 |---|---|
-| real_estate | Mandat vente exclusif, Compromis de vente, **État des lieux entrant**, **État des lieux sortant**, Bail meublé, Facture honoraires |
-| car_rental | Contrat location, Devis CD, État des lieux véhicule (départ + retour), Facture |
-| services | Proposition, Contrat prestation, **NDA / accord de confidentialité**, Ordre de mission, Facture |
-| goods_sales | Bon de commande, Devis, Bon de livraison, Facture, **Conditions générales de vente** |
+| Depuis modèle | Scroll vers la grille de modèles + ouvre le sélecteur |
+| Importer un PDF/DOCX | Ouvre le dialogue d'upload (réutilise `NewPdfTemplateDialog` de `/app/pdf-templates`) avec option « Utiliser pour ce document » |
+| Éditeur WYSIWYG | Navigation vers `/app/documents/wysiwyg` |
+| Saisie manuelle | Affiche le formulaire métier actuel (toggle inline ou route dédiée `/app/documents/new/manual`) |
 
-Chaque `body_html` contient des sections HTML structurées (parties, objet, durée, prix, signatures) avec les `{{placeholders}}` du vertical.
+## Fichiers à modifier / créer
 
-### 2. Migration SQL
-
-Ajouter sur `document_templates` :
-- `body_html TEXT` (corps long de document)
-- `required_fields TEXT[]` (variables obligatoires)
-
-Pas de nouvelle table — on réutilise la table existante avec son RLS / GRANT déjà en place.
-
-### 3. Mise à jour `seedBusinessVerticalTemplates`
-
-- Insérer `body_html` et `required_fields` lors du seed
-- Mode **upsert sur conflit (organization_id + business_vertical + name)** plutôt que skip, pour permettre la mise à jour du contenu si l'utilisateur re-seed après une nouvelle version
-
-Ajouter une nouvelle fonction `listVerticalTemplates({ vertical })` qui retourne pour un vertical donné la liste des templates de l'org (id, name, document_type, seeded boolean), pour l'UI.
-
-### 4. UI admin `/admin/business-verticals`
-
-- Remplacer le `<details>` "Variables dynamiques" par un panneau dépliable listant **les modèles du vertical** : nom, type document, badge "Importé" / "À importer", lien vers `/app/templates/$id/edit` si importé
-- Ajouter pour chaque template un mini-aperçu des `required_fields`
-- Conserver le bouton "Importer les modèles" en bulk + ajouter une icône pour ré-importer/mettre à jour
+- **`src/routes/_authenticated.app.documents.new.tsx`** — remplace le formulaire monolithique par le sélecteur 4 cartes + grille de modèles. Le formulaire actuel est extrait dans un composant `ManualDocumentForm` toggleable.
+- **`src/components/documents/StartOptionCard.tsx`** (nouveau) — carte d'action réutilisable (icône, titre, description, badge optionnel).
+- **`src/components/documents/TemplatePickerGrid.tsx`** (nouveau) — liste des modèles PDF groupés par `document_type`, factorisée depuis le code existant de `/app/pdf-templates`.
+- **`src/components/documents/ManualDocumentForm.tsx`** (nouveau) — extraction du formulaire actuel de `new.tsx` (aucun changement de logique, juste déplacement).
+- **`src/locales/fr.json` & `en.json`** — clés `documents.new.startFromTemplate`, `uploadPdf`, `wysiwygEditor`, `manualEntry`, sous-titres et descriptions.
 
 ## Détails techniques
 
-### Schéma SQL
-```sql
-ALTER TABLE public.document_templates
-  ADD COLUMN IF NOT EXISTS body_html text,
-  ADD COLUMN IF NOT EXISTS required_fields text[] DEFAULT ARRAY[]::text[];
-```
-GRANT déjà en place sur `document_templates`. Pas de RLS à modifier.
+- Réutiliser la query `listPdfTemplates` déjà appelée dans `/app/pdf-templates` (server fn dans `src/lib/pdf-templates.functions.ts`) pour la grille embarquée.
+- Pour l'upload : importer et réutiliser `NewPdfTemplateDialog` du fichier `_authenticated.app.pdf-templates.index.tsx` (extraire au préalable dans `src/components/pdf-templates/NewPdfTemplateDialog.tsx` pour la partager).
+- Aucune migration BDD, aucun changement de schéma : pur travail front + locales.
+- Conserver les routes existantes (`/app/documents/wysiwyg`, `/app/pdf-templates`) inchangées.
 
-### Forme d'un preset enrichi
-```ts
-{
-  name: "Accord de confidentialité (NDA)",
-  document_type: "contract",
-  required_fields: ["client_company", "mission_title", "start_date", "end_date"],
-  body_html: `
-    <h2>Article 1 — Parties</h2>
-    <p>Entre {{company_name}} et {{client_company}}, représenté par {{client_name}}…</p>
-    <h2>Article 2 — Objet</h2>
-    <p>Dans le cadre de la mission « {{mission_title}} »…</p>
-    <h2>Article 3 — Durée</h2>
-    <p>Du {{start_date}} au {{end_date}}, prolongé de 3 ans après expiration.</p>
-    …
-  `,
-  legal_mentions: "…",
-}
-```
+## Hors-scope
 
-### Compatibilité
-- Les templates existants déjà seedés gardent leur ligne ; `body_html`/`required_fields` restent NULL et sont remplis lors d'un nouveau "Importer" (mode upsert).
-- L'éditeur visuel (`/app/templates/$id/edit`) n'est pas modifié — `body_html` reste exploitable par les flux PDF/HTML qui lisent déjà header/footer (à utiliser dans la prochaine itération de rendu si besoin).
-
-## Fichiers touchés
-
-- `supabase/migrations/<timestamp>_template_body_required_fields.sql` (nouvelle)
-- `src/lib/business-verticals.ts` (enrichi + nouveaux templates)
-- `src/lib/business-verticals.functions.ts` (upsert + `listVerticalTemplates`)
-- `src/routes/_authenticated.admin.business-verticals.index.tsx` (UI listing)
-- `src/integrations/supabase/types.ts` (régénéré post-migration)
-
-## Hors scope
-
-- Refonte de l'éditeur visuel pour exploiter `body_html` (à voir séparément)
-- Validation des `required_fields` au moment de l'instanciation (à brancher dans `instantiateTemplate` plus tard)
+- Pas de chaînage automatique « modèle PDF → document » s'il n'existe pas déjà côté serveur ; si seul le clic « Utiliser » mène à l'éditeur du modèle, on l'indique clairement dans le libellé.
+- Pas de refonte du sidebar/header (déjà fait précédemment).
