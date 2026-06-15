@@ -44,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/app/templates/import")({
 
 function ImportTemplatePage() {
   const router = useRouter();
+  const { vertical } = Route.useSearch();
   const upload = useServerFn(uploadTemplateSource);
   const save = useServerFn(saveOverlayTemplate);
 
@@ -80,11 +81,13 @@ function ImportTemplatePage() {
           sourceMime: source!.mime,
           sourcePageCount: source!.pageCount,
           zones: input.zones,
+          ...(vertical ? { businessVertical: vertical } : {}),
         },
       }),
     onSuccess: () => {
       toast.success("Modèle enregistré");
-      router.navigate({ to: "/app/templates" });
+      if (vertical) router.navigate({ to: "/admin/business-verticals" });
+      else router.navigate({ to: "/app/templates" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -93,10 +96,16 @@ function ImportTemplatePage() {
     <div className="min-h-screen">
       <div className="px-4 py-3 border-b flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/app/templates"><ArrowLeft className="h-4 w-4 mr-1" />Retour</Link>
+          <Link to={vertical ? "/admin/business-verticals" : "/app/templates"}>
+            <ArrowLeft className="h-4 w-4 mr-1" />Retour
+          </Link>
         </Button>
         <h1 className="text-base font-semibold">Importer un document</h1>
+        {vertical ? (
+          <Badge variant="secondary">{VERTICAL_LABELS[vertical]}</Badge>
+        ) : null}
       </div>
+
 
       {!source ? (
         <div className="p-6 max-w-xl mx-auto">
