@@ -328,9 +328,9 @@
     }
   },
   "templates": {
-    "title": "PDF templates",
-    "subtitle": "Customize the look of your generated documents.",
-    "new": "New template",
+    "title": "Brand templates",
+    "subtitle": "Customize the look of generated invoices, quotes and orders.",
+    "new": "New brand template",
     "name": "Name",
     "type": "Document type",
     "primary_color": "Primary color",
