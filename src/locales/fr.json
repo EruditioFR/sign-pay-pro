@@ -56,10 +56,10 @@
     "coming_soon": "Bientôt disponible"
   },
   "roles": {
-    "super_admin": "Super Admin",
+    "super_admin": "Super administrateur",
     "reseller": "Revendeur",
-    "admin_client": "Admin Client",
-    "manager": "Manager",
+    "admin_client": "Administrateur",
+    "manager": "Responsable",
     "user": "Utilisateur"
   },
   "users": {
@@ -102,27 +102,50 @@
     "created": "Document créé.",
     "empty": "Aucun document.",
     "search_placeholder": "Rechercher par titre…",
-    "filter": { "all_types": "Tous les types", "all_statuses": "Tous les statuts" },
+    "filter": {
+      "all_types": "Tous les types",
+      "all_statuses": "Tous les statuts"
+    },
     "field": {
-      "title": "Titre", "type": "Type", "reference": "Référence",
-      "third_party": "Tiers", "third_party_email": "Email du tiers",
-      "amount": "Montant TTC", "amount_ht": "Montant HT", "amount_ttc": "Montant TTC",
-      "currency": "Devise", "issue_date": "Date d'émission", "due_date": "Échéance",
-      "description": "Description", "status": "Statut"
+      "title": "Titre",
+      "type": "Type",
+      "reference": "Référence",
+      "third_party": "Tiers",
+      "third_party_email": "Email du tiers",
+      "amount": "Montant TTC",
+      "amount_ht": "Montant HT",
+      "amount_ttc": "Montant TTC",
+      "currency": "Devise",
+      "issue_date": "Date d'émission",
+      "due_date": "Échéance",
+      "description": "Description",
+      "status": "Statut"
     },
     "types": {
-      "purchase_order": "Bon de commande", "quote": "Devis",
-      "invoice": "Facture", "contract": "Contrat", "other": "Autre"
+      "purchase_order": "Bon de commande",
+      "quote": "Devis",
+      "invoice": "Facture",
+      "contract": "Contrat",
+      "other": "Autre"
     },
     "status": {
-      "draft": "Brouillon", "pending_validation": "À valider",
-      "validated": "Validé", "rejected": "Rejeté", "archived": "Archivé",
-      "issued": "Émise", "sent": "Envoyée", "viewed": "Vue",
-      "signed": "Signé", "paid": "Payé", "partially_paid": "Partiellement payé",
+      "draft": "Brouillon",
+      "pending_validation": "À valider",
+      "validated": "Validé",
+      "rejected": "Rejeté",
+      "archived": "Archivé",
+      "issued": "Émise",
+      "sent": "Envoyée",
+      "viewed": "Vue",
+      "signed": "Signé",
+      "paid": "Payé",
+      "partially_paid": "Partiellement payé",
       "cancelled": "Annulé"
     },
     "archive": {
-      "archive": "Archiver", "unarchive": "Désarchiver", "cancel": "Annuler le document",
+      "archive": "Archiver",
+      "unarchive": "Désarchiver",
+      "cancel": "Annuler le document",
       "include_archived": "Inclure les archives",
       "archived_banner": "Ce document est archivé — lecture seule.",
       "cancelled_banner": "Ce document a été annulé.",
@@ -134,8 +157,10 @@
       "confirm_cancel": "Annuler définitivement ce document ?"
     },
     "upload": {
-      "label": "Glissez un fichier ou cliquez", "choose": "Choisir",
-      "uploading": "Envoi…", "success": "Fichier ajouté.",
+      "label": "Glissez un fichier ou cliquez",
+      "choose": "Choisir",
+      "uploading": "Envoi…",
+      "success": "Fichier ajouté.",
       "too_large": "Fichier trop volumineux (max 20 Mo)."
     }
   },
@@ -154,20 +179,31 @@
     "previous": "Précédent",
     "next": "Suivant",
     "signature": {
-      "title": "Signature", "any": "Toutes", "none": "Aucune",
-      "pending": "En attente", "signed": "Signé"
+      "title": "Signature",
+      "any": "Toutes",
+      "none": "Aucune",
+      "pending": "En attente",
+      "signed": "Signé"
     },
     "payment": {
-      "title": "Paiement", "any": "Tous", "none": "Aucun",
-      "partial": "Partiel", "paid": "Payé"
+      "title": "Paiement",
+      "any": "Tous",
+      "none": "Aucun",
+      "partial": "Partiel",
+      "paid": "Payé"
     },
     "archived": {
-      "title": "Archives", "exclude": "Sans archives",
-      "include": "Avec archives", "only": "Archives uniquement"
+      "title": "Archives",
+      "exclude": "Sans archives",
+      "include": "Avec archives",
+      "only": "Archives uniquement"
     },
     "sort": {
-      "created_at": "Création", "updated_at": "Modification",
-      "issue_date": "Émission", "due_date": "Échéance", "amount_ttc": "Montant"
+      "created_at": "Création",
+      "updated_at": "Modification",
+      "issue_date": "Émission",
+      "due_date": "Échéance",
+      "amount_ttc": "Montant"
     },
     "presets": "Filtres enregistrés",
     "presets_save": "Enregistrer ce filtre",
@@ -179,8 +215,10 @@
     "no_steps": "Aucune étape.",
     "optional": "facultative",
     "step_status": {
-      "pending": "En attente", "approved": "Approuvée",
-      "rejected": "Rejetée", "skipped": "Sautée"
+      "pending": "En attente",
+      "approved": "Approuvée",
+      "rejected": "Rejetée",
+      "skipped": "Sautée"
     }
   },
   "approvals": {
@@ -188,7 +226,11 @@
     "subtitle": "Vos étapes de validation en attente."
   },
   "nav_extra": {
-    "documents": "Documents", "approvals": "À valider", "workflows": "Workflows", "templates": "Modèles PDF", "analytics": "Analytics"
+    "documents": "Documents",
+    "approvals": "À valider",
+    "workflows": "Workflows",
+    "templates": "Modèles PDF",
+    "analytics": "Analytics"
   },
   "analytics": {
     "title": "Analytics métier",
@@ -211,35 +253,66 @@
       "overdue": "En retard"
     },
     "series": {
-      "created": "Créés", "signed": "Signés", "paid": "Payés"
+      "created": "Créés",
+      "signed": "Signés",
+      "paid": "Payés"
     }
   },
   "templates": {
-    "title": "Modèles PDF", "subtitle": "Personnalisez l'apparence de vos documents générés.",
-    "new": "Nouveau modèle", "name": "Nom", "type": "Type de document",
-    "primary_color": "Couleur principale", "logo_url": "URL du logo",
-    "legal_mentions": "Mentions légales", "payment_terms": "Conditions de paiement",
-    "iban": "IBAN", "bic": "BIC", "vat_number": "N° TVA",
-    "active": "Actif", "is_default": "Modèle par défaut",
-    "saved": "Modèle enregistré.", "deleted": "Modèle supprimé.",
-    "empty": "Aucun modèle pour le moment.", "delete_confirm": "Supprimer ce modèle ?"
+    "title": "Modèles PDF",
+    "subtitle": "Personnalisez l'apparence de vos documents générés.",
+    "new": "Nouveau modèle",
+    "name": "Nom",
+    "type": "Type de document",
+    "primary_color": "Couleur principale",
+    "logo_url": "URL du logo",
+    "legal_mentions": "Mentions légales",
+    "payment_terms": "Conditions de paiement",
+    "iban": "IBAN",
+    "bic": "BIC",
+    "vat_number": "N° TVA",
+    "active": "Actif",
+    "is_default": "Modèle par défaut",
+    "saved": "Modèle enregistré.",
+    "deleted": "Modèle supprimé.",
+    "empty": "Aucun modèle pour le moment.",
+    "delete_confirm": "Supprimer ce modèle ?"
   },
   "doc_detail": {
-    "files": "Fichiers", "signatures": "Signatures", "payments": "Paiements",
-    "no_signatures": "Aucune signature pour le moment.", "no_payments": "Aucun paiement pour le moment.",
-    "signed_by": "Signé par", "on": "le", "amount": "Montant", "method": "Méthode", "status": "Statut"
+    "files": "Fichiers",
+    "signatures": "Signatures",
+    "payments": "Paiements",
+    "no_signatures": "Aucune signature pour le moment.",
+    "no_payments": "Aucun paiement pour le moment.",
+    "signed_by": "Signé par",
+    "on": "le",
+    "amount": "Montant",
+    "method": "Méthode",
+    "status": "Statut"
   },
-  "pdf": { "generate": "Générer le PDF", "generated": "PDF généré." },
+  "pdf": {
+    "generate": "Générer le PDF",
+    "generated": "PDF généré."
+  },
   "sharing": {
-    "title": "Envoyer au tiers", "send": "Envoyer",
-    "recipient_name": "Nom du destinataire", "recipient_email": "Email",
+    "title": "Envoyer au tiers",
+    "send": "Envoyer",
+    "recipient_name": "Nom du destinataire",
+    "recipient_email": "Email",
     "expires_in_days": "Expire dans (jours)",
-    "allow_sign": "Autoriser la signature", "allow_pay": "Autoriser le paiement",
-    "create_link": "Créer le lien", "link_created_copied": "Lien créé et copié.",
-    "link_revoked": "Lien révoqué.", "copied": "Lien copié.",
-    "existing_links": "Liens existants", "views": "vues",
-    "active": "actif", "inactive": "expiré",
-    "channel": "Mode d'envoi", "via_email": "Email", "via_whatsapp": "WhatsApp",
+    "allow_sign": "Autoriser la signature",
+    "allow_pay": "Autoriser le paiement",
+    "create_link": "Créer le lien",
+    "link_created_copied": "Lien créé et copié.",
+    "link_revoked": "Lien révoqué.",
+    "copied": "Lien copié.",
+    "existing_links": "Liens existants",
+    "views": "vues",
+    "active": "actif",
+    "inactive": "expiré",
+    "channel": "Mode d'envoi",
+    "via_email": "Email",
+    "via_whatsapp": "WhatsApp",
     "recipient_phone": "Téléphone (format international)",
     "phone_required": "Veuillez renseigner le numéro de téléphone.",
     "email_required": "Veuillez renseigner l'email du destinataire.",
@@ -248,25 +321,61 @@
     "share_message": "Bonjour {{name}}, voici le lien pour consulter et signer le document : {{url}}"
   },
   "payments": {
-    "record": "Encaisser", "record_title": "Enregistrer un paiement",
-    "amount": "Montant", "method": "Méthode", "reference": "Référence",
-    "bank_transfer": "Virement", "cash": "Espèces", "check": "Chèque", "other": "Autre",
-    "recorded": "Paiement enregistré."
+    "record": "Encaisser",
+    "record_title": "Enregistrer un paiement",
+    "amount": "Montant",
+    "method": "Méthode",
+    "reference": "Référence",
+    "bank_transfer": "Virement",
+    "cash": "Espèces",
+    "check": "Chèque",
+    "other": "Autre",
+    "recorded": "Paiement enregistré.",
+    "status": {
+      "pending": "En attente",
+      "succeeded": "Réussi",
+      "failed": "Échoué",
+      "refunded": "Remboursé",
+      "cancelled": "Annulé",
+      "processing": "En traitement"
+    },
+    "methods": {
+      "bank_transfer": "Virement",
+      "cash": "Espèces",
+      "check": "Chèque",
+      "card": "Carte bancaire",
+      "stripe": "Stripe",
+      "sepa": "Prélèvement SEPA",
+      "other": "Autre"
+    }
   },
   "public": {
-    "invalid_title": "Lien invalide", "invalid_text": "Ce lien est expiré ou a été révoqué.",
+    "invalid_title": "Lien invalide",
+    "invalid_text": "Ce lien est expiré ou a été révoqué.",
     "shared_with_you": "Document partagé avec vous",
-    "no_pdf": "Aucun PDF disponible.", "actions": "Actions",
-    "sign": "Signer", "pay": "Payer",
-    "signer_name": "Nom du signataire", "signer_email": "Email",
-    "draw_signature": "Signez ci-dessous", "clear": "Effacer",
-    "sign_now": "Signer maintenant", "signed_ok": "Document signé. Merci !",
-    "need_name": "Renseignez votre nom.", "need_signature": "Veuillez signer.",
-    "amount": "Montant", "payer_name": "Nom du payeur", "payer_email": "Email du payeur",
-    "payment_ref": "Référence du paiement", "payment_ref_hint": "Ex: référence du virement",
-    "declare_payment": "Déclarer le paiement", "declare_payment_hint": "Ou déclarez un paiement effectué hors ligne (virement, chèque…).",
-    "pay_online": "Payer en ligne par carte", "or": "ou",
-    "paid_ok": "Paiement enregistré. Merci !", "need_amount": "Montant invalide."
+    "no_pdf": "Aucun PDF disponible.",
+    "actions": "Actions",
+    "sign": "Signer",
+    "pay": "Payer",
+    "signer_name": "Nom du signataire",
+    "signer_email": "Email",
+    "draw_signature": "Signez ci-dessous",
+    "clear": "Effacer",
+    "sign_now": "Signer maintenant",
+    "signed_ok": "Document signé. Merci !",
+    "need_name": "Renseignez votre nom.",
+    "need_signature": "Veuillez signer.",
+    "amount": "Montant",
+    "payer_name": "Nom du payeur",
+    "payer_email": "Email du payeur",
+    "payment_ref": "Référence du paiement",
+    "payment_ref_hint": "Ex: référence du virement",
+    "declare_payment": "Déclarer le paiement",
+    "declare_payment_hint": "Ou déclarez un paiement effectué hors ligne (virement, chèque…).",
+    "pay_online": "Payer en ligne par carte",
+    "or": "ou",
+    "paid_ok": "Paiement enregistré. Merci !",
+    "need_amount": "Montant invalide."
   },
   "pay": {
     "success_title": "Paiement confirmé",
@@ -282,6 +391,21 @@
     "overdue": "En retard",
     "refunded": "Remboursé",
     "not_applicable": "—",
-    "tooltip": { "paid": "Payé", "due": "Dû", "remaining": "Restant" }
+    "tooltip": {
+      "paid": "Payé",
+      "due": "Dû",
+      "remaining": "Restant"
+    }
+  },
+  "signatures": {
+    "status": {
+      "pending": "En attente",
+      "sent": "Envoyée",
+      "viewed": "Consultée",
+      "signed": "Signée",
+      "declined": "Refusée",
+      "cancelled": "Annulée",
+      "expired": "Expirée"
+    }
   }
 }

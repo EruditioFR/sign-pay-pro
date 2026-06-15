@@ -88,33 +88,64 @@
     "created": "Created"
   },
   "common": {
-    "save": "Save", "cancel": "Cancel", "loading": "Loading…", "error": "Error", "language": "Language", "retry": "Retry"
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Error",
+    "language": "Language",
+    "retry": "Retry"
   },
   "documents": {
-    "title": "Documents", "subtitle": "Manage your business documents.",
-    "new": "New document", "created": "Document created.", "empty": "No documents.",
+    "title": "Documents",
+    "subtitle": "Manage your business documents.",
+    "new": "New document",
+    "created": "Document created.",
+    "empty": "No documents.",
     "search_placeholder": "Search by title…",
-    "filter": { "all_types": "All types", "all_statuses": "All statuses" },
+    "filter": {
+      "all_types": "All types",
+      "all_statuses": "All statuses"
+    },
     "field": {
-      "title": "Title", "type": "Type", "reference": "Reference",
-      "third_party": "Third party", "third_party_email": "Third-party email",
-      "amount": "Amount (incl.)", "amount_ht": "Amount (excl.)", "amount_ttc": "Amount (incl.)",
-      "currency": "Currency", "issue_date": "Issue date", "due_date": "Due date",
-      "description": "Description", "status": "Status"
+      "title": "Title",
+      "type": "Type",
+      "reference": "Reference",
+      "third_party": "Third party",
+      "third_party_email": "Third-party email",
+      "amount": "Amount (incl.)",
+      "amount_ht": "Amount (excl.)",
+      "amount_ttc": "Amount (incl.)",
+      "currency": "Currency",
+      "issue_date": "Issue date",
+      "due_date": "Due date",
+      "description": "Description",
+      "status": "Status"
     },
     "types": {
-      "purchase_order": "Purchase order", "quote": "Quote",
-      "invoice": "Invoice", "contract": "Contract", "other": "Other"
+      "purchase_order": "Purchase order",
+      "quote": "Quote",
+      "invoice": "Invoice",
+      "contract": "Contract",
+      "other": "Other"
     },
     "status": {
-      "draft": "Draft", "pending_validation": "Pending", "validated": "Validated",
-      "rejected": "Rejected", "archived": "Archived",
-      "issued": "Issued", "sent": "Sent", "viewed": "Viewed",
-      "signed": "Signed", "paid": "Paid", "partially_paid": "Partially paid",
+      "draft": "Draft",
+      "pending_validation": "Pending",
+      "validated": "Validated",
+      "rejected": "Rejected",
+      "archived": "Archived",
+      "issued": "Issued",
+      "sent": "Sent",
+      "viewed": "Viewed",
+      "signed": "Signed",
+      "paid": "Paid",
+      "partially_paid": "Partially paid",
       "cancelled": "Cancelled"
     },
     "archive": {
-      "archive": "Archive", "unarchive": "Unarchive", "cancel": "Cancel document",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "cancel": "Cancel document",
       "include_archived": "Include archives",
       "archived_banner": "This document is archived — read-only.",
       "cancelled_banner": "This document has been cancelled.",
@@ -126,8 +157,10 @@
       "confirm_cancel": "Permanently cancel this document?"
     },
     "upload": {
-      "label": "Drop a file or click", "choose": "Choose",
-      "uploading": "Uploading…", "success": "File added.",
+      "label": "Drop a file or click",
+      "choose": "Choose",
+      "uploading": "Uploading…",
+      "success": "File added.",
       "too_large": "File too large (max 20 MB)."
     }
   },
@@ -146,37 +179,58 @@
     "previous": "Previous",
     "next": "Next",
     "signature": {
-      "title": "Signature", "any": "Any", "none": "None",
-      "pending": "Pending", "signed": "Signed"
+      "title": "Signature",
+      "any": "Any",
+      "none": "None",
+      "pending": "Pending",
+      "signed": "Signed"
     },
     "payment": {
-      "title": "Payment", "any": "Any", "none": "None",
-      "partial": "Partial", "paid": "Paid"
+      "title": "Payment",
+      "any": "Any",
+      "none": "None",
+      "partial": "Partial",
+      "paid": "Paid"
     },
     "archived": {
-      "title": "Archives", "exclude": "Hide archives",
-      "include": "Include archives", "only": "Archives only"
+      "title": "Archives",
+      "exclude": "Hide archives",
+      "include": "Include archives",
+      "only": "Archives only"
     },
     "sort": {
-      "created_at": "Created", "updated_at": "Updated",
-      "issue_date": "Issued", "due_date": "Due", "amount_ttc": "Amount"
+      "created_at": "Created",
+      "updated_at": "Updated",
+      "issue_date": "Issued",
+      "due_date": "Due",
+      "amount_ttc": "Amount"
     },
     "presets": "Saved filters",
     "presets_save": "Save current filter",
     "presets_empty": "No saved filters."
   },
   "workflows": {
-    "title": "Workflows", "subtitle": "Validation templates for your organization.",
-    "no_steps": "No steps.", "optional": "optional",
+    "title": "Workflows",
+    "subtitle": "Validation templates for your organization.",
+    "no_steps": "No steps.",
+    "optional": "optional",
     "step_status": {
-      "pending": "Pending", "approved": "Approved", "rejected": "Rejected", "skipped": "Skipped"
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "skipped": "Skipped"
     }
   },
   "approvals": {
-    "title": "To approve", "subtitle": "Your pending validation steps."
+    "title": "To approve",
+    "subtitle": "Your pending validation steps."
   },
   "nav_extra": {
-    "documents": "Documents", "approvals": "To approve", "workflows": "Workflows", "templates": "PDF templates", "analytics": "Analytics"
+    "documents": "Documents",
+    "approvals": "To approve",
+    "workflows": "Workflows",
+    "templates": "PDF templates",
+    "analytics": "Analytics"
   },
   "analytics": {
     "title": "Business analytics",
@@ -198,19 +252,35 @@
       "avg_to_paid": "Avg. time → payment",
       "overdue": "Overdue"
     },
-    "series": { "created": "Created", "signed": "Signed", "paid": "Paid" }
+    "series": {
+      "created": "Created",
+      "signed": "Signed",
+      "paid": "Paid"
+    }
   },
-  "pdf": { "generate": "Generate PDF", "generated": "PDF generated." },
+  "pdf": {
+    "generate": "Generate PDF",
+    "generated": "PDF generated."
+  },
   "sharing": {
-    "title": "Send to recipient", "send": "Send",
-    "recipient_name": "Recipient name", "recipient_email": "Email",
+    "title": "Send to recipient",
+    "send": "Send",
+    "recipient_name": "Recipient name",
+    "recipient_email": "Email",
     "expires_in_days": "Expires in (days)",
-    "allow_sign": "Allow signature", "allow_pay": "Allow payment",
-    "create_link": "Create link", "link_created_copied": "Link created and copied.",
-    "link_revoked": "Link revoked.", "copied": "Link copied.",
-    "existing_links": "Existing links", "views": "views",
-    "active": "active", "inactive": "expired",
-    "channel": "Delivery method", "via_email": "Email", "via_whatsapp": "WhatsApp",
+    "allow_sign": "Allow signature",
+    "allow_pay": "Allow payment",
+    "create_link": "Create link",
+    "link_created_copied": "Link created and copied.",
+    "link_revoked": "Link revoked.",
+    "copied": "Link copied.",
+    "existing_links": "Existing links",
+    "views": "views",
+    "active": "active",
+    "inactive": "expired",
+    "channel": "Delivery method",
+    "via_email": "Email",
+    "via_whatsapp": "WhatsApp",
     "recipient_phone": "Phone (international format)",
     "phone_required": "Please enter a phone number.",
     "email_required": "Please enter the recipient's email.",
@@ -219,40 +289,93 @@
     "share_message": "Hello {{name}}, here is the link to review and sign the document: {{url}}"
   },
   "payments": {
-    "record": "Record payment", "record_title": "Record a payment",
-    "amount": "Amount", "method": "Method", "reference": "Reference",
-    "bank_transfer": "Bank transfer", "cash": "Cash", "check": "Check", "other": "Other",
-    "recorded": "Payment recorded."
+    "record": "Record payment",
+    "record_title": "Record a payment",
+    "amount": "Amount",
+    "method": "Method",
+    "reference": "Reference",
+    "bank_transfer": "Bank transfer",
+    "cash": "Cash",
+    "check": "Check",
+    "other": "Other",
+    "recorded": "Payment recorded.",
+    "status": {
+      "pending": "Pending",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "cancelled": "Cancelled",
+      "processing": "Processing"
+    },
+    "methods": {
+      "bank_transfer": "Bank transfer",
+      "cash": "Cash",
+      "check": "Check",
+      "card": "Card",
+      "stripe": "Stripe",
+      "sepa": "SEPA direct debit",
+      "other": "Other"
+    }
   },
   "templates": {
-    "title": "PDF templates", "subtitle": "Customize the look of your generated documents.",
-    "new": "New template", "name": "Name", "type": "Document type",
-    "primary_color": "Primary color", "logo_url": "Logo URL",
-    "legal_mentions": "Legal mentions", "payment_terms": "Payment terms",
-    "iban": "IBAN", "bic": "BIC", "vat_number": "VAT number",
-    "active": "Active", "is_default": "Default template",
-    "saved": "Template saved.", "deleted": "Template deleted.",
-    "empty": "No templates yet.", "delete_confirm": "Delete this template?"
+    "title": "PDF templates",
+    "subtitle": "Customize the look of your generated documents.",
+    "new": "New template",
+    "name": "Name",
+    "type": "Document type",
+    "primary_color": "Primary color",
+    "logo_url": "Logo URL",
+    "legal_mentions": "Legal mentions",
+    "payment_terms": "Payment terms",
+    "iban": "IBAN",
+    "bic": "BIC",
+    "vat_number": "VAT number",
+    "active": "Active",
+    "is_default": "Default template",
+    "saved": "Template saved.",
+    "deleted": "Template deleted.",
+    "empty": "No templates yet.",
+    "delete_confirm": "Delete this template?"
   },
   "doc_detail": {
-    "files": "Files", "signatures": "Signatures", "payments": "Payments",
-    "no_signatures": "No signatures yet.", "no_payments": "No payments yet.",
-    "signed_by": "Signed by", "on": "on", "amount": "Amount", "method": "Method", "status": "Status"
+    "files": "Files",
+    "signatures": "Signatures",
+    "payments": "Payments",
+    "no_signatures": "No signatures yet.",
+    "no_payments": "No payments yet.",
+    "signed_by": "Signed by",
+    "on": "on",
+    "amount": "Amount",
+    "method": "Method",
+    "status": "Status"
   },
   "public": {
-    "invalid_title": "Invalid link", "invalid_text": "This link is expired or revoked.",
+    "invalid_title": "Invalid link",
+    "invalid_text": "This link is expired or revoked.",
     "shared_with_you": "Document shared with you",
-    "no_pdf": "No PDF available.", "actions": "Actions",
-    "sign": "Sign", "pay": "Pay",
-    "signer_name": "Signer name", "signer_email": "Email",
-    "draw_signature": "Sign below", "clear": "Clear",
-    "sign_now": "Sign now", "signed_ok": "Document signed. Thank you!",
-    "need_name": "Please enter your name.", "need_signature": "Please sign.",
-    "amount": "Amount", "payer_name": "Payer name", "payer_email": "Payer email",
-    "payment_ref": "Payment reference", "payment_ref_hint": "e.g. transfer reference",
-    "declare_payment": "Declare payment", "declare_payment_hint": "Or declare a payment made offline (transfer, check…).",
-    "pay_online": "Pay online by card", "or": "or",
-    "paid_ok": "Payment recorded. Thank you!", "need_amount": "Invalid amount."
+    "no_pdf": "No PDF available.",
+    "actions": "Actions",
+    "sign": "Sign",
+    "pay": "Pay",
+    "signer_name": "Signer name",
+    "signer_email": "Email",
+    "draw_signature": "Sign below",
+    "clear": "Clear",
+    "sign_now": "Sign now",
+    "signed_ok": "Document signed. Thank you!",
+    "need_name": "Please enter your name.",
+    "need_signature": "Please sign.",
+    "amount": "Amount",
+    "payer_name": "Payer name",
+    "payer_email": "Payer email",
+    "payment_ref": "Payment reference",
+    "payment_ref_hint": "e.g. transfer reference",
+    "declare_payment": "Declare payment",
+    "declare_payment_hint": "Or declare a payment made offline (transfer, check…).",
+    "pay_online": "Pay online by card",
+    "or": "or",
+    "paid_ok": "Payment recorded. Thank you!",
+    "need_amount": "Invalid amount."
   },
   "pay": {
     "success_title": "Payment confirmed",
@@ -268,6 +391,21 @@
     "overdue": "Overdue",
     "refunded": "Refunded",
     "not_applicable": "—",
-    "tooltip": { "paid": "Paid", "due": "Due", "remaining": "Remaining" }
+    "tooltip": {
+      "paid": "Paid",
+      "due": "Due",
+      "remaining": "Remaining"
+    }
+  },
+  "signatures": {
+    "status": {
+      "pending": "Pending",
+      "sent": "Sent",
+      "viewed": "Viewed",
+      "signed": "Signed",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    }
   }
 }
