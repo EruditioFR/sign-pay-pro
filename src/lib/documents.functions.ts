@@ -1,21 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import {
+  assertCanTransition,
+  buildTransitionAuditEntry,
+  canArchive,
+  canCancel,
+  isReadOnlyStatus as smIsReadOnly,
+  READ_ONLY_STATUSES as SM_READ_ONLY,
+  type DocumentStatus as SMDocumentStatus,
+} from "@/lib/document-state-machine";
 
 export type DocumentType = "purchase_order" | "quote" | "invoice" | "contract" | "other";
-export type DocumentStatus =
-  | "draft"
-  | "pending_validation"
-  | "validated"
-  | "rejected"
-  | "issued"
-  | "sent"
-  | "viewed"
-  | "signed"
-  | "paid"
-  | "partially_paid"
-  | "archived"
-  | "cancelled";
+export type DocumentStatus = SMDocumentStatus;
 
 export const ALL_DOCUMENT_STATUSES: DocumentStatus[] = [
   "draft",
@@ -32,11 +29,12 @@ export const ALL_DOCUMENT_STATUSES: DocumentStatus[] = [
   "cancelled",
 ];
 
-/** Statuts en lecture seule : seules les opérations d'export/consultation sont autorisées */
-export const READ_ONLY_STATUSES: DocumentStatus[] = ["archived", "cancelled"];
+/** @deprecated importer depuis `@/lib/document-state-machine` */
+export const READ_ONLY_STATUSES: DocumentStatus[] = [...SM_READ_ONLY];
 
+/** @deprecated importer depuis `@/lib/document-state-machine` */
 export function isReadOnlyStatus(status: string | null | undefined): boolean {
-  return !!status && (READ_ONLY_STATUSES as string[]).includes(status);
+  return smIsReadOnly(status);
 }
 
 const DocumentTypeEnum = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
