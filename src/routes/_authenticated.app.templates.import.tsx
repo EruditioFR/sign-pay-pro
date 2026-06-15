@@ -2,11 +2,13 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { FileUp, ArrowLeft } from "lucide-react";
 import {
   uploadTemplateSource,
@@ -17,13 +19,28 @@ import {
   type OverlayEditorSource,
 } from "@/components/overlay-editor/OverlayEditor";
 
+const searchSchema = z.object({
+  vertical: z
+    .enum(["real_estate", "car_rental", "services", "goods_sales"])
+    .optional(),
+});
+
+const VERTICAL_LABELS: Record<string, string> = {
+  real_estate: "Immobilier",
+  car_rental: "Location de véhicules",
+  services: "Prestations de services",
+  goods_sales: "Vente de biens",
+};
+
 export const Route = createFileRoute("/_authenticated/app/templates/import")({
+  validateSearch: (raw) => searchSchema.parse(raw),
   component: ImportTemplatePage,
   errorComponent: ({ error }) => (
     <div className="p-6 text-sm text-destructive">{(error as Error).message}</div>
   ),
   notFoundComponent: () => <div className="p-6 text-sm">Introuvable.</div>,
 });
+
 
 function ImportTemplatePage() {
   const router = useRouter();
