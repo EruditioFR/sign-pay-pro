@@ -18,9 +18,10 @@ import {
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
   CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
+  RefreshCw, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getCurrentDocumentPdfUrl } from "@/lib/sharing.functions";
+import { getCurrentDocumentPdfUrl, listDocumentSignatures } from "@/lib/sharing.functions";
 import {
   listPdfFields, savePdfFields, flattenPdfWithFields,
   type PdfFieldKind,
@@ -96,15 +97,28 @@ function PdfEditorPage() {
   const fetchFields = useServerFn(listPdfFields);
   const saveFn = useServerFn(savePdfFields);
   const flattenFn = useServerFn(flattenPdfWithFields);
+  const listSignaturesFn = useServerFn(listDocumentSignatures);
 
   const urlQ = useQuery({
     queryKey: ["editor-pdf-url", id],
     queryFn: () => fetchUrl({ data: { document_id: id } }),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
   const fieldsQ = useQuery({
     queryKey: ["pdf-fields", id],
     queryFn: () => fetchFields({ data: { documentId: id } }),
   });
+  const sigsQ = useQuery({
+    queryKey: ["document-signatures", id],
+    queryFn: () => listSignaturesFn({ data: { document_id: id } }),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 15_000,
+  });
+  const signatures = sigsQ.data?.signatures ?? [];
 
   const [pageCount, setPageCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
@@ -336,6 +350,23 @@ function PdfEditorPage() {
           </Link>
         </Button>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["editor-pdf-url", id] });
+              qc.invalidateQueries({ queryKey: ["document-signatures", id] });
+            }}
+            disabled={urlQ.isFetching}
+            title="Recharger le PDF (utile après une signature)"
+          >
+            {urlQ.isFetching ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1 h-4 w-4" />
+            )}
+            Rafraîchir
+          </Button>
           <Button variant="outline" size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
             {saveMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
             Enregistrer
@@ -349,6 +380,29 @@ function PdfEditorPage() {
           </Button>
         </div>
       </div>
+
+      {signatures.length > 0 && (
+        <div className="flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">
+              {signatures.length} signature{signatures.length > 1 ? "s" : ""} collectée{signatures.length > 1 ? "s" : ""}
+            </p>
+            <ul className="mt-1 space-y-0.5 text-xs">
+              {signatures.map((s) => (
+                <li key={s.id}>
+                  • {s.signer_name}
+                  {s.signer_email ? ` (${s.signer_email})` : ""} —{" "}
+                  {new Date(s.signed_at).toLocaleString("fr-FR")}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-xs opacity-80">
+              Le PDF affiché ci-dessous est la dernière version signée. Si la signature n'apparaît pas, cliquez sur « Rafraîchir ».
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-[200px_1fr_260px]">
         {/* Palette */}
