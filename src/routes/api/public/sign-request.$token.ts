@@ -165,6 +165,18 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             .from("document_signature_requests")
             .update({ status: "declined", decline_reason: body.reason ?? null })
             .eq("id", req.id);
+          try {
+            const { notifySignatureDeclined } = await import("@/lib/signature-notifications.server");
+            void notifySignatureDeclined(
+              supabaseAdmin,
+              req.document_id,
+              req.signer_name,
+              req.signer_email,
+              body.reason ?? null,
+            );
+          } catch (e) {
+            console.error("notifySignatureDeclined failed", e);
+          }
           return json({ ok: true });
         }
 
