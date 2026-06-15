@@ -21,6 +21,11 @@ import {
   type OverlayZone,
 } from "@/lib/template-overlay/schema";
 import { SourceCanvas } from "@/components/overlay-editor/SourceCanvas";
+import {
+  SignersPaymentFields,
+  emptySignersPaymentValue,
+  applySignersAndPayment,
+} from "@/components/documents/SignersPaymentFields";
 
 export const Route = createFileRoute("/_authenticated/app/templates/$id/fill")({
   component: FillOverlayPage,
