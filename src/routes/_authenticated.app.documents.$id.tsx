@@ -275,7 +275,7 @@ function DocumentDetailPage() {
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {p.method} · {p.status}
+                        {t(`payments.methods.${p.method}`, { defaultValue: p.method })} · {t(`payments.status.${p.status}`, { defaultValue: p.status })}
                         {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleDateString()}` : ""}
                         {p.provider_ref ? ` · ${p.provider_ref}` : ""}
                       </div>

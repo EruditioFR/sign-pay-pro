@@ -291,7 +291,7 @@ function PendingSignaturesPage() {
                             >
                               <div className="font-medium">{g.document_title}</div>
                               <div className="text-xs text-muted-foreground">
-                                {g.document_reference ?? "—"} · {g.document_type}
+                                {g.document_reference ?? "—"} · {t(`documents.types.${g.document_type}`, { defaultValue: g.document_type })}
                               </div>
                             </Link>
                           </TableCell>
