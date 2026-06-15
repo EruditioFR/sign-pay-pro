@@ -258,10 +258,6 @@ export const instantiateOverlayTemplate = createServerFn({ method: "POST" })
         title,
         type: "other",
         status: "draft",
-        metadata: {
-          overlay_template_id: (tpl as { id: string }).id,
-          zone_values: zoneValues,
-        } as unknown as never,
       } as never)
       .select("id")
       .single();
