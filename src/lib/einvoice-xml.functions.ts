@@ -25,8 +25,54 @@ import {
   INVOICE_TYPE_CODES,
   PAYMENT_MEANS_CODES,
   VAT_CATEGORIES,
+  type EinvoiceProfile,
   type ReadinessIssue,
 } from "@/lib/einvoice";
+
+// ---------------------------------------------------------------------------
+// Profil Factur-X → URN guideline (BT-24)
+// ---------------------------------------------------------------------------
+
+const PROFILE_URNS: Record<EinvoiceProfile, string> = {
+  minimum:  "urn:factur-x.eu:1p0:minimum",
+  basic_wl: "urn:factur-x.eu:1p0:basicwl",
+  basic:    "urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic",
+  en16931:  "urn:cen.eu:en16931:2017",
+  extended: "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended",
+};
+
+/**
+ * Validation structurelle légère du XML CII (substitut au XSD officiel,
+ * non chargeable dans workerd). Vérifie l'existence des blocs EN 16931
+ * obligatoires et l'équilibre des balises. Renvoie la liste des erreurs.
+ */
+export function validateCiiXmlStructure(xml: string): string[] {
+  const errors: string[] = [];
+  if (!xml.startsWith("<?xml")) errors.push("Prologue XML manquant");
+  if (!xml.includes("<rsm:CrossIndustryInvoice")) errors.push("Racine CrossIndustryInvoice absente");
+
+  const required: Array<[string, string]> = [
+    ["ram:ID", "BT-1 numéro de facture"],
+    ["ram:TypeCode", "BT-3 code type"],
+    ["ram:IssueDateTime", "BT-2 date d'émission"],
+    ["ram:SellerTradeParty", "BG-4 vendeur"],
+    ["ram:BuyerTradeParty", "BG-7 acheteur"],
+    ["ram:InvoiceCurrencyCode", "BT-5 devise"],
+    ["ram:GrandTotalAmount", "BT-112 total TTC"],
+    ["ram:TaxBasisTotalAmount", "BT-109 total HT"],
+    ["ram:TaxTotalAmount", "BT-110 total TVA"],
+  ];
+  for (const [tagName, label] of required) {
+    if (!xml.includes(`<${tagName}`)) errors.push(`Champ obligatoire manquant : ${label}`);
+  }
+
+  const opens = xml.match(/<([a-zA-Z][\w:-]*)(\s[^>]*)?(?<!\/)>/g) ?? [];
+  const closes = xml.match(/<\/([a-zA-Z][\w:-]*)>/g) ?? [];
+  if (opens.length !== closes.length) {
+    errors.push(`Balises non équilibrées (${opens.length} ouvertes / ${closes.length} fermées)`);
+  }
+  return errors;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers XML
@@ -64,6 +110,7 @@ function fmtDate(iso: string | null | undefined): string | null {
 // ---------------------------------------------------------------------------
 
 interface BuildInput {
+  profile?: EinvoiceProfile;
   doc: {
     id: string;
     invoice_number: string | null;
@@ -146,6 +193,8 @@ function pickAddress(
 
 function buildCiiXml(input: BuildInput): string {
   const { doc, org, lines, vat_breakdown } = input;
+  const profile: EinvoiceProfile = input.profile ?? "en16931";
+  const guidelineUrn = PROFILE_URNS[profile];
 
   const invoiceNumber = doc.invoice_number ?? doc.reference ?? doc.id.slice(0, 8);
   const typeCode = doc.invoice_type_code ?? INVOICE_TYPE_CODES.COMMERCIAL_INVOICE;
@@ -206,10 +255,11 @@ function buildCiiXml(input: BuildInput): string {
         },
       ];
 
+  const sellerSiren = org.siren ?? (sellerSiret ? sellerSiret.slice(0, 9) : null);
   const sellerXml = `
     <ram:SellerTradeParty>
       ${tag("ram:Name", sellerName)}
-      ${sellerSiret ? `<ram:SpecifiedLegalOrganization>${tag("ram:ID", sellerSiret, { schemeID: "0009" })}</ram:SpecifiedLegalOrganization>` : ""}
+      ${sellerSiret ? `<ram:SpecifiedLegalOrganization>${tag("ram:ID", sellerSiret, { schemeID: "0009" })}</ram:SpecifiedLegalOrganization>` : sellerSiren ? `<ram:SpecifiedLegalOrganization>${tag("ram:ID", sellerSiren, { schemeID: "0002" })}</ram:SpecifiedLegalOrganization>` : ""}
       <ram:PostalTradeAddress>
         ${tag("ram:PostcodeCode", sellerAddr.postal_code)}
         ${tag("ram:LineOne", sellerAddr.line1)}
@@ -218,6 +268,7 @@ function buildCiiXml(input: BuildInput): string {
         ${tag("ram:CountryID", sellerAddr.country_code)}
       </ram:PostalTradeAddress>
       ${sellerVat ? `<ram:SpecifiedTaxRegistration>${tag("ram:ID", sellerVat, { schemeID: "VA" })}</ram:SpecifiedTaxRegistration>` : ""}
+      ${sellerSiren ? `<ram:SpecifiedTaxRegistration>${tag("ram:ID", sellerSiren, { schemeID: "FC" })}</ram:SpecifiedTaxRegistration>` : ""}
     </ram:SellerTradeParty>`;
 
   const buyerXml = `
@@ -286,7 +337,7 @@ function buildCiiXml(input: BuildInput): string {
   xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
   <rsm:ExchangedDocumentContext>
     <ram:GuidelineSpecifiedDocumentContextParameter>
-      <ram:ID>urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic</ram:ID>
+      <ram:ID>${escapeXml(guidelineUrn)}</ram:ID>
     </ram:GuidelineSpecifiedDocumentContextParameter>
   </rsm:ExchangedDocumentContext>
   <rsm:ExchangedDocument>
@@ -325,6 +376,8 @@ const InputSchema = z.object({
   document_id: z.string().uuid(),
   /** Si true, met einvoice_status='ready' + journalise un événement. */
   mark_ready: z.boolean().optional().default(true),
+  /** Profil Factur-X. Par défaut EN 16931 (profil européen complet). */
+  profile: z.enum(["minimum", "basic_wl", "basic", "en16931", "extended"]).optional().default("en16931"),
 });
 
 export const generateInvoiceCii = createServerFn({ method: "POST" })
@@ -381,6 +434,7 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
 
     // 5) Génération XML
     const xml = buildCiiXml({
+      profile: data.profile,
       doc: {
         id: doc.id,
         invoice_number: doc.invoice_number,
@@ -440,8 +494,12 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
       })),
     });
 
+    // 5b) Validation structurelle (substitut XSD côté serverless)
+    const structureErrors = validateCiiXmlStructure(xml);
+    for (const err of structureErrors) issues.push({ field: "xml", message: err });
+
     const invoiceNumber = doc.invoice_number ?? doc.reference ?? doc.id.slice(0, 8);
-    const filename = `factur-x-${String(invoiceNumber).replace(/[^A-Za-z0-9._-]/g, "_")}.xml`;
+    const filename = `factur-x-${data.profile}-${String(invoiceNumber).replace(/[^A-Za-z0-9._-]/g, "_")}.xml`;
 
     // 6) Optionnel : marquer le doc comme "ready" + journaliser
     if (data.mark_ready) {
@@ -450,7 +508,7 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         .from("documents")
         .update({
           einvoice_format: "factur_x",
-          einvoice_profile: "basic",
+          einvoice_profile: data.profile,
           einvoice_status: "ready",
           einvoice_last_event_at: new Date().toISOString(),
         })
@@ -461,15 +519,15 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         from_status: fromStatus,
         to_status: "ready",
         source: "internal",
-        reason: "CII XML generated",
-        payload: { user_id: userId, issues_count: issues.length },
+        reason: `CII XML generated (profile=${data.profile})`,
+        payload: { user_id: userId, issues_count: issues.length, profile: data.profile },
       });
     }
 
     return {
       xml,
       filename,
-      profile: "basic" as const,
+      profile: data.profile,
       format: "factur_x" as const,
       issues,
     };
