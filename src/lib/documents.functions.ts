@@ -321,9 +321,10 @@ export const cancelDocument = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !doc) throw new Error("Document introuvable");
-    if (["paid", "signed", "archived", "cancelled"].includes(doc.status)) {
+    if (!canCancel(doc.status)) {
       throw new Error("Document non annulable dans son statut actuel.");
     }
+    assertCanTransition(doc.status, "cancelled");
 
     const { error } = await supabase
       .from("documents")
@@ -331,13 +332,16 @@ export const cancelDocument = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      organization_id: doc.organization_id,
-      user_id: userId,
-      action: "document.cancelled",
-      resource: `document:${data.id}`,
-      metadata: { previous_status: doc.status, reason: data.reason ?? null },
-    });
+    await supabase.from("audit_logs").insert(
+      buildTransitionAuditEntry({
+        organization_id: doc.organization_id,
+        user_id: userId,
+        document_id: data.id,
+        from: doc.status,
+        to: "cancelled",
+        reason: data.reason ?? null,
+      }),
+    );
     return { ok: true };
   });
 
