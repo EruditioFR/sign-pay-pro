@@ -75,7 +75,7 @@ function PdfTemplatesPage() {
       ) : (
         (() => {
           const TYPE_ORDER = ["quote", "invoice", "purchase_order", "contract", "other"] as const;
-          const groups = new Map<string, typeof data.templates>();
+          const groups = new Map<string, NonNullable<typeof data>["templates"]>();
           for (const t of data!.templates) {
             const key = t.document_type || "other";
             if (!groups.has(key)) groups.set(key, []);
