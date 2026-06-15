@@ -376,6 +376,8 @@ const InputSchema = z.object({
   document_id: z.string().uuid(),
   /** Si true, met einvoice_status='ready' + journalise un événement. */
   mark_ready: z.boolean().optional().default(true),
+  /** Profil Factur-X. Par défaut EN 16931 (profil européen complet). */
+  profile: z.enum(["minimum", "basic_wl", "basic", "en16931", "extended"]).optional().default("en16931"),
 });
 
 export const generateInvoiceCii = createServerFn({ method: "POST" })
