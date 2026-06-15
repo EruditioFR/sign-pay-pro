@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import {
   listBusinessVerticalsSummary,
@@ -41,6 +42,7 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
 const VERTICAL_IDS: VerticalId[] = ["real_estate", "car_rental", "services", "goods_sales"];
 
 function BusinessVerticalsPage() {
+  const { t: tr } = useTranslation();
   const qc = useQueryClient();
   const list = useServerFn(listBusinessVerticalsSummary);
   const listTpls = useServerFn(listVerticalTemplates);
@@ -115,7 +117,7 @@ function BusinessVerticalsPage() {
                   <div className="flex flex-wrap gap-1">
                     {v.documentTypes.map((dt) => (
                       <Badge key={dt} variant="outline">
-                        {dt}
+                        {tr(`documents.types.${dt}`, { defaultValue: dt })}
                       </Badge>
                     ))}
                   </div>
@@ -141,7 +143,7 @@ function BusinessVerticalsPage() {
                               )}
                               <span className="font-medium truncate">{t.name}</span>
                               <Badge variant="secondary" className="text-[10px]">
-                                {t.document_type}
+                                {tr(`documents.types.${t.document_type}`, { defaultValue: t.document_type })}
                               </Badge>
                             </div>
                             {t.required_fields.length > 0 ? (

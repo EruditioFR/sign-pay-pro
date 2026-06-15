@@ -1,4 +1,5 @@
 import { ActivityExportsMenu } from "@/components/activity-exports-menu";
+import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -81,6 +82,7 @@ function daysBetween(iso: string | null) {
 }
 
 function PendingSignaturesPage() {
+  const { t } = useTranslation();
   const fetchPage = useServerFn(listPendingSignaturesPage);
   const fetchTotals = useServerFn(getPendingSignaturesTotals);
   const fetchOrgs = useServerFn(listPendingSignaturesOrgs);
@@ -291,7 +293,7 @@ function PendingSignaturesPage() {
                             >
                               <div className="font-medium">{g.document_title}</div>
                               <div className="text-xs text-muted-foreground">
-                                {g.document_reference ?? "—"} · {g.document_type}
+                                {g.document_reference ?? "—"} · {t(`documents.types.${g.document_type}`, { defaultValue: g.document_type })}
                               </div>
                             </Link>
                           </TableCell>

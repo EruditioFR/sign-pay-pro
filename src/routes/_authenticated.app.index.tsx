@@ -282,10 +282,10 @@ function UserDashboard() {
                     {d.title}
                   </Link>
                   <span className="hidden text-xs uppercase text-muted-foreground sm:inline">
-                    {d.type}
+                    {t(`documents.types.${d.type}`, { defaultValue: d.type })}
                   </span>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                    {d.status}
+                    {t(`documents.status.${d.status}`, { defaultValue: d.status })}
                   </span>
                   <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
                     {d.amount_ttc ? fmtAmount(d.amount_ttc) : "—"}
