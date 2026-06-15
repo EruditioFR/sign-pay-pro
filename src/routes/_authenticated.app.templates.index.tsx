@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmAction } from "@/components/confirm-action";
-import { Plus, Pencil, Eye, Wand2, Trash2, LayoutTemplate } from "lucide-react";
+import { Plus, Pencil, Eye, Wand2, Trash2, LayoutTemplate, FileUp } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/templates/")({
@@ -57,7 +57,10 @@ function TemplatesIndexPage() {
           <h1 className="text-xl font-semibold">Modèles de documents</h1>
           <p className="text-sm text-muted-foreground">Créez des modèles visuels réutilisables.</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/app/templates/import"><FileUp className="h-4 w-4 mr-1.5" />Importer un document</Link>
+          </Button>
           <Button asChild>
             <Link to="/app/templates/new"><Plus className="h-4 w-4 mr-1.5" />Nouveau modèle</Link>
           </Button>
