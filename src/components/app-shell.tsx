@@ -259,7 +259,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {t("app.name")}
           </Link>
         </div>
-        <NavList items={items} pathname={location.pathname} approvalsCount={approvalsCount} />
+        <NavList groups={groups} pathname={location.pathname} approvalsCount={approvalsCount} />
         {me && (
           <div className="border-t border-border p-3 text-xs text-muted-foreground">
             <div className="font-medium text-foreground">{me.organizationName}</div>
