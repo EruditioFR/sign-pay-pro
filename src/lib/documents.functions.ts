@@ -232,8 +232,14 @@ export const archiveDocument = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !doc) throw new Error("Document introuvable");
-    if (doc.status === "archived") throw new Error("Document déjà archivé.");
-    if (doc.status === "cancelled") throw new Error("Un document annulé ne peut pas être archivé.");
+    if (!canArchive(doc.status)) {
+      throw new Error(
+        doc.status === "archived"
+          ? "Document déjà archivé."
+          : "Document non archivable dans son statut actuel.",
+      );
+    }
+    assertCanTransition(doc.status, "archived");
 
     const { error } = await supabase
       .from("documents")
@@ -247,17 +253,17 @@ export const archiveDocument = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      organization_id: doc.organization_id,
-      user_id: userId,
-      action: "document.archived",
-      resource: `document:${data.id}`,
-      metadata: {
-        previous_status: doc.status,
-        retention_until: data.retention_until ?? null,
+    await supabase.from("audit_logs").insert(
+      buildTransitionAuditEntry({
+        organization_id: doc.organization_id,
+        user_id: userId,
+        document_id: data.id,
+        from: doc.status,
+        to: "archived",
         reason: data.reason ?? null,
-      },
-    });
+        extra: { retention_until: data.retention_until ?? null },
+      }),
+    );
     return { ok: true };
   });
 
