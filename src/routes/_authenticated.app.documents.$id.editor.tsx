@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
-  CheckSquare, PenLine, Signature, Loader2,
+  CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl } from "@/lib/sharing.functions";
@@ -65,6 +65,24 @@ const KIND_META: Record<PdfFieldKind, { label: string; w: number; h: number; ico
   initials: { label: "Paraphe", w: 60, h: 40, icon: Initials },
 };
 
+const DYNAMIC_VARIABLES: { key: string; label: string }[] = [
+  { key: "third_party_name", label: "Nom destinataire" },
+  { key: "third_party_email", label: "Email destinataire" },
+  { key: "title", label: "Titre document" },
+  { key: "reference", label: "Référence" },
+  { key: "document_number", label: "N° document" },
+  { key: "invoice_number", label: "N° facture" },
+  { key: "amount_ht", label: "Montant HT" },
+  { key: "amount_ttc", label: "Montant TTC" },
+  { key: "currency", label: "Devise" },
+  { key: "issue_date", label: "Date d'émission" },
+  { key: "due_date", label: "Date d'échéance" },
+  { key: "today", label: "Date du jour" },
+  { key: "now", label: "Date/heure actuelle" },
+];
+
+type Tool = PdfFieldKind | "select";
+
 export const Route = createFileRoute("/_authenticated/app/documents/$id/editor")({
   component: PdfEditorPage,
 });
@@ -95,6 +113,10 @@ function PdfEditorPage() {
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
+  const [activeTool, setActiveTool] = useState<Tool>("select");
+  const [draft, setDraft] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const draftStartRef = useRef<{ x: number; y: number } | null>(null);
+  const valueInputRef = useRef<HTMLInputElement | null>(null);
   const [tplOpen, setTplOpen] = useState(false);
   const [tplMode, setTplMode] = useState<"new" | "version">("new");
   const [tplName, setTplName] = useState("");
@@ -170,16 +192,22 @@ function PdfEditorPage() {
     return () => { cancelled = true; };
   }, [pageIndex, pageCount, urlQ.data?.url]);
 
-  const addField = (kind: PdfFieldKind) => {
+  const createField = (kind: PdfFieldKind, rect?: { x: number; y: number; w: number; h: number }) => {
     const meta = KIND_META[kind];
+    const w = rect?.w ?? meta.w;
+    const h = rect?.h ?? meta.h;
+    const cssX = rect?.x ?? (pageDims.w * renderScale) / 2 - (w * renderScale) / 2;
+    const cssY = rect?.y ?? (pageDims.h * renderScale) / 2 - (h * renderScale) / 2;
+    const xPdf = Math.max(0, cssX / renderScale);
+    const yPdfTop = cssY / renderScale;
     const newField: Field = {
       tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       page_index: pageIndex,
       kind,
-      x: Math.max(0, pageDims.w / 2 - meta.w / 2),
-      y: Math.max(0, pageDims.h / 2 - meta.h / 2),
-      width: meta.w,
-      height: meta.h,
+      x: xPdf,
+      y: Math.max(0, pageDims.h - yPdfTop - h),
+      width: w,
+      height: h,
       value: kind === "checkbox" ? "false" : null,
       font_size: 11,
       required: false,
@@ -189,6 +217,7 @@ function PdfEditorPage() {
     setFields((prev) => [...prev, newField]);
     setSelectedId(newField.tempId);
   };
+  const addField = (kind: PdfFieldKind) => createField(kind);
 
   const updateField = (tempId: string, patch: Partial<Field>) => {
     setFields((prev) => prev.map((f) => (f.tempId === tempId ? { ...f, ...patch } : f)));
@@ -325,16 +354,51 @@ function PdfEditorPage() {
         {/* Palette */}
         <Card>
           <CardContent className="space-y-2 p-3">
-            <p className="text-xs font-semibold text-muted-foreground">Ajouter un champ</p>
+            <p className="text-xs font-semibold text-muted-foreground">Outil</p>
+            <Button
+              variant={activeTool === "select" ? "default" : "outline"}
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => setActiveTool("select")}
+            >
+              <MousePointer2 className="mr-2 h-4 w-4" /> Sélection
+            </Button>
+
+            <p className="pt-2 text-xs font-semibold text-muted-foreground">Tracer une zone</p>
             {(Object.keys(KIND_META) as PdfFieldKind[]).map((k) => {
               const m = KIND_META[k];
               const Icon = m.icon;
+              const isActive = activeTool === k;
               return (
-                <Button key={k} variant="outline" size="sm" className="w-full justify-start" onClick={() => addField(k)}>
-                  <Icon className="mr-2 h-4 w-4" /> {m.label}
-                </Button>
+                <div key={k} className="flex gap-1">
+                  <Button
+                    variant={isActive ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 justify-start"
+                    onClick={() => setActiveTool(isActive ? "select" : k)}
+                    title="Cliquer-glisser sur le PDF pour tracer la zone"
+                  >
+                    <Icon className="mr-2 h-4 w-4" /> {m.label}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="px-2"
+                    onClick={() => addField(k)}
+                    title="Insérer une zone par défaut au centre de la page"
+                  >
+                    +
+                  </Button>
+                </div>
               );
             })}
+
+            {activeTool !== "select" && (
+              <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
+                Cliquez-glissez sur le PDF pour tracer la zone «&nbsp;{KIND_META[activeTool as PdfFieldKind].label}&nbsp;».
+              </p>
+            )}
+
             <div className="pt-3">
               <Label className="text-xs">Page</Label>
               {pageCount > 0 && (
@@ -358,8 +422,55 @@ function PdfEditorPage() {
             {pageCount > 0 && pageDims.h > 0 && (
               <div
                 className="absolute inset-0"
+                style={{ cursor: activeTool !== "select" ? "crosshair" : "default" }}
                 onMouseDown={(e) => {
-                  if (e.target === e.currentTarget) setSelectedId(null);
+                  if (activeTool === "select") {
+                    if (e.target === e.currentTarget) setSelectedId(null);
+                    return;
+                  }
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  draftStartRef.current = { x, y };
+                  setDraft({ x, y, w: 0, h: 0 });
+                }}
+                onMouseMove={(e) => {
+                  if (!draftStartRef.current) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const cx = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                  const cy = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+                  const sx = draftStartRef.current.x;
+                  const sy = draftStartRef.current.y;
+                  setDraft({
+                    x: Math.min(sx, cx),
+                    y: Math.min(sy, cy),
+                    w: Math.abs(cx - sx),
+                    h: Math.abs(cy - sy),
+                  });
+                }}
+                onMouseUp={() => {
+                  const d = draft;
+                  draftStartRef.current = null;
+                  setDraft(null);
+                  if (!d || activeTool === "select") return;
+                  const kind = activeTool as PdfFieldKind;
+                  if (d.w < 8 || d.h < 8) {
+                    // tracé trop petit → insertion par défaut autour du clic
+                    const meta = KIND_META[kind];
+                    createField(kind, {
+                      x: d.x,
+                      y: d.y,
+                      w: meta.w,
+                      h: meta.h,
+                    });
+                  } else {
+                    createField(kind, d);
+                  }
+                  setActiveTool("select");
+                }}
+                onMouseLeave={() => {
+                  draftStartRef.current = null;
+                  setDraft(null);
                 }}
               >
                 {pageFields.map((f) => {
@@ -369,15 +480,19 @@ function PdfEditorPage() {
                   const cssW = f.width * renderScale;
                   const cssH = f.height * renderScale;
                   const isSelected = selectedId === f.tempId;
+                  const drawingMode = activeTool !== "select";
                   return (
                     <Rnd
                       key={f.tempId}
                       size={{ width: cssW, height: cssH }}
                       position={{ x: cssLeft, y: cssTop }}
                       bounds="parent"
-                      onDragStop={(_, d) => {
-                        const newX = d.x / renderScale;
-                        const newTop = d.y / renderScale;
+                      disableDragging={drawingMode}
+                      enableResizing={!drawingMode}
+                      style={{ pointerEvents: drawingMode ? "none" : "auto" }}
+                      onDragStop={(_, dd) => {
+                        const newX = dd.x / renderScale;
+                        const newTop = dd.y / renderScale;
                         updateField(f.tempId, { x: newX, y: pageDims.h - newTop - f.height });
                       }}
                       onResizeStop={(_, __, ref, ___, pos) => {
@@ -399,10 +514,19 @@ function PdfEditorPage() {
                     </Rnd>
                   );
                 })}
+
+                {draft && (
+                  <div
+                    className="pointer-events-none absolute border-2 border-dashed border-primary bg-primary/10"
+                    style={{ left: draft.x, top: draft.y, width: draft.w, height: draft.h }}
+                  />
+                )}
               </div>
             )}
           </div>
         </div>
+
+
 
         {/* Inspector */}
         <Card>
@@ -432,10 +556,53 @@ function PdfEditorPage() {
                     <div className="space-y-1">
                       <Label className="text-xs">Valeur</Label>
                       <Input
-                        type={selected.kind === "date" ? "date" : "text"}
+                        ref={valueInputRef}
+                        type={selected.kind === "date" && !(selected.value ?? "").includes("{{") ? "date" : "text"}
                         value={selected.value ?? ""}
                         onChange={(e) => updateField(selected.tempId, { value: e.target.value })}
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs flex items-center gap-1">
+                        <Variable className="h-3 w-3" /> Insérer un champ dynamique
+                      </Label>
+                      <Select
+                        value=""
+                        onValueChange={(key) => {
+                          if (!key) return;
+                          const token = `{{${key}}}`;
+                          const input = valueInputRef.current;
+                          const current = selected.value ?? "";
+                          if (input && document.activeElement === input) {
+                            const start = input.selectionStart ?? current.length;
+                            const end = input.selectionEnd ?? current.length;
+                            const next = current.slice(0, start) + token + current.slice(end);
+                            updateField(selected.tempId, { value: next });
+                            requestAnimationFrame(() => {
+                              input.focus();
+                              const pos = start + token.length;
+                              input.setSelectionRange(pos, pos);
+                            });
+                          } else {
+                            updateField(selected.tempId, { value: (current ? current + " " : "") + token });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Choisir une variable…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DYNAMIC_VARIABLES.map((v) => (
+                            <SelectItem key={v.key} value={v.key}>
+                              <span className="font-medium">{v.label}</span>
+                              <span className="ml-2 text-[10px] text-muted-foreground">{`{{${v.key}}}`}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground">
+                        Les variables sont remplacées par les valeurs du document lors de la génération.
+                      </p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Taille de police ({selected.font_size}pt)</Label>
@@ -574,7 +741,22 @@ function FieldPreview({ field, onSignClick }: { field: Field; onSignClick: () =>
   if (field.kind === "checkbox") {
     return <span>{field.value === "true" ? "✓" : ""}</span>;
   }
-  return <span className="truncate px-1">{field.value || `« ${KIND_META[field.kind].label} »`}</span>;
+  const value = field.value || "";
+  if (!value) {
+    return <span className="truncate px-1 italic text-muted-foreground">{`« ${KIND_META[field.kind].label} »`}</span>;
+  }
+  const parts = value.split(/(\{\{\s*[a-zA-Z0-9_]+\s*\}\})/g);
+  return (
+    <span className="truncate px-1">
+      {parts.map((p, i) =>
+        /^\{\{\s*[a-zA-Z0-9_]+\s*\}\}$/.test(p) ? (
+          <span key={i} className="rounded bg-primary/20 px-1 text-primary">{p}</span>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </span>
+  );
 }
 
 function SignatureDrawDialog({

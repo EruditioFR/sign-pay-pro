@@ -1,64 +1,63 @@
-# Refonte de la page « Nouveau document »
+## Objectif
 
-Transformer `/app/documents/new` en un sélecteur de point d'entrée clair, inspiré du bloc "Execution Actions" de Signova, avant d'arriver au formulaire détaillé.
+Dans l'éditeur PDF (`/app/documents/$id/editor`) :
+1. Permettre de **placer une zone en traçant un rectangle à la souris** sur la page (UX type DocuSign/Signova).
+2. Permettre d'insérer dans les zones texte/date des **variables dynamiques** (`{{third_party_name}}`, `{{amount_ttc}}`, `{{today}}`…) qui sont remplacées au moment de la génération du PDF final par les valeurs du document.
 
-## Objectif UX
+## Changements UI — éditeur
 
-Au lieu d'ouvrir directement un long formulaire, l'utilisateur arrive sur un écran qui présente **3 cartes d'action** côte à côte, chacune menant à un flux dédié :
+Fichier : `src/routes/_authenticated.app.documents.$id.editor.tsx`
 
-1. **Partir d'un modèle existant** — choisir parmi les modèles PDF déjà importés (groupés par type métier comme sur `/app/pdf-templates`).
-2. **Importer un modèle** — uploader un PDF/DOCX (facture, CERFA, contrat…) puis y poser les champs dynamiques + zones de signature.
-3. **Créer depuis l'éditeur** — partir d'une page blanche dans l'éditeur WYSIWYG.
+- Palette gauche : remplacer le bouton "ajouter" par un sélecteur d'outil (Texte / Date / Case / Signature / Paraphe + outil "Sélection"). Le type actif est mis en surbrillance.
+- Calque au-dessus du canvas PDF :
+  - Quand un outil est actif, le curseur passe en `crosshair`.
+  - `mousedown` → début du tracé, `mousemove` → rectangle fantôme, `mouseup` → création de la zone aux coordonnées tracées (conversion CSS px → points PDF, origine bas-gauche).
+  - Tracé minimum (ex. 12 px) : sinon on retombe sur la taille par défaut centrée à l'endroit du clic.
+  - Outil revient automatiquement à "Sélection" après création.
+- Conserver les `Rnd` existants pour déplacer / redimensionner ensuite.
+- Conserver le bouton "Ajouter centré" comme repli (clic simple dans la palette).
 
-Le formulaire métier actuel (titre, montants, tiers, dates…) reste accessible comme **4ᵉ option « Saisie manuelle »** (ou via "Voir toutes les options") pour ne rien casser, mais n'est plus l'écran d'accueil.
+## Champs dynamiques
 
-## Structure de la page
+### Catalogue des variables (résolu côté serveur lors du flatten)
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  NOUVEAU DOCUMENT                                            │
-│  Choisissez comment démarrer votre document                  │
-├──────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
-│  │  📄      │  │  ⬆️       │  │  ✨      │  │  📝      │     │
-│  │ Depuis   │  │ Importer │  │ Éditeur  │  │ Saisie   │     │
-│  │ modèle   │  │ un PDF   │  │ WYSIWYG  │  │ manuelle │     │
-│  │          │  │ /DOCX    │  │          │  │          │     │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │
-├──────────────────────────────────────────────────────────────┤
-│  MODÈLES DISPONIBLES (si option 1 sélectionnée)              │
-│  Groupés par type métier : Devis · Factures · Contrats…      │
-└──────────────────────────────────────────────────────────────┘
-```
+Issu de la table `documents` :
+- `{{title}}`, `{{reference}}`, `{{document_number}}`
+- `{{third_party_name}}`, `{{third_party_email}}`
+- `{{amount_ht}}`, `{{amount_ttc}}`, `{{currency}}`
+- `{{issue_date}}`, `{{due_date}}`
+- `{{invoice_number}}`
+Et global : `{{today}}`, `{{now}}`.
 
-- Style cohérent avec les cartes existantes (mêmes `Card` shadcn, icônes `lucide-react`, fond sombre pour la carte mise en avant à la Signova).
-- En dessous : aperçu inline de la liste des modèles existants (toujours visible), regroupés par `document_type`, pour pouvoir cliquer directement sur un modèle sans passer par l'étape intermédiaire.
+### Inspector (zone Texte/Date sélectionnée)
 
-## Comportement des cartes
+- Ajouter un `Select` "Insérer une variable…" listant le catalogue : insère le token `{{xxx}}` à la position courante du champ `Valeur`.
+- Aperçu en direct : si la valeur contient des `{{…}}`, le rendu dans la zone affiche le token avec un fond légèrement coloré (badge) pour signaler "dynamique".
 
-| Carte | Action |
-|---|---|
-| Depuis modèle | Scroll vers la grille de modèles + ouvre le sélecteur |
-| Importer un PDF/DOCX | Ouvre le dialogue d'upload (réutilise `NewPdfTemplateDialog` de `/app/pdf-templates`) avec option « Utiliser pour ce document » |
-| Éditeur WYSIWYG | Navigation vers `/app/documents/wysiwyg` |
-| Saisie manuelle | Affiche le formulaire métier actuel (toggle inline ou route dédiée `/app/documents/new/manual`) |
+### Résolution côté serveur
 
-## Fichiers à modifier / créer
+Fichier : `src/lib/pdf-editor.functions.ts`, fonction `flattenPdfWithFields` :
+- Charger les colonnes utiles de `documents` (déjà fait pour `id, type, reference` — étendre).
+- Construire une map `variables` (formats : montants au format FR avec devise, dates en `dd/MM/yyyy`).
+- Avant `page.drawText`, remplacer toutes les occurrences `{{key}}` (insensible aux espaces) par la valeur ; token inconnu → laissé vide.
+- Même résolution appliquée aux zones de type `date` (permet `{{today}}`, `{{issue_date}}`).
 
-- **`src/routes/_authenticated.app.documents.new.tsx`** — remplace le formulaire monolithique par le sélecteur 4 cartes + grille de modèles. Le formulaire actuel est extrait dans un composant `ManualDocumentForm` toggleable.
-- **`src/components/documents/StartOptionCard.tsx`** (nouveau) — carte d'action réutilisable (icône, titre, description, badge optionnel).
-- **`src/components/documents/TemplatePickerGrid.tsx`** (nouveau) — liste des modèles PDF groupés par `document_type`, factorisée depuis le code existant de `/app/pdf-templates`.
-- **`src/components/documents/ManualDocumentForm.tsx`** (nouveau) — extraction du formulaire actuel de `new.tsx` (aucun changement de logique, juste déplacement).
-- **`src/locales/fr.json` & `en.json`** — clés `documents.new.startFromTemplate`, `uploadPdf`, `wysiwygEditor`, `manualEntry`, sous-titres et descriptions.
+Aucun changement de schéma DB : on stocke toujours le `value` brut avec tokens, la résolution est faite à la génération.
 
 ## Détails techniques
 
-- Réutiliser la query `listPdfTemplates` déjà appelée dans `/app/pdf-templates` (server fn dans `src/lib/pdf-templates.functions.ts`) pour la grille embarquée.
-- Pour l'upload : importer et réutiliser `NewPdfTemplateDialog` du fichier `_authenticated.app.pdf-templates.index.tsx` (extraire au préalable dans `src/components/pdf-templates/NewPdfTemplateDialog.tsx` pour la partager).
-- Aucune migration BDD, aucun changement de schéma : pur travail front + locales.
-- Conserver les routes existantes (`/app/documents/wysiwyg`, `/app/pdf-templates`) inchangées.
+- Conversion souris → points PDF : `x_pdf = cssX / renderScale`, `y_pdf = pageDims.h - (cssY + cssH) / renderScale`. Clamp dans `[0, pageDims.w/h]`.
+- État local : `activeTool: PdfFieldKind | "select"`, `draft: {startX, startY, x, y, w, h} | null` pendant le tracé.
+- Le calque d'overlay ne doit pas être recouvert par les `Rnd` quand un outil de tracé est actif (les `Rnd` passent en `pointerEvents: none`) — sinon impossible de tracer par-dessus une zone existante.
+- Format montant : `new Intl.NumberFormat('fr-FR', { style: 'currency', currency: doc.currency || 'EUR' })`.
 
-## Hors-scope
+## Fichiers modifiés
 
-- Pas de chaînage automatique « modèle PDF → document » s'il n'existe pas déjà côté serveur ; si seul le clic « Utiliser » mène à l'éditeur du modèle, on l'indique clairement dans le libellé.
-- Pas de refonte du sidebar/header (déjà fait précédemment).
+- `src/routes/_authenticated.app.documents.$id.editor.tsx` — outil actif, tracé à la souris, sélecteur de variable dans l'inspector, rendu badge des tokens.
+- `src/lib/pdf-editor.functions.ts` — étendre `select` documents + helper `resolveVariables(value, ctx)` appliqué dans la boucle de rendu.
+
+## Hors périmètre
+
+- Assignation par signataire (workflow multi-parties) — non demandé.
+- Calculs/formules et listes déroulantes — non demandés.
+- Champs à remplir par le signataire dans une page publique — non demandé.

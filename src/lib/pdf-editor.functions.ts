@@ -100,10 +100,48 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
 
     const { data: doc, error: docErr } = await supabase
       .from("documents")
-      .select("id, organization_id, type, reference")
+      .select(
+        "id, organization_id, type, reference, title, document_number, invoice_number, third_party_name, third_party_email, amount_ht, amount_ttc, currency, issue_date, due_date",
+      )
       .eq("id", data.documentId)
       .maybeSingle();
     if (docErr || !doc) throw new Error("Document introuvable");
+
+    const fmtDate = (v: string | null | undefined) => {
+      if (!v) return "";
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return String(v);
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return `${dd}/${mm}/${d.getFullYear()}`;
+    };
+    const currency = (doc.currency as string) || "EUR";
+    const fmtMoney = (n: number | null | undefined) => {
+      if (n === null || n === undefined) return "";
+      try {
+        return new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(Number(n));
+      } catch {
+        return `${n} ${currency}`;
+      }
+    };
+    const now = new Date();
+    const variables: Record<string, string> = {
+      title: (doc.title as string) ?? "",
+      reference: (doc.reference as string) ?? "",
+      document_number: (doc.document_number as string) ?? "",
+      invoice_number: (doc.invoice_number as string) ?? "",
+      third_party_name: (doc.third_party_name as string) ?? "",
+      third_party_email: (doc.third_party_email as string) ?? "",
+      amount_ht: fmtMoney(doc.amount_ht as number | null),
+      amount_ttc: fmtMoney(doc.amount_ttc as number | null),
+      currency,
+      issue_date: fmtDate(doc.issue_date as string | null),
+      due_date: fmtDate(doc.due_date as string | null),
+      today: fmtDate(now.toISOString()),
+      now: now.toLocaleString("fr-FR"),
+    };
+    const resolveVars = (s: string) =>
+      s.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, k) => variables[k] ?? "");
 
     const { data: current } = await supabase
       .from("document_files")
@@ -145,7 +183,8 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       const y = Number(f.y);
       const w = Number(f.width);
       const h = Number(f.height);
-      const value = (f.value ?? "").toString();
+      const rawValue = (f.value ?? "").toString();
+      const value = f.kind === "text" || f.kind === "date" ? resolveVars(rawValue) : rawValue;
 
       if (f.kind === "text" || f.kind === "date") {
         if (!value.trim()) continue;
