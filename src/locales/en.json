@@ -16,6 +16,16 @@
     "clients": "Clients",
     "profile": "My profile"
   },
+  "nav_group": {
+    "overview": "Overview",
+    "documents": "Documents & signatures",
+    "workflows": "Workflows & validation",
+    "organization": "Organization",
+    "admin": "Administration",
+    "profile": "Profile",
+    "organizations": "Organizations",
+    "security": "Security"
+  },
   "landing": {
     "hero_title": "Manage your business documents end-to-end.",
     "hero_subtitle": "Creation, validation, e-signature and payment — on a single multi-tenant, compliant platform.",
