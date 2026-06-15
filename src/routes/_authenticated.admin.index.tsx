@@ -17,6 +17,7 @@ import {
   Users,
   Settings,
 } from "lucide-react";
+import { QuickStartActions } from "@/components/dashboard/QuickStartActions";
 import {
   ResponsiveContainer,
   AreaChart,
