@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/app/pdf-templates/")({
 });
 
 function PdfTemplatesPage() {
-  const { t } = useTranslation();
+  const { t: tr } = useTranslation();
   const qc = useQueryClient();
   const listFn = useServerFn(listPdfTemplates);
   const delFn = useServerFn(deletePdfTemplate);
@@ -81,7 +81,7 @@ function PdfTemplatesPage() {
                   <p className="line-clamp-2 text-muted-foreground">{t.description}</p>
                 )}
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span className="rounded bg-muted px-2 py-0.5">{t.document_type ? t(`documents.types.${t.document_type}`, { defaultValue: t.document_type }) : "—"}</span>
+                  <span className="rounded bg-muted px-2 py-0.5">{t.document_type ? tr(`documents.types.${t.document_type}`, { defaultValue: t.document_type }) : "—"}</span>
                   <span className="rounded bg-muted px-2 py-0.5">{t.page_count} page(s)</span>
                   <span className="rounded bg-muted px-2 py-0.5">{t.field_count} zone(s)</span>
                   <span className="rounded bg-muted px-2 py-0.5">v{t.version_count}</span>
