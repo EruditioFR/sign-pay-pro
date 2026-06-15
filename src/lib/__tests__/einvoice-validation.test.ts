@@ -101,10 +101,11 @@ describe("Format helpers", () => {
     expect(isValidSiret("1234")).toBe(false);
     expect(isValidSiret("ABCDEFGHIJKLMN")).toBe(false);
   });
-  it("isValidFrVatNumber requires FR + key + 9 digits", () => {
+  it("isValidFrVatNumber requires FR + key + 9 digits (case-insensitive)", () => {
     expect(isValidFrVatNumber("FR40303265045")).toBe(true);
-    expect(isValidFrVatNumber("fr40303265045")).toBe(false); // lowercase not normalized here
+    expect(isValidFrVatNumber("fr40303265045")).toBe(true); // normalized to upper
     expect(isValidFrVatNumber("FR4030326504")).toBe(false); // 8 digits
+    expect(isValidFrVatNumber("DE123456789")).toBe(false); // not FR
     expect(isValidFrVatNumber(null)).toBe(false);
   });
   it("isValidIban handles spaces and basic structure", () => {
