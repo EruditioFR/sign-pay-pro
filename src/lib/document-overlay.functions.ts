@@ -105,6 +105,10 @@ const SaveSchema = z.object({
   sourceMime: z.string().min(1),
   sourcePageCount: z.number().int().min(1).default(1),
   zones: OverlayZonesSchema,
+  businessVertical: z
+    .enum(["real_estate", "car_rental", "services", "goods_sales"])
+    .optional()
+    .nullable(),
 });
 
 export const saveOverlayTemplate = createServerFn({ method: "POST" })
@@ -126,6 +130,9 @@ export const saveOverlayTemplate = createServerFn({ method: "POST" })
       source_mime: data.sourceMime,
       source_page_count: data.sourcePageCount,
       overlay_zones: data.zones as unknown as never,
+      ...(data.businessVertical
+        ? { business_vertical: data.businessVertical }
+        : {}),
     } as Record<string, unknown>;
 
     if (data.id) {
@@ -147,6 +154,7 @@ export const saveOverlayTemplate = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { template: tpl };
   });
+
 
 // =============================================================================
 // Load overlay template (with signed URL)
