@@ -158,7 +158,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mut.isPending}>Annuler</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending || !file || !name.trim()}>
             {mut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Importer le PDF
+            {openEditorAfterImport ? "Importer & placer les zones" : "Importer le PDF"}
           </Button>
         </DialogFooter>
       </DialogContent>
