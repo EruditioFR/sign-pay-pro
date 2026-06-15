@@ -8,7 +8,7 @@ import {
 } from "@/lib/guest-approvals.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { StepStatusBadge } from "@/components/status-badge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/approve/$token")({
@@ -63,7 +63,7 @@ function ApprovePage() {
     <div className="mx-auto max-w-2xl px-6 py-12">
       <div className="mb-2 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Validation requise</h1>
-        <Badge variant="outline">{step.status}</Badge>
+        <StepStatusBadge status={step.status} />
       </div>
       <p className="text-sm text-muted-foreground">
         Étape {step.position} — {step.name}

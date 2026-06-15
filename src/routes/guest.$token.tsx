@@ -84,9 +84,16 @@ function GuestDashboard() {
       </div>
 
       {documents.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-          Aucun circuit pour le moment.
-        </div>
+        <EmptyState
+          icon={Inbox}
+          title="Aucun circuit pour le moment"
+          description="Les documents qui vous sont envoyés apparaîtront ici. Vous pouvez aussi initier un nouveau circuit."
+          action={
+            <Button asChild>
+              <Link to="/guest/new">Nouveau circuit</Link>
+            </Button>
+          }
+        />
       ) : (
         <ul className="space-y-3">
           {documents.map((d) => {
