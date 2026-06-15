@@ -1,11 +1,10 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { NewPdfTemplateDialog } from "@/components/pdf-templates/NewPdfTemplateDialog";
 import { LayoutTemplate, FileUp, Sparkles, ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function QuickStartActions() {
-  const navigate = useNavigate();
   return (
     <section>
       <div className="mb-3 flex items-baseline justify-between">
