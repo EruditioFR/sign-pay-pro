@@ -1,63 +1,46 @@
+
 ## Objectif
 
-Dans l'éditeur PDF (`/app/documents/$id/editor`) :
-1. Permettre de **placer une zone en traçant un rectangle à la souris** sur la page (UX type DocuSign/Signova).
-2. Permettre d'insérer dans les zones texte/date des **variables dynamiques** (`{{third_party_name}}`, `{{amount_ttc}}`, `{{today}}`…) qui sont remplacées au moment de la génération du PDF final par les valeurs du document.
+Dans l'éditeur WYSIWYG, ne pas demander les signataires et le paiement sur la page d'édition. À la place, ajouter une **étape suivante** après le clic sur *Générer PDF* : un écran de configuration où l'utilisateur saisit les signataires et le paiement Stripe, puis valide l'envoi.
 
-## Changements UI — éditeur
+## Parcours utilisateur
 
-Fichier : `src/routes/_authenticated.app.documents.$id.editor.tsx`
+```text
+[Éditeur WYSIWYG]
+   └─ clic "Générer PDF"
+        └─ création du document (silencieuse, sans envoi d'emails)
+             └─ redirection vers [Étape "Configurer envoi"]
+                  ├─ aperçu : titre + type + lien "Voir le PDF"
+                  ├─ bloc Signataires (ordre séquentiel)
+                  ├─ bloc Paiement Stripe (optionnel + montant)
+                  ├─ bouton "Envoyer pour signature"  → applique + redirige vers l'éditeur du document
+                  └─ bouton "Ignorer"                 → redirige vers l'éditeur du document sans envoi
+```
 
-- Palette gauche : remplacer le bouton "ajouter" par un sélecteur d'outil (Texte / Date / Case / Signature / Paraphe + outil "Sélection"). Le type actif est mis en surbrillance.
-- Calque au-dessus du canvas PDF :
-  - Quand un outil est actif, le curseur passe en `crosshair`.
-  - `mousedown` → début du tracé, `mousemove` → rectangle fantôme, `mouseup` → création de la zone aux coordonnées tracées (conversion CSS px → points PDF, origine bas-gauche).
-  - Tracé minimum (ex. 12 px) : sinon on retombe sur la taille par défaut centrée à l'endroit du clic.
-  - Outil revient automatiquement à "Sélection" après création.
-- Conserver les `Rnd` existants pour déplacer / redimensionner ensuite.
-- Conserver le bouton "Ajouter centré" comme repli (clic simple dans la palette).
+## Changements
 
-## Champs dynamiques
+### 1. Nouvelle route `src/routes/_authenticated.app.documents.$id.configure.tsx`
+- Charge le document (titre, type, lien PDF).
+- Affiche le composant partagé `SignersPaymentFields` (déjà existant).
+- Bouton **Envoyer pour signature** : appelle `applySignersAndPayment({ documentId, ... })` (helper déjà existant dans `SignersPaymentFields.tsx`) → toast → navigation vers `/app/documents/$id/editor`.
+- Bouton **Ignorer** : navigation directe vers `/app/documents/$id/editor`.
+- Header avec retour vers l'éditeur WYSIWYG (`?draftId=...`) pour revenir corriger le contenu.
 
-### Catalogue des variables (résolu côté serveur lors du flatten)
+### 2. `src/routes/_authenticated.app.documents.wysiwyg.tsx`
+- Dans `finalizeMut.onSuccess`, remplacer la navigation actuelle :
+  ```ts
+  navigate({ to: "/app/documents/$id/editor", params: { id: res.documentId } })
+  ```
+  par :
+  ```ts
+  navigate({ to: "/app/documents/$id/configure", params: { id: res.documentId } })
+  ```
+- Aucun champ signataires/paiement ajouté à cette page (option 2 retenue).
 
-Issu de la table `documents` :
-- `{{title}}`, `{{reference}}`, `{{document_number}}`
-- `{{third_party_name}}`, `{{third_party_email}}`
-- `{{amount_ht}}`, `{{amount_ttc}}`, `{{currency}}`
-- `{{issue_date}}`, `{{due_date}}`
-- `{{invoice_number}}`
-Et global : `{{today}}`, `{{now}}`.
+### 3. Aucun changement nécessaire
+- `SignersPaymentFields.tsx` et son helper `applySignersAndPayment` couvrent déjà ce besoin (utilisés par les 3 autres parcours).
+- `finalizeWysiwygDocument` reste inchangé : il crée juste le document.
 
-### Inspector (zone Texte/Date sélectionnée)
-
-- Ajouter un `Select` "Insérer une variable…" listant le catalogue : insère le token `{{xxx}}` à la position courante du champ `Valeur`.
-- Aperçu en direct : si la valeur contient des `{{…}}`, le rendu dans la zone affiche le token avec un fond légèrement coloré (badge) pour signaler "dynamique".
-
-### Résolution côté serveur
-
-Fichier : `src/lib/pdf-editor.functions.ts`, fonction `flattenPdfWithFields` :
-- Charger les colonnes utiles de `documents` (déjà fait pour `id, type, reference` — étendre).
-- Construire une map `variables` (formats : montants au format FR avec devise, dates en `dd/MM/yyyy`).
-- Avant `page.drawText`, remplacer toutes les occurrences `{{key}}` (insensible aux espaces) par la valeur ; token inconnu → laissé vide.
-- Même résolution appliquée aux zones de type `date` (permet `{{today}}`, `{{issue_date}}`).
-
-Aucun changement de schéma DB : on stocke toujours le `value` brut avec tokens, la résolution est faite à la génération.
-
-## Détails techniques
-
-- Conversion souris → points PDF : `x_pdf = cssX / renderScale`, `y_pdf = pageDims.h - (cssY + cssH) / renderScale`. Clamp dans `[0, pageDims.w/h]`.
-- État local : `activeTool: PdfFieldKind | "select"`, `draft: {startX, startY, x, y, w, h} | null` pendant le tracé.
-- Le calque d'overlay ne doit pas être recouvert par les `Rnd` quand un outil de tracé est actif (les `Rnd` passent en `pointerEvents: none`) — sinon impossible de tracer par-dessus une zone existante.
-- Format montant : `new Intl.NumberFormat('fr-FR', { style: 'currency', currency: doc.currency || 'EUR' })`.
-
-## Fichiers modifiés
-
-- `src/routes/_authenticated.app.documents.$id.editor.tsx` — outil actif, tracé à la souris, sélecteur de variable dans l'inspector, rendu badge des tokens.
-- `src/lib/pdf-editor.functions.ts` — étendre `select` documents + helper `resolveVariables(value, ctx)` appliqué dans la boucle de rendu.
-
-## Hors périmètre
-
-- Assignation par signataire (workflow multi-parties) — non demandé.
-- Calculs/formules et listes déroulantes — non demandés.
-- Champs à remplir par le signataire dans une page publique — non demandé.
+## Notes techniques
+- La route `configure` est sous `_authenticated`, donc protégée.
+- Si l'utilisateur ferme l'onglet à l'étape configure, le document existe déjà en brouillon — il pourra reprendre la config plus tard depuis la liste des documents (déjà possible via l'éditeur du document, inchangé).
