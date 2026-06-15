@@ -183,7 +183,8 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       const y = Number(f.y);
       const w = Number(f.width);
       const h = Number(f.height);
-      const value = (f.value ?? "").toString();
+      const rawValue = (f.value ?? "").toString();
+      const value = f.kind === "text" || f.kind === "date" ? resolveVars(rawValue) : rawValue;
 
       if (f.kind === "text" || f.kind === "date") {
         if (!value.trim()) continue;
