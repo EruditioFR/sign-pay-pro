@@ -18,9 +18,10 @@ import {
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
   CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
+  RefreshCw, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getCurrentDocumentPdfUrl } from "@/lib/sharing.functions";
+import { getCurrentDocumentPdfUrl, listDocumentSignatures } from "@/lib/sharing.functions";
 import {
   listPdfFields, savePdfFields, flattenPdfWithFields,
   type PdfFieldKind,
@@ -96,15 +97,28 @@ function PdfEditorPage() {
   const fetchFields = useServerFn(listPdfFields);
   const saveFn = useServerFn(savePdfFields);
   const flattenFn = useServerFn(flattenPdfWithFields);
+  const listSignaturesFn = useServerFn(listDocumentSignatures);
 
   const urlQ = useQuery({
     queryKey: ["editor-pdf-url", id],
     queryFn: () => fetchUrl({ data: { document_id: id } }),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
   const fieldsQ = useQuery({
     queryKey: ["pdf-fields", id],
     queryFn: () => fetchFields({ data: { documentId: id } }),
   });
+  const sigsQ = useQuery({
+    queryKey: ["document-signatures", id],
+    queryFn: () => listSignaturesFn({ data: { document_id: id } }),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 15_000,
+  });
+  const signatures = sigsQ.data?.signatures ?? [];
 
   const [pageCount, setPageCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
