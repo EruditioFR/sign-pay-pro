@@ -69,15 +69,16 @@ function WorkflowsListPage() {
                         <Pencil className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (confirm("Supprimer ce modèle ?")) delMut.mutate(tpl.id);
-                      }}
+                    <ConfirmAction
+                      title="Supprimer ce modèle de workflow ?"
+                      description="Le modèle sera définitivement supprimé. Les workflows déjà créés ne sont pas affectés."
+                      confirmLabel="Supprimer"
+                      onConfirm={() => delMut.mutateAsync(tpl.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button variant="ghost" size="sm" aria-label="Supprimer">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </ConfirmAction>
                   </div>
                 </li>
               ))}

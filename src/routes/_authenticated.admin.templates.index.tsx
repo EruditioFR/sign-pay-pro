@@ -123,15 +123,16 @@ function TemplatesPage() {
                       <Pencil className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (window.confirm(t("templates.delete_confirm"))) delMut.mutate(tpl.id);
-                    }}
+                  <ConfirmAction
+                    title="Supprimer ce modèle ?"
+                    description={t("templates.delete_confirm")}
+                    confirmLabel="Supprimer"
+                    onConfirm={() => delMut.mutateAsync(tpl.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Button size="sm" variant="ghost" aria-label="Supprimer">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </ConfirmAction>
                 </div>
               </CardContent>
             </Card>

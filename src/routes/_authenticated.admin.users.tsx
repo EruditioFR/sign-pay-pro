@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -222,9 +223,16 @@ function UsersPage() {
                       <Button size="sm" variant="outline" onClick={() => setEditing(u as OrgUser)}>
                         Éditer
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => onDelete(u as OrgUser)}>
-                        Supprimer
-                      </Button>
+                      <ConfirmAction
+                        title="Supprimer cet utilisateur ?"
+                        description={`${u.email} sera définitivement supprimé. Cette action est irréversible.`}
+                        confirmLabel="Supprimer"
+                        onConfirm={() => onDelete(u as OrgUser)}
+                      >
+                        <Button size="sm" variant="destructive">
+                          Supprimer
+                        </Button>
+                      </ConfirmAction>
                     </TableCell>
                   </TableRow>
                 ))}
