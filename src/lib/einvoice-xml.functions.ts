@@ -434,6 +434,7 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
 
     // 5) Génération XML
     const xml = buildCiiXml({
+      profile: data.profile,
       doc: {
         id: doc.id,
         invoice_number: doc.invoice_number,
