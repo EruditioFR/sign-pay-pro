@@ -181,17 +181,7 @@ function GuestDashboard() {
                               </div>
                             )}
                           </div>
-                          <Badge
-                            variant={
-                              st.status === "approved"
-                                ? "default"
-                                : st.status === "rejected"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                          >
-                            {st.status}
-                          </Badge>
+                          <StepStatusBadge status={st.status} />
                         </li>
                       ))}
                     </ul>
