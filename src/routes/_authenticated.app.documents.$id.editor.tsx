@@ -741,7 +741,22 @@ function FieldPreview({ field, onSignClick }: { field: Field; onSignClick: () =>
   if (field.kind === "checkbox") {
     return <span>{field.value === "true" ? "✓" : ""}</span>;
   }
-  return <span className="truncate px-1">{field.value || `« ${KIND_META[field.kind].label} »`}</span>;
+  const value = field.value || "";
+  if (!value) {
+    return <span className="truncate px-1 italic text-muted-foreground">{`« ${KIND_META[field.kind].label} »`}</span>;
+  }
+  const parts = value.split(/(\{\{\s*[a-zA-Z0-9_]+\s*\}\})/g);
+  return (
+    <span className="truncate px-1">
+      {parts.map((p, i) =>
+        /^\{\{\s*[a-zA-Z0-9_]+\s*\}\}$/.test(p) ? (
+          <span key={i} className="rounded bg-primary/20 px-1 text-primary">{p}</span>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </span>
+  );
 }
 
 function SignatureDrawDialog({
