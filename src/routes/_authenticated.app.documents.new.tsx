@@ -5,20 +5,21 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { createDocument, type DocumentType } from "@/lib/documents.functions";
 import { listPdfTemplates } from "@/lib/pdf-templates.functions";
-import { createSignatureRequests } from "@/lib/signature-requests.functions";
-import { createDocumentPaymentLink } from "@/lib/stripe-payment-links.functions";
+import {
+  SignersPaymentFields,
+  emptySignersPaymentValue,
+  applySignersAndPayment,
+} from "@/components/documents/SignersPaymentFields";
 import { NewPdfTemplateDialog } from "@/components/pdf-templates/NewPdfTemplateDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Sparkles, FileUp, LayoutTemplate, PencilLine, FileText, ArrowRight, ChevronDown, ChevronUp,
-  Plus, Trash2, Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/new")({
@@ -224,29 +225,13 @@ function StartOptionCard({
   return inner;
 }
 
-type Signer = { signer_name: string; signer_email: string };
-
 function ManualDocumentForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const create = useServerFn(createDocument);
-  const createSigs = useServerFn(createSignatureRequests);
-  const createPayLink = useServerFn(createDocumentPaymentLink);
   const [busy, setBusy] = useState(false);
-
-  // Signers
-  const [signers, setSigners] = useState<Signer[]>([{ signer_name: "", signer_email: "" }]);
-  const [sequential] = useState(true); // ordre séquentiel fixe (choix utilisateur)
-  const [expiresIn, setExpiresIn] = useState(30);
-
-  // Payment
-  const [paymentEnabled, setPaymentEnabled] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState<string>("");
-
-  const updateSigner = (i: number, patch: Partial<Signer>) =>
-    setSigners((s) => s.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
-  const addSigner = () => setSigners((s) => [...s, { signer_name: "", signer_email: "" }]);
-  const removeSigner = (i: number) => setSigners((s) => s.filter((_, idx) => idx !== i));
+  const [sp, setSp] = useState(emptySignersPaymentValue());
+  const [currency, setCurrency] = useState("EUR");
 
   return (
     <Card>
@@ -259,14 +244,8 @@ function ManualDocumentForm() {
           onSubmit={async (e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
-            const currency = (fd.get("currency") as string) || "EUR";
+            const cur = (fd.get("currency") as string) || "EUR";
             const title = String(fd.get("title") ?? "");
-            const validSigners = signers.filter((s) => s.signer_name.trim() && s.signer_email.trim());
-            const payAmount = paymentEnabled ? Number(paymentAmount) : 0;
-            if (paymentEnabled && (!payAmount || payAmount <= 0)) {
-              toast.error("Indiquez un montant de paiement valide.");
-              return;
-            }
             setBusy(true);
             try {
               const res = await create({
@@ -277,7 +256,7 @@ function ManualDocumentForm() {
                   description: (fd.get("description") as string) || null,
                   amount_ht: fd.get("amount_ht") ? Number(fd.get("amount_ht")) : null,
                   amount_ttc: fd.get("amount_ttc") ? Number(fd.get("amount_ttc")) : null,
-                  currency,
+                  currency: cur,
                   third_party_name: (fd.get("third_party_name") as string) || null,
                   third_party_email: (fd.get("third_party_email") as string) || null,
                   issue_date: (fd.get("issue_date") as string) || null,
@@ -286,52 +265,7 @@ function ManualDocumentForm() {
                 },
               });
               const docId = res.document.id;
-
-              // 1) Paiement Stripe (avant les emails pour pouvoir joindre le lien)
-              if (paymentEnabled) {
-                try {
-                  await createPayLink({
-                    data: {
-                      document_id: docId,
-                      amount: payAmount,
-                      currency,
-                      label: title || "Document",
-                    },
-                  });
-                  toast.success("Lien de paiement Stripe généré.");
-                } catch (err) {
-                  toast.error(
-                    "Lien Stripe non créé : " +
-                      (err instanceof Error ? err.message : "erreur inconnue"),
-                  );
-                }
-              }
-
-              // 2) Demandes de signature (emails inclus le lien de paiement le cas échéant)
-              if (validSigners.length > 0) {
-                try {
-                  await createSigs({
-                    data: {
-                      document_id: docId,
-                      sequential,
-                      expires_in_days: expiresIn,
-                      signers: validSigners.map((s, idx) => ({
-                        signer_name: s.signer_name.trim(),
-                        signer_email: s.signer_email.trim(),
-                        order_index: idx + 1,
-                      })),
-                    },
-                  });
-                  toast.success(
-                    `Invitation${validSigners.length > 1 ? "s" : ""} envoyée${validSigners.length > 1 ? "s" : ""}.`,
-                  );
-                } catch (err) {
-                  toast.error(
-                    "Signature : " + (err instanceof Error ? err.message : "erreur inconnue"),
-                  );
-                }
-              }
-
+              await applySignersAndPayment(sp, { documentId: docId, title, currency: cur });
               toast.success(t("documents.created"));
               navigate({ to: "/app/documents/$id", params: { id: docId } });
             } catch (err: unknown) {
@@ -378,7 +312,13 @@ function ManualDocumentForm() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="currency">{t("documents.field.currency")}</Label>
-            <Input id="currency" name="currency" defaultValue="EUR" maxLength={3} />
+            <Input
+              id="currency"
+              name="currency"
+              defaultValue="EUR"
+              maxLength={3}
+              onChange={(e) => setCurrency(e.target.value.toUpperCase() || "EUR")}
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="issue_date">{t("documents.field.issue_date")}</Label>
@@ -393,97 +333,8 @@ function ManualDocumentForm() {
             <Textarea id="description" name="description" rows={4} maxLength={2000} />
           </div>
 
-          {/* ====== Signataires ====== */}
-          <div className="md:col-span-2 rounded-md border border-border p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <h3 className="text-sm font-semibold">Destinataires pour signature</h3>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={addSigner} className="gap-1">
-                <Plus className="h-3.5 w-3.5" /> Ajouter
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Ordre séquentiel : chaque signataire reçoit son email après la signature du précédent.
-              Laissez vide si vous n'envoyez pas de demande de signature maintenant.
-            </p>
-            <div className="space-y-2">
-              {signers.map((s, i) => (
-                <div key={i} className="grid grid-cols-[24px_1fr_1fr_auto] items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">{i + 1}.</span>
-                  <Input
-                    placeholder="Nom"
-                    value={s.signer_name}
-                    onChange={(e) => updateSigner(i, { signer_name: e.target.value })}
-                  />
-                  <Input
-                    type="email"
-                    placeholder="email@exemple.fr"
-                    value={s.signer_email}
-                    onChange={(e) => updateSigner(i, { signer_email: e.target.value })}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeSigner(i)}
-                    disabled={signers.length === 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="expires" className="text-xs">Valide pendant (jours)</Label>
-              <Input
-                id="expires"
-                type="number"
-                min={1}
-                max={365}
-                value={expiresIn}
-                onChange={(e) => setExpiresIn(Number(e.target.value) || 30)}
-                className="w-24 h-8"
-              />
-            </div>
-          </div>
-
-          {/* ====== Paiement ====== */}
-          <div className="md:col-span-2 rounded-md border border-border p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="payment-toggle" className="flex items-center gap-2 cursor-pointer">
-                <span className="text-sm font-semibold">Demander un paiement</span>
-                <span className="text-xs text-muted-foreground font-normal">
-                  (Stripe — lien joint à l'email de signature)
-                </span>
-              </Label>
-              <Switch
-                id="payment-toggle"
-                checked={paymentEnabled}
-                onCheckedChange={setPaymentEnabled}
-              />
-            </div>
-            {paymentEnabled && (
-              <div className="grid gap-2 md:grid-cols-[1fr_auto]">
-                <div className="grid gap-1">
-                  <Label htmlFor="pay-amount" className="text-xs">Montant à payer</Label>
-                  <Input
-                    id="pay-amount"
-                    type="number"
-                    step="0.01"
-                    min="0.5"
-                    placeholder="0.00"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    required={paymentEnabled}
-                  />
-                </div>
-                <p className="self-end text-xs text-muted-foreground pb-2">
-                  Devise = devise du document.
-                </p>
-              </div>
-            )}
+          <div className="md:col-span-2">
+            <SignersPaymentFields value={sp} onChange={setSp} currencyHint={currency} />
           </div>
 
           <div className="md:col-span-2 flex justify-end gap-2">

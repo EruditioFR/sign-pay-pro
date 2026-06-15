@@ -21,6 +21,11 @@ import {
   type OverlayZone,
 } from "@/lib/template-overlay/schema";
 import { SourceCanvas } from "@/components/overlay-editor/SourceCanvas";
+import {
+  SignersPaymentFields,
+  emptySignersPaymentValue,
+  applySignersAndPayment,
+} from "@/components/documents/SignersPaymentFields";
 
 export const Route = createFileRoute("/_authenticated/app/templates/$id/fill")({
   component: FillOverlayPage,
@@ -43,6 +48,7 @@ function FillOverlayPage() {
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [outUrl, setOutUrl] = useState<string | null>(null);
+  const [sp, setSp] = useState(emptySignersPaymentValue());
 
   const zones: OverlayZone[] = useMemo(() => {
     const raw = (q.data?.template as { overlay_zones?: unknown } | undefined)?.overlay_zones ?? [];
@@ -51,10 +57,15 @@ function FillOverlayPage() {
 
   const instMut = useMutation({
     mutationFn: () => inst({ data: { id, values } }),
-    onSuccess: (r) => {
-      // pre-fill auto-resolved values
+    onSuccess: async (r) => {
       setValues((prev) => ({ ...r.values, ...prev }));
       toast.success("Document brouillon créé");
+      const tplName = (q.data?.template as { name?: string } | undefined)?.name ?? "Document";
+      await applySignersAndPayment(sp, {
+        documentId: r.documentId,
+        title: tplName,
+        currency: "EUR",
+      });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -168,6 +179,10 @@ function FillOverlayPage() {
                 );
               })}
             </div>
+          </Card>
+
+          <Card className="p-3">
+            <SignersPaymentFields value={sp} onChange={setSp} compact />
           </Card>
 
           <Card className="p-3 space-y-2">
