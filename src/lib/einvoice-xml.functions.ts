@@ -255,10 +255,11 @@ function buildCiiXml(input: BuildInput): string {
         },
       ];
 
+  const sellerSiren = org.siren ?? (sellerSiret ? sellerSiret.slice(0, 9) : null);
   const sellerXml = `
     <ram:SellerTradeParty>
       ${tag("ram:Name", sellerName)}
-      ${sellerSiret ? `<ram:SpecifiedLegalOrganization>${tag("ram:ID", sellerSiret, { schemeID: "0009" })}</ram:SpecifiedLegalOrganization>` : ""}
+      ${sellerSiret ? `<ram:SpecifiedLegalOrganization>${tag("ram:ID", sellerSiret, { schemeID: "0009" })}</ram:SpecifiedLegalOrganization>` : sellerSiren ? `<ram:SpecifiedLegalOrganization>${tag("ram:ID", sellerSiren, { schemeID: "0002" })}</ram:SpecifiedLegalOrganization>` : ""}
       <ram:PostalTradeAddress>
         ${tag("ram:PostcodeCode", sellerAddr.postal_code)}
         ${tag("ram:LineOne", sellerAddr.line1)}
@@ -267,6 +268,7 @@ function buildCiiXml(input: BuildInput): string {
         ${tag("ram:CountryID", sellerAddr.country_code)}
       </ram:PostalTradeAddress>
       ${sellerVat ? `<ram:SpecifiedTaxRegistration>${tag("ram:ID", sellerVat, { schemeID: "VA" })}</ram:SpecifiedTaxRegistration>` : ""}
+      ${sellerSiren ? `<ram:SpecifiedTaxRegistration>${tag("ram:ID", sellerSiren, { schemeID: "FC" })}</ram:SpecifiedTaxRegistration>` : ""}
     </ram:SellerTradeParty>`;
 
   const buyerXml = `
