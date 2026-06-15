@@ -2,11 +2,13 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { FileUp, ArrowLeft } from "lucide-react";
 import {
   uploadTemplateSource,
@@ -17,7 +19,21 @@ import {
   type OverlayEditorSource,
 } from "@/components/overlay-editor/OverlayEditor";
 
+const searchSchema = z.object({
+  vertical: z
+    .enum(["real_estate", "car_rental", "services", "goods_sales"])
+    .optional(),
+});
+
+const VERTICAL_LABELS: Record<string, string> = {
+  real_estate: "Immobilier",
+  car_rental: "Location de véhicules",
+  services: "Prestations de services",
+  goods_sales: "Vente de biens",
+};
+
 export const Route = createFileRoute("/_authenticated/app/templates/import")({
+  validateSearch: (raw) => searchSchema.parse(raw),
   component: ImportTemplatePage,
   errorComponent: ({ error }) => (
     <div className="p-6 text-sm text-destructive">{(error as Error).message}</div>
@@ -25,8 +41,10 @@ export const Route = createFileRoute("/_authenticated/app/templates/import")({
   notFoundComponent: () => <div className="p-6 text-sm">Introuvable.</div>,
 });
 
+
 function ImportTemplatePage() {
   const router = useRouter();
+  const { vertical } = Route.useSearch();
   const upload = useServerFn(uploadTemplateSource);
   const save = useServerFn(saveOverlayTemplate);
 
@@ -63,11 +81,13 @@ function ImportTemplatePage() {
           sourceMime: source!.mime,
           sourcePageCount: source!.pageCount,
           zones: input.zones,
+          ...(vertical ? { businessVertical: vertical } : {}),
         },
       }),
     onSuccess: () => {
       toast.success("Modèle enregistré");
-      router.navigate({ to: "/app/templates" });
+      if (vertical) router.navigate({ to: "/admin/business-verticals" });
+      else router.navigate({ to: "/app/templates" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -76,10 +96,16 @@ function ImportTemplatePage() {
     <div className="min-h-screen">
       <div className="px-4 py-3 border-b flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/app/templates"><ArrowLeft className="h-4 w-4 mr-1" />Retour</Link>
+          <Link to={vertical ? "/admin/business-verticals" : "/app/templates"}>
+            <ArrowLeft className="h-4 w-4 mr-1" />Retour
+          </Link>
         </Button>
         <h1 className="text-base font-semibold">Importer un document</h1>
+        {vertical ? (
+          <Badge variant="secondary">{VERTICAL_LABELS[vertical]}</Badge>
+        ) : null}
       </div>
+
 
       {!source ? (
         <div className="p-6 max-w-xl mx-auto">
