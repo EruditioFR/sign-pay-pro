@@ -88,7 +88,7 @@ function WysiwygNewDocPage() {
     onSuccess: (res) => {
       toast.success("Document généré");
       navigate({
-        to: "/app/documents/$id/editor",
+        to: "/app/documents/$id/configure",
         params: { id: res.documentId },
       });
     },
