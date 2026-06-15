@@ -28,6 +28,11 @@ import {
   type EinvoiceProfile,
   type ReadinessIssue,
 } from "@/lib/einvoice";
+import {
+  validateFacturXInput,
+  formatValidationErrors,
+  type ValidationIssue,
+} from "@/lib/einvoice-validation";
 
 // ---------------------------------------------------------------------------
 // Profil Factur-X → URN guideline (BT-24)
