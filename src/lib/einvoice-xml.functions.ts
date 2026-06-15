@@ -494,8 +494,12 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
       })),
     });
 
+    // 5b) Validation structurelle (substitut XSD côté serverless)
+    const structureErrors = validateCiiXmlStructure(xml);
+    for (const err of structureErrors) issues.push({ field: "xml", message: err });
+
     const invoiceNumber = doc.invoice_number ?? doc.reference ?? doc.id.slice(0, 8);
-    const filename = `factur-x-${String(invoiceNumber).replace(/[^A-Za-z0-9._-]/g, "_")}.xml`;
+    const filename = `factur-x-${data.profile}-${String(invoiceNumber).replace(/[^A-Za-z0-9._-]/g, "_")}.xml`;
 
     // 6) Optionnel : marquer le doc comme "ready" + journaliser
     if (data.mark_ready) {
@@ -504,7 +508,7 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         .from("documents")
         .update({
           einvoice_format: "factur_x",
-          einvoice_profile: "basic",
+          einvoice_profile: data.profile,
           einvoice_status: "ready",
           einvoice_last_event_at: new Date().toISOString(),
         })
@@ -515,16 +519,18 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         from_status: fromStatus,
         to_status: "ready",
         source: "internal",
-        reason: "CII XML generated",
-        payload: { user_id: userId, issues_count: issues.length },
+        reason: `CII XML generated (profile=${data.profile})`,
+        payload: { user_id: userId, issues_count: issues.length, profile: data.profile },
       });
     }
 
     return {
       xml,
       filename,
-      profile: "basic" as const,
+      profile: data.profile,
       format: "factur_x" as const,
       issues,
+    };
+  });
     };
   });
