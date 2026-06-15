@@ -11,20 +11,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft,
   Briefcase,
   Building2,
   Car,
   CheckCircle2,
   Circle,
+  FileUp,
   Home,
   PackageSearch,
   Pencil,
+  Plus,
   RefreshCw,
   Sparkles,
+  SquarePen,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ComponentType } from "react";
+
 
 export const Route = createFileRoute("/_authenticated/admin/business-verticals/")({
   component: BusinessVerticalsPage,
