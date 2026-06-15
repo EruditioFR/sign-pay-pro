@@ -132,13 +132,14 @@ export const saveTemplateCanvas = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!me?.organization_id) throw new Error("Organisation introuvable");
 
+    const canvasJson = JSON.parse(JSON.stringify(data.canvas)) as Record<string, unknown>;
     const payload = {
       organization_id: me.organization_id,
       name: data.name,
       page_format: data.page_format,
       page_orientation: data.page_orientation,
-      canvas_schema: data.canvas as unknown as Record<string, unknown>,
-    };
+      canvas_schema: canvasJson,
+    } as never;
 
     if (data.id) {
       const { data: tpl, error } = await supabase
@@ -147,8 +148,8 @@ export const saveTemplateCanvas = createServerFn({ method: "POST" })
           name: data.name,
           page_format: data.page_format,
           page_orientation: data.page_orientation,
-          canvas_schema: data.canvas as unknown as Record<string, unknown>,
-        })
+          canvas_schema: canvasJson,
+        } as never)
         .eq("id", data.id)
         .select()
         .single();
