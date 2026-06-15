@@ -556,10 +556,53 @@ function PdfEditorPage() {
                     <div className="space-y-1">
                       <Label className="text-xs">Valeur</Label>
                       <Input
-                        type={selected.kind === "date" ? "date" : "text"}
+                        ref={valueInputRef}
+                        type={selected.kind === "date" && !(selected.value ?? "").includes("{{") ? "date" : "text"}
                         value={selected.value ?? ""}
                         onChange={(e) => updateField(selected.tempId, { value: e.target.value })}
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs flex items-center gap-1">
+                        <Variable className="h-3 w-3" /> Insérer un champ dynamique
+                      </Label>
+                      <Select
+                        value=""
+                        onValueChange={(key) => {
+                          if (!key) return;
+                          const token = `{{${key}}}`;
+                          const input = valueInputRef.current;
+                          const current = selected.value ?? "";
+                          if (input && document.activeElement === input) {
+                            const start = input.selectionStart ?? current.length;
+                            const end = input.selectionEnd ?? current.length;
+                            const next = current.slice(0, start) + token + current.slice(end);
+                            updateField(selected.tempId, { value: next });
+                            requestAnimationFrame(() => {
+                              input.focus();
+                              const pos = start + token.length;
+                              input.setSelectionRange(pos, pos);
+                            });
+                          } else {
+                            updateField(selected.tempId, { value: (current ? current + " " : "") + token });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Choisir une variable…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DYNAMIC_VARIABLES.map((v) => (
+                            <SelectItem key={v.key} value={v.key}>
+                              <span className="font-medium">{v.label}</span>
+                              <span className="ml-2 text-[10px] text-muted-foreground">{`{{${v.key}}}`}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground">
+                        Les variables sont remplacées par les valeurs du document lors de la génération.
+                      </p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Taille de police ({selected.font_size}pt)</Label>
