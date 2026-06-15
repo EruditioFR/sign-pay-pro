@@ -243,18 +243,33 @@ function DocumentDetailPage() {
             <p className="text-sm text-muted-foreground">{t("doc_detail.no_payments")}</p>
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border text-sm">
-              {(pays?.payments ?? []).map((p) => (
-                <li key={p.id} className="flex items-center justify-between px-3 py-2">
-                  <div>
-                    <div className="font-medium">{p.amount} {p.currency}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {p.method} · {p.status}
-                      {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleDateString()}` : ""}
-                      {p.provider_ref ? ` · ${p.provider_ref}` : ""}
+              {(pays?.payments ?? []).map((p) => {
+                const meta = (p.metadata ?? {}) as Record<string, unknown>;
+                const isStripe = meta.provider === "stripe" || p.method === "card";
+                const kindLabel = isStripe
+                  ? t("payments.kind.stripe", { defaultValue: "Paiement en ligne (Stripe)" })
+                  : t("payments.kind.manual", { defaultValue: "Paiement enregistré manuellement" });
+                const kindClass = isStripe
+                  ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300"
+                  : "bg-slate-500/15 text-slate-700 dark:text-slate-300";
+                return (
+                  <li key={p.id} className="flex items-center justify-between px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{p.amount} {p.currency}</span>
+                        <span className={`rounded px-2 py-0.5 text-xs font-medium ${kindClass}`}>
+                          {kindLabel}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {p.method} · {p.status}
+                        {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleDateString()}` : ""}
+                        {p.provider_ref ? ` · ${p.provider_ref}` : ""}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>

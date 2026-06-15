@@ -32,23 +32,64 @@ export function PaymentDialog({ documentId, suggestedAmount, currency }: {
         provider_ref: ref || null,
       },
     }),
-    onSuccess: () => {
-      toast.success(t("payments.recorded"));
+    onSuccess: (res) => {
+      const clamped = res?.clamped_amount;
+      const requested = res?.requested_amount;
+      if (typeof clamped === "number" && typeof requested === "number" && clamped < requested) {
+        toast.success(
+          t("payments.recorded_clamped", {
+            defaultValue: `Paiement enregistré (montant ajusté au restant dû : ${clamped} ${currency || "EUR"})`,
+            amount: clamped,
+            currency: currency || "EUR",
+          }),
+        );
+      } else {
+        toast.success(t("payments.recorded", { defaultValue: "Paiement enregistré" }));
+      }
       qc.invalidateQueries({ queryKey: ["document", documentId] });
+      qc.invalidateQueries({ queryKey: ["doc_payments", documentId] });
       qc.invalidateQueries({ queryKey: ["payments", documentId] });
       setOpen(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      const map: Record<string, string> = {
+        document_already_paid: t("payments.err.already_paid", {
+          defaultValue: "Ce document est déjà entièrement payé.",
+        }),
+        amount_out_of_range: t("payments.err.amount_out_of_range", {
+          defaultValue: "Le montant dépasse le restant dû.",
+        }),
+        document_not_found: t("payments.err.not_found", {
+          defaultValue: "Document introuvable.",
+        }),
+      };
+      toast.error(map[e.message] ?? e.message);
+    },
   });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm"><CreditCard className="mr-1 h-4 w-4" />{t("payments.record")}</Button>
+        <Button variant="outline" size="sm">
+          <CreditCard className="mr-1 h-4 w-4" />
+          {t("payments.record_manual", { defaultValue: "Enregistrer un paiement (hors ligne)" })}
+        </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{t("payments.record_title")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>
+            {t("payments.record_manual_title", {
+              defaultValue: "Enregistrer un paiement reçu hors ligne",
+            })}
+          </DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {t("payments.manual_hint", {
+              defaultValue:
+                "Utilisez ce formulaire uniquement pour les paiements reçus par virement, chèque ou espèces. Les paiements en ligne (Stripe) sont enregistrés automatiquement.",
+            })}
+          </p>
           <div className="space-y-1">
             <Label>{t("payments.amount")} ({currency || "EUR"})</Label>
             <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(parseFloat(e.target.value))} />
