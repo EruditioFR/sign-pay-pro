@@ -192,16 +192,22 @@ function PdfEditorPage() {
     return () => { cancelled = true; };
   }, [pageIndex, pageCount, urlQ.data?.url]);
 
-  const addField = (kind: PdfFieldKind) => {
+  const createField = (kind: PdfFieldKind, rect?: { x: number; y: number; w: number; h: number }) => {
     const meta = KIND_META[kind];
+    const w = rect?.w ?? meta.w;
+    const h = rect?.h ?? meta.h;
+    const cssX = rect?.x ?? (pageDims.w * renderScale) / 2 - (w * renderScale) / 2;
+    const cssY = rect?.y ?? (pageDims.h * renderScale) / 2 - (h * renderScale) / 2;
+    const xPdf = Math.max(0, cssX / renderScale);
+    const yPdfTop = cssY / renderScale;
     const newField: Field = {
       tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       page_index: pageIndex,
       kind,
-      x: Math.max(0, pageDims.w / 2 - meta.w / 2),
-      y: Math.max(0, pageDims.h / 2 - meta.h / 2),
-      width: meta.w,
-      height: meta.h,
+      x: xPdf,
+      y: Math.max(0, pageDims.h - yPdfTop - h),
+      width: w,
+      height: h,
       value: kind === "checkbox" ? "false" : null,
       font_size: 11,
       required: false,
@@ -211,6 +217,7 @@ function PdfEditorPage() {
     setFields((prev) => [...prev, newField]);
     setSelectedId(newField.tempId);
   };
+  const addField = (kind: PdfFieldKind) => createField(kind);
 
   const updateField = (tempId: string, patch: Partial<Field>) => {
     setFields((prev) => prev.map((f) => (f.tempId === tempId ? { ...f, ...patch } : f)));
