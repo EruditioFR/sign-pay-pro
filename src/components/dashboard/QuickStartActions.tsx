@@ -20,12 +20,12 @@ export function QuickStartActions() {
         </Link>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
-        <Link to="/app/documents/new" className="block">
+        <Link to="/admin/business-verticals" className="block">
           <ActionCard
             accent
             icon={<LayoutTemplate className="h-5 w-5" />}
             title="Partir d'un modèle"
-            description="Devis, factures, contrats, CERFA déjà importés."
+            description="Parcourez la bibliothèque des modèles par secteur métier."
             cta="Voir les modèles"
           />
         </Link>
