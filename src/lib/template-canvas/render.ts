@@ -40,8 +40,15 @@ export function renderCanvasToHtml(
       }
       case "image": {
         const fit = b.fit ?? "contain";
+        const src = interpolate(b.src, values);
+        if (!src) {
+          parts.push(
+            `<div style="${style}display:flex;align-items:center;justify-content:center;border:1px dashed #d1d5db;color:#9ca3af;font-size:9pt;">Logo</div>`,
+          );
+          break;
+        }
         parts.push(
-          `<div style="${style}"><img src="${escapeHtml(b.src)}" alt="${escapeHtml(b.alt ?? "")}" style="width:100%;height:100%;object-fit:${fit};"/></div>`,
+          `<div style="${style}"><img src="${escapeHtml(src)}" alt="${escapeHtml(b.alt ?? "")}" style="width:100%;height:100%;object-fit:${fit};"/></div>`,
         );
         break;
       }

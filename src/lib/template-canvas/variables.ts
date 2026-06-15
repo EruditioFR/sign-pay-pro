@@ -34,6 +34,7 @@ export const VARIABLE_CATALOG: readonly VariableDef[] = [
   { key: "issuer.bic", label: "BIC", group: "Émetteur" },
   { key: "issuer.email", label: "Email émetteur", group: "Émetteur" },
   { key: "issuer.phone", label: "Téléphone émetteur", group: "Émetteur" },
+  { key: "issuer.logo_url", label: "URL du logo", group: "Émetteur" },
 
   // Document
   { key: "document.number", label: "N° de document", group: "Document", example: "FAC-2026-0001" },
