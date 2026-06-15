@@ -73,43 +73,73 @@ function PdfTemplatesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {data!.templates.map((t) => (
-            <Card key={t.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-4 w-4" />
-                  <span className="truncate">{t.name}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                {t.description && (
-                  <p className="line-clamp-2 text-muted-foreground">{t.description}</p>
-                )}
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span className="rounded bg-muted px-2 py-0.5">{t.document_type ? tr(`documents.types.${t.document_type}`, { defaultValue: t.document_type }) : "—"}</span>
-                  <span className="rounded bg-muted px-2 py-0.5">{t.page_count} page(s)</span>
-                  <span className="rounded bg-muted px-2 py-0.5">{t.field_count} zone(s)</span>
-                  <span className="rounded bg-muted px-2 py-0.5">v{t.version_count}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <UseTemplateDialog templateId={t.id} templateName={t.name} />
-                  <VersionHistoryDialog templateId={t.id} templateName={t.name} />
-                  <ConfirmAction
-                    title="Supprimer ce modèle ?"
-                    description="Toutes les versions de ce modèle seront supprimées définitivement."
-                    confirmLabel="Supprimer"
-                    onConfirm={() => del.mutateAsync(t.id)}
-                  >
-                    <Button variant="ghost" size="sm" aria-label="Supprimer le modèle">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </ConfirmAction>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        (() => {
+          const TYPE_ORDER = ["quote", "invoice", "purchase_order", "contract", "other"] as const;
+          const groups = new Map<string, NonNullable<typeof data>["templates"]>();
+          for (const t of data!.templates) {
+            const key = t.document_type || "other";
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key)!.push(t);
+          }
+          const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
+            const ia = TYPE_ORDER.indexOf(a as never);
+            const ib = TYPE_ORDER.indexOf(b as never);
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+          });
+          return (
+            <div className="space-y-6">
+              {sortedKeys.map((key) => {
+                const items = groups.get(key)!;
+                return (
+                  <section key={key} className="space-y-3">
+                    <div className="flex items-baseline gap-2 border-b border-border pb-1">
+                      <h2 className="text-lg font-semibold">
+                        {tr(`documents.types.${key}`, { defaultValue: key })}
+                      </h2>
+                      <span className="text-xs text-muted-foreground">{items.length} modèle(s)</span>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                      {items.map((t) => (
+                        <Card key={t.id}>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <FileText className="h-4 w-4" />
+                              <span className="truncate">{t.name}</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3 text-sm">
+                            {t.description && (
+                              <p className="line-clamp-2 text-muted-foreground">{t.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              <span className="rounded bg-muted px-2 py-0.5">{t.page_count} page(s)</span>
+                              <span className="rounded bg-muted px-2 py-0.5">{t.field_count} zone(s)</span>
+                              <span className="rounded bg-muted px-2 py-0.5">v{t.version_count}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <UseTemplateDialog templateId={t.id} templateName={t.name} />
+                              <VersionHistoryDialog templateId={t.id} templateName={t.name} />
+                              <ConfirmAction
+                                title="Supprimer ce modèle ?"
+                                description="Toutes les versions de ce modèle seront supprimées définitivement."
+                                confirmLabel="Supprimer"
+                                onConfirm={() => del.mutateAsync(t.id)}
+                              >
+                                <Button variant="ghost" size="sm" aria-label="Supprimer le modèle">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </ConfirmAction>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          );
+        })()
       )}
     </div>
   );
