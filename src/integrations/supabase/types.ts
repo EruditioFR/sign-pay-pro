@@ -161,6 +161,82 @@ export type Database = {
           },
         ]
       }
+      document_number_sequences: {
+        Row: {
+          created_at: string
+          kind: string
+          last_seq: number
+          organization_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          last_seq?: number
+          organization_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          last_seq?: number
+          organization_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_number_sequences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_numbering_settings: {
+        Row: {
+          created_at: string
+          credit_note_prefix: string
+          invoice_prefix: string
+          organization_id: string
+          pad_width: number
+          quote_prefix: string
+          reset_yearly: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credit_note_prefix?: string
+          invoice_prefix?: string
+          organization_id: string
+          pad_width?: number
+          quote_prefix?: string
+          reset_yearly?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credit_note_prefix?: string
+          invoice_prefix?: string
+          organization_id?: string
+          pad_width?: number
+          quote_prefix?: string
+          reset_yearly?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_numbering_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_payments: {
         Row: {
           amount: number
@@ -674,6 +750,8 @@ export type Database = {
           current_workflow_id: string | null
           delivery_date: string | null
           description: string | null
+          document_number: string | null
+          document_numbered_at: string | null
           due_date: string | null
           einvoice_format: Database["public"]["Enums"]["einvoice_format"] | null
           einvoice_last_event_at: string | null
@@ -731,6 +809,8 @@ export type Database = {
           current_workflow_id?: string | null
           delivery_date?: string | null
           description?: string | null
+          document_number?: string | null
+          document_numbered_at?: string | null
           due_date?: string | null
           einvoice_format?:
             | Database["public"]["Enums"]["einvoice_format"]
@@ -792,6 +872,8 @@ export type Database = {
           current_workflow_id?: string | null
           delivery_date?: string | null
           description?: string | null
+          document_number?: string | null
+          document_numbered_at?: string | null
           due_date?: string | null
           einvoice_format?:
             | Database["public"]["Enums"]["einvoice_format"]
@@ -1610,6 +1692,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_document_number: {
+        Args: { p_document_id: string }
+        Returns: string
+      }
       audit_log_event: {
         Args: {
           _action: string
