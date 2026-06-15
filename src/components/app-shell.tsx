@@ -291,7 +291,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </Link>
                   </div>
                   <NavList
-                    items={items}
+                    groups={groups}
                     pathname={location.pathname}
                     approvalsCount={approvalsCount}
                     onItemClick={() => setMobileOpen(false)}
