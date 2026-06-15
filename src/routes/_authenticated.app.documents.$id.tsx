@@ -181,7 +181,12 @@ function DocumentDetailPage() {
 
       <Card>
         <CardHeader><CardTitle>{t("doc_detail.signatures")}</CardTitle></CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <SignatureIntegrityPanel
+            documentId={doc.id}
+            documentTitle={doc.title}
+            hasSignatures={(sigs?.signatures ?? []).length > 0}
+          />
           {(sigs?.signatures ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("doc_detail.no_signatures")}</p>
           ) : (
