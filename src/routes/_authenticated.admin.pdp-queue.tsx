@@ -187,6 +187,7 @@ function PdpQueuePage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
