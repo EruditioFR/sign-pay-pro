@@ -20,6 +20,7 @@ import { SignDocumentDialog } from "@/components/sign-document-dialog";
 import { SignedPdfPreview } from "@/components/signed-pdf-preview";
 import { MultiSignersDialog } from "@/components/multi-signers-dialog";
 import { ArchiveActions } from "@/components/archive-actions";
+import { SignatureIntegrityPanel } from "@/components/signature-integrity-panel";
 import { DocumentActivityPdfButton } from "@/components/document-activity-pdf-button";
 import { ExportFacturXButton } from "@/components/export-factur-x-button";
 import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
