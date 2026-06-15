@@ -6,7 +6,9 @@ import {
   cancelGuestSignerRequest,
 } from "@/lib/guest.functions";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { DocumentStatusBadge, SignerStatusBadge, StepStatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Inbox } from "lucide-react";
 import { Ban } from "lucide-react";
 import { toast } from "sonner";
 
