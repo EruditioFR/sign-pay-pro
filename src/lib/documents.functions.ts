@@ -1,21 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import {
+  assertCanTransition,
+  buildTransitionAuditEntry,
+  canArchive,
+  canCancel,
+  isReadOnlyStatus as smIsReadOnly,
+  READ_ONLY_STATUSES as SM_READ_ONLY,
+  type DocumentStatus as SMDocumentStatus,
+} from "@/lib/document-state-machine";
 
 export type DocumentType = "purchase_order" | "quote" | "invoice" | "contract" | "other";
-export type DocumentStatus =
-  | "draft"
-  | "pending_validation"
-  | "validated"
-  | "rejected"
-  | "issued"
-  | "sent"
-  | "viewed"
-  | "signed"
-  | "paid"
-  | "partially_paid"
-  | "archived"
-  | "cancelled";
+export type DocumentStatus = SMDocumentStatus;
 
 export const ALL_DOCUMENT_STATUSES: DocumentStatus[] = [
   "draft",
@@ -32,11 +29,12 @@ export const ALL_DOCUMENT_STATUSES: DocumentStatus[] = [
   "cancelled",
 ];
 
-/** Statuts en lecture seule : seules les opérations d'export/consultation sont autorisées */
-export const READ_ONLY_STATUSES: DocumentStatus[] = ["archived", "cancelled"];
+/** @deprecated importer depuis `@/lib/document-state-machine` */
+export const READ_ONLY_STATUSES: DocumentStatus[] = [...SM_READ_ONLY];
 
+/** @deprecated importer depuis `@/lib/document-state-machine` */
 export function isReadOnlyStatus(status: string | null | undefined): boolean {
-  return !!status && (READ_ONLY_STATUSES as string[]).includes(status);
+  return smIsReadOnly(status);
 }
 
 const DocumentTypeEnum = z.enum(["purchase_order", "quote", "invoice", "contract", "other"]);
@@ -234,8 +232,14 @@ export const archiveDocument = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !doc) throw new Error("Document introuvable");
-    if (doc.status === "archived") throw new Error("Document déjà archivé.");
-    if (doc.status === "cancelled") throw new Error("Un document annulé ne peut pas être archivé.");
+    if (!canArchive(doc.status)) {
+      throw new Error(
+        doc.status === "archived"
+          ? "Document déjà archivé."
+          : "Document non archivable dans son statut actuel.",
+      );
+    }
+    assertCanTransition(doc.status, "archived");
 
     const { error } = await supabase
       .from("documents")
@@ -249,17 +253,17 @@ export const archiveDocument = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      organization_id: doc.organization_id,
-      user_id: userId,
-      action: "document.archived",
-      resource: `document:${data.id}`,
-      metadata: {
-        previous_status: doc.status,
-        retention_until: data.retention_until ?? null,
+    await supabase.from("audit_logs").insert(
+      buildTransitionAuditEntry({
+        organization_id: doc.organization_id,
+        user_id: userId,
+        document_id: data.id,
+        from: doc.status,
+        to: "archived",
         reason: data.reason ?? null,
-      },
-    });
+        extra: { retention_until: data.retention_until ?? null },
+      }),
+    );
     return { ok: true };
   });
 
@@ -288,13 +292,16 @@ export const unarchiveDocument = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      organization_id: doc.organization_id,
-      user_id: userId,
-      action: "document.unarchived",
-      resource: `document:${data.id}`,
-      metadata: { restored_to: restored },
-    });
+    await supabase.from("audit_logs").insert(
+      buildTransitionAuditEntry({
+        organization_id: doc.organization_id,
+        user_id: userId,
+        document_id: data.id,
+        from: "archived",
+        to: restored,
+        extra: { unarchive: true },
+      }),
+    );
     return { ok: true, restored_to: restored };
   });
 
@@ -314,9 +321,10 @@ export const cancelDocument = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !doc) throw new Error("Document introuvable");
-    if (["paid", "signed", "archived", "cancelled"].includes(doc.status)) {
+    if (!canCancel(doc.status)) {
       throw new Error("Document non annulable dans son statut actuel.");
     }
+    assertCanTransition(doc.status, "cancelled");
 
     const { error } = await supabase
       .from("documents")
@@ -324,13 +332,16 @@ export const cancelDocument = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      organization_id: doc.organization_id,
-      user_id: userId,
-      action: "document.cancelled",
-      resource: `document:${data.id}`,
-      metadata: { previous_status: doc.status, reason: data.reason ?? null },
-    });
+    await supabase.from("audit_logs").insert(
+      buildTransitionAuditEntry({
+        organization_id: doc.organization_id,
+        user_id: userId,
+        document_id: data.id,
+        from: doc.status,
+        to: "cancelled",
+        reason: data.reason ?? null,
+      }),
+    );
     return { ok: true };
   });
 
