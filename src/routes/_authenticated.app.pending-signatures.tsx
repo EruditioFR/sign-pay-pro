@@ -82,6 +82,7 @@ function daysBetween(iso: string | null) {
 }
 
 function PendingSignaturesPage() {
+  const { t } = useTranslation();
   const fetchPage = useServerFn(listPendingSignaturesPage);
   const fetchTotals = useServerFn(getPendingSignaturesTotals);
   const fetchOrgs = useServerFn(listPendingSignaturesOrgs);
