@@ -235,7 +235,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const approvalsCount = approvals?.steps.length ?? 0;
 
-  const items = me ? navForRole(me.primaryRole, t) : [];
+  const groups = me ? navGroupsForRole(me.primaryRole, t) : [];
 
   const onLogout = async () => {
     await supabase.auth.signOut();
