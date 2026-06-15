@@ -146,7 +146,7 @@ export const listDocumentSignatures = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data: rows, error } = await supabase
       .from("document_signatures")
-      .select("id, signer_name, signer_email, signed_at, ip, pdf_storage_path, pdf_hash_sha256")
+      .select("id, signer_name, signer_email, signed_at, ip, user_agent, pdf_storage_path, pdf_hash_sha256, signature_level, auth_method")
       .eq("document_id", data.document_id)
       .order("signed_at", { ascending: false });
     if (error) throw new Error(error.message);
