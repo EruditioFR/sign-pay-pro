@@ -94,7 +94,9 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Importer un modèle PDF</DialogTitle>
+          <DialogTitle>
+            {openEditorAfterImport ? "Importer un PDF à compléter & signer" : "Importer un modèle PDF"}
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
