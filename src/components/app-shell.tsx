@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
-  Bot,
+  
   Building2,
   CheckSquare,
   FileText,
@@ -30,7 +30,7 @@ import {
   Menu,
   PenLine,
   ScrollText,
-  Sparkles,
+  
   Settings,
   ShieldCheck,
   Store,
@@ -63,10 +63,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/admin", label: t("nav.dashboard"), icon: Home },
         { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
-        { to: "/app/demo", label: "Démo", icon: Sparkles },
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
-        { to: "/app/drafts", label: "Brouillons", icon: FileText },
-        { to: "/app/pdf-templates", label: "Modèles PDF", icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         {
           to: "/app/approvals",
@@ -88,11 +85,7 @@ function navForRole(role: AppRole, t: (k: string) => string): NavItem[] {
       return [
         { to: "/app", label: t("nav.dashboard"), icon: Home },
         { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
-        { to: "/app/demo", label: "Démo", icon: Sparkles },
-        
         { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
-        { to: "/app/drafts", label: "Brouillons", icon: FileText },
-        { to: "/app/pdf-templates", label: "Modèles PDF", icon: FileText },
         { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
         {
           to: "/app/approvals",
