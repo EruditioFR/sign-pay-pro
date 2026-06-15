@@ -18,7 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { PdpStatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -35,21 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin/pdp-queue")({
 
 type StatusFilter = "pending" | "submitted" | "acknowledged" | "rejected" | "error" | "all";
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "En attente",
-  submitted: "Transmise",
-  acknowledged: "Acquittée",
-  rejected: "Rejetée",
-  error: "Erreur",
-};
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  pending: "secondary",
-  submitted: "default",
-  acknowledged: "default",
-  rejected: "destructive",
-  error: "destructive",
-};
+// Labels/colors centralisés dans PdpStatusBadge (status-badge.tsx).
 
 function PdpQueuePage() {
   const [status, setStatus] = useState<StatusFilter>("pending");
