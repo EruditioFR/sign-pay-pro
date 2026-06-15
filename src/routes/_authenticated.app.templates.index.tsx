@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmAction } from "@/components/confirm-action";
-import { Plus, Pencil, Eye, Wand2, Trash2, LayoutTemplate } from "lucide-react";
+import { Plus, Pencil, Eye, Wand2, Trash2, LayoutTemplate, FileUp } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/templates/")({
@@ -57,7 +57,10 @@ function TemplatesIndexPage() {
           <h1 className="text-xl font-semibold">Modèles de documents</h1>
           <p className="text-sm text-muted-foreground">Créez des modèles visuels réutilisables.</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/app/templates/import"><FileUp className="h-4 w-4 mr-1.5" />Importer un document</Link>
+          </Button>
           <Button asChild>
             <Link to="/app/templates/new"><Plus className="h-4 w-4 mr-1.5" />Nouveau modèle</Link>
           </Button>
@@ -79,32 +82,48 @@ function TemplatesIndexPage() {
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((t) => (
+          {templates.map((t) => {
+            const isOverlay = (t as { kind?: string }).kind === "overlay";
+            return (
             <Card key={t.id}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <span className="truncate">{t.name}</span>
+                  {isOverlay && <Badge variant="outline">Document importé</Badge>}
                   {t.is_default && <Badge variant="secondary">Par défaut</Badge>}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="text-xs text-muted-foreground">
-                  {t.page_format ?? "A4"} · {t.page_orientation ?? "portrait"}
+                  {isOverlay
+                    ? `${(t as { source_page_count?: number }).source_page_count ?? 1} page(s) · ${(t as { source_mime?: string }).source_mime ?? "PDF"}`
+                    : `${t.page_format ?? "A4"} · ${t.page_orientation ?? "portrait"}`}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to="/app/templates/$id/edit" params={{ id: t.id }}>
-                      <Pencil className="h-4 w-4 mr-1.5" />Éditer
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to="/app/templates/$id/preview" params={{ id: t.id }}>
-                      <Eye className="h-4 w-4 mr-1.5" />Aperçu
-                    </Link>
-                  </Button>
-                  <Button size="sm" onClick={() => instMut.mutate(t.id)} disabled={instMut.isPending}>
-                    <Wand2 className="h-4 w-4 mr-1.5" />Utiliser
-                  </Button>
+                  {!isOverlay && (
+                    <>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to="/app/templates/$id/edit" params={{ id: t.id }}>
+                          <Pencil className="h-4 w-4 mr-1.5" />Éditer
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to="/app/templates/$id/preview" params={{ id: t.id }}>
+                          <Eye className="h-4 w-4 mr-1.5" />Aperçu
+                        </Link>
+                      </Button>
+                      <Button size="sm" onClick={() => instMut.mutate(t.id)} disabled={instMut.isPending}>
+                        <Wand2 className="h-4 w-4 mr-1.5" />Utiliser
+                      </Button>
+                    </>
+                  )}
+                  {isOverlay && (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/app/templates/$id/fill" params={{ id: t.id }}>
+                        <Wand2 className="h-4 w-4 mr-1.5" />Compléter & générer
+                      </Link>
+                    </Button>
+                  )}
                   <ConfirmAction
                     title="Supprimer ce modèle ?"
                     description="Cette action est irréversible."
@@ -117,7 +136,8 @@ function TemplatesIndexPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

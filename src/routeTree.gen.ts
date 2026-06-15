@@ -51,6 +51,7 @@ import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/sha
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicCronSignatureRemindersRouteImport } from './routes/api/public/cron/signature-reminders'
 import { Route as AuthenticatedAppTemplatesNewRouteImport } from './routes/_authenticated.app.templates.new'
+import { Route as AuthenticatedAppTemplatesImportRouteImport } from './routes/_authenticated.app.templates.import'
 import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
@@ -59,6 +60,7 @@ import { Route as AuthenticatedAdminWorkflowsIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminTemplatesNewRouteImport } from './routes/_authenticated.admin.templates.new'
 import { Route as AuthenticatedAdminTemplatesIdRouteImport } from './routes/_authenticated.admin.templates.$id'
 import { Route as AuthenticatedAppTemplatesIdPreviewRouteImport } from './routes/_authenticated.app.templates.$id.preview'
+import { Route as AuthenticatedAppTemplatesIdFillRouteImport } from './routes/_authenticated.app.templates.$id.fill'
 import { Route as AuthenticatedAppTemplatesIdEditRouteImport } from './routes/_authenticated.app.templates.$id.edit'
 import { Route as AuthenticatedAppDocumentsIdEditorRouteImport } from './routes/_authenticated.app.documents.$id.editor'
 
@@ -291,6 +293,12 @@ const AuthenticatedAppTemplatesNewRoute =
     path: '/app/templates/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppTemplatesImportRoute =
+  AuthenticatedAppTemplatesImportRouteImport.update({
+    id: '/app/templates/import',
+    path: '/app/templates/import',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsWysiwygRoute =
   AuthenticatedAppDocumentsWysiwygRouteImport.update({
     id: '/app/documents/wysiwyg',
@@ -337,6 +345,12 @@ const AuthenticatedAppTemplatesIdPreviewRoute =
   AuthenticatedAppTemplatesIdPreviewRouteImport.update({
     id: '/app/templates/$id/preview',
     path: '/app/templates/$id/preview',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAppTemplatesIdFillRoute =
+  AuthenticatedAppTemplatesIdFillRouteImport.update({
+    id: '/app/templates/$id/fill',
+    path: '/app/templates/$id/fill',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAppTemplatesIdEditRoute =
@@ -389,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
   '/app/templates/new': typeof AuthenticatedAppTemplatesNewRoute
   '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -403,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
+  '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -442,6 +458,7 @@ export interface FileRoutesByTo {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
   '/app/templates/new': typeof AuthenticatedAppTemplatesNewRoute
   '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -456,6 +473,7 @@ export interface FileRoutesByTo {
   '/app/templates': typeof AuthenticatedAppTemplatesIndexRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
+  '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
 }
 export interface FileRoutesById {
@@ -497,6 +515,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/_authenticated/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
   '/_authenticated/app/templates/new': typeof AuthenticatedAppTemplatesNewRoute
   '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -511,6 +530,7 @@ export interface FileRoutesById {
   '/_authenticated/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
   '/_authenticated/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/_authenticated/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
+  '/_authenticated/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/_authenticated/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
 }
 export interface FileRouteTypes {
@@ -552,6 +572,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/app/templates/import'
     | '/app/templates/new'
     | '/api/public/cron/signature-reminders'
     | '/api/public/payments/webhook'
@@ -566,6 +587,7 @@ export interface FileRouteTypes {
     | '/app/templates/'
     | '/app/documents/$id/editor'
     | '/app/templates/$id/edit'
+    | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -605,6 +627,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/app/templates/import'
     | '/app/templates/new'
     | '/api/public/cron/signature-reminders'
     | '/api/public/payments/webhook'
@@ -619,6 +642,7 @@ export interface FileRouteTypes {
     | '/app/templates'
     | '/app/documents/$id/editor'
     | '/app/templates/$id/edit'
+    | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
   id:
     | '__root__'
@@ -659,6 +683,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
     | '/_authenticated/app/documents/wysiwyg'
+    | '/_authenticated/app/templates/import'
     | '/_authenticated/app/templates/new'
     | '/api/public/cron/signature-reminders'
     | '/api/public/payments/webhook'
@@ -673,6 +698,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/templates/'
     | '/_authenticated/app/documents/$id/editor'
     | '/_authenticated/app/templates/$id/edit'
+    | '/_authenticated/app/templates/$id/fill'
     | '/_authenticated/app/templates/$id/preview'
   fileRoutesById: FileRoutesById
 }
@@ -991,6 +1017,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTemplatesNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/templates/import': {
+      id: '/_authenticated/app/templates/import'
+      path: '/app/templates/import'
+      fullPath: '/app/templates/import'
+      preLoaderRoute: typeof AuthenticatedAppTemplatesImportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/wysiwyg': {
       id: '/_authenticated/app/documents/wysiwyg'
       path: '/app/documents/wysiwyg'
@@ -1045,6 +1078,13 @@ declare module '@tanstack/react-router' {
       path: '/app/templates/$id/preview'
       fullPath: '/app/templates/$id/preview'
       preLoaderRoute: typeof AuthenticatedAppTemplatesIdPreviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/app/templates/$id/fill': {
+      id: '/_authenticated/app/templates/$id/fill'
+      path: '/app/templates/$id/fill'
+      fullPath: '/app/templates/$id/fill'
+      preLoaderRoute: typeof AuthenticatedAppTemplatesIdFillRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/app/templates/$id/edit': {
@@ -1105,6 +1145,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppDocumentsIdRoute: typeof AuthenticatedAppDocumentsIdRouteWithChildren
   AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
   AuthenticatedAppDocumentsWysiwygRoute: typeof AuthenticatedAppDocumentsWysiwygRoute
+  AuthenticatedAppTemplatesImportRoute: typeof AuthenticatedAppTemplatesImportRoute
   AuthenticatedAppTemplatesNewRoute: typeof AuthenticatedAppTemplatesNewRoute
   AuthenticatedAdminBusinessVerticalsIndexRoute: typeof AuthenticatedAdminBusinessVerticalsIndexRoute
   AuthenticatedAdminTemplatesIndexRoute: typeof AuthenticatedAdminTemplatesIndexRoute
@@ -1114,6 +1155,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppPdfTemplatesIndexRoute: typeof AuthenticatedAppPdfTemplatesIndexRoute
   AuthenticatedAppTemplatesIndexRoute: typeof AuthenticatedAppTemplatesIndexRoute
   AuthenticatedAppTemplatesIdEditRoute: typeof AuthenticatedAppTemplatesIdEditRoute
+  AuthenticatedAppTemplatesIdFillRoute: typeof AuthenticatedAppTemplatesIdFillRoute
   AuthenticatedAppTemplatesIdPreviewRoute: typeof AuthenticatedAppTemplatesIdPreviewRoute
 }
 
@@ -1146,6 +1188,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAppDocumentsIdRouteWithChildren,
   AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
   AuthenticatedAppDocumentsWysiwygRoute: AuthenticatedAppDocumentsWysiwygRoute,
+  AuthenticatedAppTemplatesImportRoute: AuthenticatedAppTemplatesImportRoute,
   AuthenticatedAppTemplatesNewRoute: AuthenticatedAppTemplatesNewRoute,
   AuthenticatedAdminBusinessVerticalsIndexRoute:
     AuthenticatedAdminBusinessVerticalsIndexRoute,
@@ -1157,6 +1200,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAppPdfTemplatesIndexRoute,
   AuthenticatedAppTemplatesIndexRoute: AuthenticatedAppTemplatesIndexRoute,
   AuthenticatedAppTemplatesIdEditRoute: AuthenticatedAppTemplatesIdEditRoute,
+  AuthenticatedAppTemplatesIdFillRoute: AuthenticatedAppTemplatesIdFillRoute,
   AuthenticatedAppTemplatesIdPreviewRoute:
     AuthenticatedAppTemplatesIdPreviewRoute,
 }
