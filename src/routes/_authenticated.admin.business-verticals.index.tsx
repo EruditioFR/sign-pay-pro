@@ -199,20 +199,51 @@ function BusinessVerticalsPage() {
                     </div>
                   </details>
 
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center justify-between gap-2 pt-2">
                     <span className="text-xs text-muted-foreground">
                       {v.seeded.documents}/{v.documentTemplatesCount} importés
                     </span>
-                    <Button
-                      size="sm"
-                      onClick={() => seedMut.mutate(v.id as VerticalId)}
-                      disabled={seedMut.isPending}
-                      variant={fullySeeded ? "outline" : "default"}
-                    >
-                      <RefreshCw className="mr-1 h-3.5 w-3.5" />
-                      {fullySeeded ? "Mettre à jour" : "Importer les modèles"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <Plus className="mr-1 h-3.5 w-3.5" />
+                            Ajouter un modèle
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to="/admin/templates/new"
+                              search={{ vertical: v.id as VerticalId }}
+                            >
+                              <SquarePen className="mr-2 h-4 w-4" />
+                              Édition manuelle
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to="/app/templates/import"
+                              search={{ vertical: v.id as VerticalId }}
+                            >
+                              <FileUp className="mr-2 h-4 w-4" />
+                              Importer un PDF
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        size="sm"
+                        onClick={() => seedMut.mutate(v.id as VerticalId)}
+                        disabled={seedMut.isPending}
+                        variant={fullySeeded ? "outline" : "default"}
+                      >
+                        <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                        {fullySeeded ? "Mettre à jour" : "Importer les modèles"}
+                      </Button>
+                    </div>
                   </div>
+
                 </CardContent>
               </Card>
             );
