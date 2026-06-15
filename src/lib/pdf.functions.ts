@@ -19,6 +19,8 @@ interface DocRecord {
   type: string;
   title: string;
   reference: string | null;
+  document_number?: string | null;
+  invoice_number?: string | null;
   description: string | null;
   amount_ht: number | null;
   amount_ttc: number | null;
