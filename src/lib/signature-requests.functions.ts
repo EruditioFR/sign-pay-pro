@@ -71,8 +71,23 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
       const { data: org } = doc
         ? await supabaseAdmin.from("organizations").select("name").eq("id", doc.organization_id).maybeSingle()
         : { data: null };
+
+      // Joindre éventuellement un lien de paiement Stripe (le dernier pending stripe_link)
+      const { data: pay } = await supabaseAdmin
+        .from("document_payments")
+        .select("amount, currency, metadata")
+        .eq("document_id", data.document_id)
+        .eq("method", "stripe_link")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const paymentUrl = (pay?.metadata as { url?: string } | null)?.url ?? null;
+      const paymentAmountLabel = pay
+        ? new Intl.NumberFormat("fr-FR", { style: "currency", currency: pay.currency }).format(Number(pay.amount))
+        : null;
+
       const origin = getOriginFromRequest(getRequest());
-      // In sequential mode, only email the first signer; otherwise email everyone now.
       const targets = data.sequential
         ? (inserted ?? []).filter((r) => r.order_index === Math.min(...(inserted ?? []).map((x) => x.order_index)))
         : inserted ?? [];
@@ -87,6 +102,8 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
               url: `${origin}/s/${r.token}`,
               expiresAt: r.expires_at,
               senderOrg: org?.name,
+              paymentUrl,
+              paymentAmountLabel,
             }),
           }).catch((e) => console.error("signature email failed:", e)),
         ),

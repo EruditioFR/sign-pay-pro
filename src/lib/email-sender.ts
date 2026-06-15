@@ -80,9 +80,20 @@ export function renderSignatureRequestEmail(opts: {
   url: string;
   expiresAt?: string | null;
   senderOrg?: string | null;
+  paymentUrl?: string | null;
+  paymentAmountLabel?: string | null;
 }) {
   const org = opts.senderOrg ? escapeHtml(opts.senderOrg) : "Votre interlocuteur";
   const expires = opts.expiresAt ? `<p style="color:#666;font-size:12px">À signer avant le ${new Date(opts.expiresAt).toLocaleDateString("fr-FR")}.</p>` : "";
+  const payment = opts.paymentUrl
+    ? `<hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+       <h3 style="margin:0 0 8px;font-size:15px">Paiement${opts.paymentAmountLabel ? ` — ${escapeHtml(opts.paymentAmountLabel)}` : ""}</h3>
+       <p style="margin:0 0 12px;font-size:13px;color:#444">Un règlement est attendu pour ce document.</p>
+       <p style="margin:0 0 8px">
+         <a href="${opts.paymentUrl}" style="background:#0a66ff;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block">Payer en ligne</a>
+       </p>
+       <p style="font-size:12px;color:#666">Ou copiez ce lien : <br/><a href="${opts.paymentUrl}">${opts.paymentUrl}</a></p>`
+    : "";
   return `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#fff;padding:24px;color:#111">
   <div style="max-width:560px;margin:auto">
     <h2 style="margin:0 0 16px">Demande de signature</h2>
@@ -93,6 +104,7 @@ export function renderSignatureRequestEmail(opts: {
     </p>
     <p style="font-size:12px;color:#666">Ou copiez ce lien : <br/><a href="${opts.url}">${opts.url}</a></p>
     ${expires}
+    ${payment}
   </div></body></html>`;
 }
 
