@@ -24,6 +24,13 @@ const SaveAsTemplateSchema = z.object({
   notes: z.string().max(1000).optional().nullable(),
 });
 
+const CreateFromUploadSchema = z.object({
+  file: z.instanceof(File),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional().nullable(),
+  document_type: z.enum(DOC_TYPES).default("other"),
+});
+
 async function uploadPdfCopy(
   supabase: any,
   organizationId: string,
@@ -202,6 +209,96 @@ export const saveDocumentAsPdfTemplate = createServerFn({ method: "POST" })
     });
 
     return { templateId, version };
+  });
+
+export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) throw new Error("FormData attendu");
+    const file = input.get("file");
+    const parsed = CreateFromUploadSchema.parse({
+      file,
+      name: input.get("name"),
+      description: input.get("description") || null,
+      document_type: input.get("document_type") || "other",
+    });
+    return parsed;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    if (data.file.type !== "application/pdf") throw new Error("Fichier PDF attendu");
+    if (data.file.size > 25 * 1024 * 1024) throw new Error("Fichier trop volumineux (25 Mo max)");
+
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!me?.organization_id) throw new Error("Organisation introuvable");
+
+    const bytes = new Uint8Array(await data.file.arrayBuffer());
+    let pageCount = 1;
+    try {
+      const pdf = await PDFDocument.load(bytes);
+      pageCount = pdf.getPageCount();
+    } catch {
+      throw new Error("PDF illisible");
+    }
+
+    const storagePath = `${me.organization_id}/templates/${Date.now()}-${crypto.randomUUID()}.pdf`;
+    const { error: upErr } = await supabase.storage
+      .from("documents")
+      .upload(storagePath, bytes, { contentType: "application/pdf", upsert: false });
+    if (upErr) throw new Error(upErr.message);
+
+    const { data: template, error: tplErr } = await supabase
+      .from("pdf_templates")
+      .insert({
+        organization_id: me.organization_id,
+        name: data.name,
+        description: data.description ?? null,
+        document_type: data.document_type as DocumentType,
+        storage_path: storagePath,
+        file_name: data.file.name,
+        page_count: pageCount,
+        size_bytes: bytes.byteLength,
+        created_by: userId,
+      })
+      .select()
+      .single();
+    if (tplErr) throw new Error(tplErr.message);
+
+    const { data: version, error: vErr } = await supabase
+      .from("pdf_template_versions")
+      .insert({
+        template_id: template.id,
+        version: 1,
+        storage_path: storagePath,
+        file_name: data.file.name,
+        page_count: pageCount,
+        size_bytes: bytes.byteLength,
+        is_current: true,
+        created_by: userId,
+      })
+      .select()
+      .single();
+    if (vErr) throw new Error(vErr.message);
+
+    await supabase
+      .from("pdf_templates")
+      .update({ current_version_id: version.id, updated_at: new Date().toISOString() })
+      .eq("id", template.id);
+
+    await supabase.from("audit_logs").insert({
+      organization_id: me.organization_id,
+      user_id: userId,
+      action: "pdf_template.uploaded",
+      resource: `pdf_template:${template.id}`,
+      metadata: { version_id: version.id, file_name: data.file.name, pages: pageCount },
+    });
+
+    return { template: { ...template, current_version_id: version.id }, version };
   });
 
 export const listPdfTemplates = createServerFn({ method: "GET" })
