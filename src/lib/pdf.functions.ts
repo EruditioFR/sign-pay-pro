@@ -92,9 +92,11 @@ export async function buildDocumentPdf(
     other: "DOCUMENT",
   };
   page.drawText(typeLabel[doc.type] || "DOCUMENT", { x: left, y, size: 22, font: fontBold, color: dark });
-  if (doc.reference) {
-    page.drawText(`N° ${doc.reference}`, { x: left, y: y - 18, size: 10, font, color: muted });
+  const legalNumber = doc.document_number ?? doc.invoice_number ?? doc.reference ?? null;
+  if (legalNumber) {
+    page.drawText(`N° ${legalNumber}`, { x: left, y: y - 18, size: 10, font: fontBold, color: dark });
   }
+
 
   // Right block: dates
   let yr = y;
