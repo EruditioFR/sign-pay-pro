@@ -514,6 +514,7 @@ export type Database = {
         Row: {
           active: boolean
           bic: string | null
+          body_html: string | null
           business_vertical: string | null
           canvas_schema: Json | null
           created_at: string
@@ -533,6 +534,7 @@ export type Database = {
           page_orientation: string
           payment_terms: string | null
           primary_color: string | null
+          required_fields: string[] | null
           source_mime: string | null
           source_page_count: number | null
           source_storage_path: string | null
@@ -542,6 +544,7 @@ export type Database = {
         Insert: {
           active?: boolean
           bic?: string | null
+          body_html?: string | null
           business_vertical?: string | null
           canvas_schema?: Json | null
           created_at?: string
@@ -561,6 +564,7 @@ export type Database = {
           page_orientation?: string
           payment_terms?: string | null
           primary_color?: string | null
+          required_fields?: string[] | null
           source_mime?: string | null
           source_page_count?: number | null
           source_storage_path?: string | null
@@ -570,6 +574,7 @@ export type Database = {
         Update: {
           active?: boolean
           bic?: string | null
+          body_html?: string | null
           business_vertical?: string | null
           canvas_schema?: Json | null
           created_at?: string
@@ -589,6 +594,7 @@ export type Database = {
           page_orientation?: string
           payment_terms?: string | null
           primary_color?: string | null
+          required_fields?: string[] | null
           source_mime?: string | null
           source_page_count?: number | null
           source_storage_path?: string | null
