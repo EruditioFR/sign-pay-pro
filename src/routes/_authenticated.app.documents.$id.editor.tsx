@@ -65,6 +65,24 @@ const KIND_META: Record<PdfFieldKind, { label: string; w: number; h: number; ico
   initials: { label: "Paraphe", w: 60, h: 40, icon: Initials },
 };
 
+const DYNAMIC_VARIABLES: { key: string; label: string }[] = [
+  { key: "third_party_name", label: "Nom destinataire" },
+  { key: "third_party_email", label: "Email destinataire" },
+  { key: "title", label: "Titre document" },
+  { key: "reference", label: "Référence" },
+  { key: "document_number", label: "N° document" },
+  { key: "invoice_number", label: "N° facture" },
+  { key: "amount_ht", label: "Montant HT" },
+  { key: "amount_ttc", label: "Montant TTC" },
+  { key: "currency", label: "Devise" },
+  { key: "issue_date", label: "Date d'émission" },
+  { key: "due_date", label: "Date d'échéance" },
+  { key: "today", label: "Date du jour" },
+  { key: "now", label: "Date/heure actuelle" },
+];
+
+type Tool = PdfFieldKind | "select";
+
 export const Route = createFileRoute("/_authenticated/app/documents/$id/editor")({
   component: PdfEditorPage,
 });
