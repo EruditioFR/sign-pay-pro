@@ -171,7 +171,7 @@ function AdminDashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.byType}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="type" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                    <XAxis dataKey="type" fontSize={11} stroke="hsl(var(--muted-foreground))" tickFormatter={(v: string) => t(`documents.types.${v}`, { defaultValue: v })} />
                     <YAxis allowDecimals={false} fontSize={11} stroke="hsl(var(--muted-foreground))" />
                     <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
                     <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
