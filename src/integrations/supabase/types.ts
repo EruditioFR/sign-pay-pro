@@ -515,6 +515,7 @@ export type Database = {
           active: boolean
           bic: string | null
           business_vertical: string | null
+          canvas_schema: Json | null
           created_at: string
           document_type: Database["public"]["Enums"]["document_type"] | null
           footer_html: string | null
@@ -526,6 +527,8 @@ export type Database = {
           logo_url: string | null
           name: string
           organization_id: string
+          page_format: string
+          page_orientation: string
           payment_terms: string | null
           primary_color: string | null
           updated_at: string
@@ -535,6 +538,7 @@ export type Database = {
           active?: boolean
           bic?: string | null
           business_vertical?: string | null
+          canvas_schema?: Json | null
           created_at?: string
           document_type?: Database["public"]["Enums"]["document_type"] | null
           footer_html?: string | null
@@ -546,6 +550,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           organization_id: string
+          page_format?: string
+          page_orientation?: string
           payment_terms?: string | null
           primary_color?: string | null
           updated_at?: string
@@ -555,6 +561,7 @@ export type Database = {
           active?: boolean
           bic?: string | null
           business_vertical?: string | null
+          canvas_schema?: Json | null
           created_at?: string
           document_type?: Database["public"]["Enums"]["document_type"] | null
           footer_html?: string | null
@@ -566,6 +573,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           organization_id?: string
+          page_format?: string
+          page_orientation?: string
           payment_terms?: string | null
           primary_color?: string | null
           updated_at?: string

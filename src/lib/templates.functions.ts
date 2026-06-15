@@ -104,3 +104,153 @@ export const deleteDocumentTemplate = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// =============================================================================
+// Visual canvas editor — save / load / instantiate
+// =============================================================================
+
+import { CanvasSchema, type Canvas } from "@/lib/template-canvas/schema";
+import { renderCanvasToHtml } from "@/lib/template-canvas/render";
+
+const SaveCanvasSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1).max(120),
+  page_format: z.enum(["A4", "A5", "LETTER"]).default("A4"),
+  page_orientation: z.enum(["portrait", "landscape"]).default("portrait"),
+  canvas: CanvasSchema,
+});
+
+export const saveTemplateCanvas = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SaveCanvasSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!me?.organization_id) throw new Error("Organisation introuvable");
+
+    const canvasJson = JSON.parse(JSON.stringify(data.canvas)) as Record<string, unknown>;
+    const payload = {
+      organization_id: me.organization_id,
+      name: data.name,
+      page_format: data.page_format,
+      page_orientation: data.page_orientation,
+      canvas_schema: canvasJson,
+    } as never;
+
+    if (data.id) {
+      const { data: tpl, error } = await supabase
+        .from("document_templates")
+        .update({
+          name: data.name,
+          page_format: data.page_format,
+          page_orientation: data.page_orientation,
+          canvas_schema: canvasJson,
+        } as never)
+        .eq("id", data.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return { template: tpl };
+    }
+    const { data: tpl, error } = await supabase
+      .from("document_templates")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { template: tpl };
+  });
+
+const InstantiateSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1).max(200).optional(),
+  values: z.record(z.string(), z.union([z.string(), z.number(), z.null()])).optional(),
+});
+
+/**
+ * Create a real document (draft) from a visual template.
+ * - Reads the template canvas
+ * - Resolves dynamic variables (issuer / system; client / document left empty by default)
+ * - Renders an HTML snapshot saved to wysiwyg_drafts
+ * - Returns the new document id + draft id
+ */
+export const instantiateTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => InstantiateSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!me?.organization_id) throw new Error("Organisation introuvable");
+
+    const { data: tpl, error: tplErr } = await supabase
+      .from("document_templates")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (tplErr) throw new Error(tplErr.message);
+    if (!tpl) throw new Error("Modèle introuvable");
+
+    const parsed = CanvasSchema.safeParse(tpl.canvas_schema);
+    if (!parsed.success) throw new Error("Le modèle ne contient pas de canevas valide");
+    const canvas: Canvas = parsed.data;
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name, siret, vat_number, address_line1, iban, bic")
+      .eq("id", me.organization_id)
+      .maybeSingle();
+
+    const now = new Date();
+    const values: Record<string, string> = {
+      "issuer.company": org?.name ?? "",
+      "issuer.address": org?.address_line1 ?? "",
+      "issuer.siret": org?.siret ?? "",
+      "issuer.vat_number": org?.vat_number ?? "",
+      "issuer.iban": org?.iban ?? "",
+      "issuer.bic": org?.bic ?? "",
+      "issuer.email": "",
+      "issuer.phone": "",
+      "system.today": now.toISOString().slice(0, 10),
+      "system.now": now.toISOString(),
+      ...(data.values ?? {} as Record<string, string>),
+    };
+
+    const html = renderCanvasToHtml(canvas, values);
+    const title = data.title?.trim() || tpl.name || "Document";
+
+    const { data: doc, error: docErr } = await supabase
+      .from("documents")
+      .insert({
+        organization_id: me.organization_id,
+        created_by: userId,
+        title,
+        type: ((tpl.document_type as "contract" | "invoice" | "other" | "purchase_order" | "quote" | null) ?? "other"),
+        status: "draft",
+      })
+      .select("id")
+      .single();
+    if (docErr) throw new Error(docErr.message);
+
+    const { data: draft, error: draftErr } = await supabase
+      .from("wysiwyg_drafts")
+      .insert({
+        organization_id: me.organization_id,
+        created_by: userId,
+        title,
+        html,
+        document_id: doc.id,
+      })
+      .select("id")
+      .single();
+    if (draftErr) throw new Error(draftErr.message);
+
+    return { documentId: doc.id, draftId: draft.id };
+  });
