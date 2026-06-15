@@ -16,6 +16,16 @@
     "clients": "Clients",
     "profile": "Mon profil"
   },
+  "nav_group": {
+    "overview": "Vue d'ensemble",
+    "documents": "Documents & signatures",
+    "workflows": "Workflows & validation",
+    "organization": "Organisation",
+    "admin": "Administration",
+    "profile": "Profil",
+    "organizations": "Organisations",
+    "security": "Sécurité"
+  },
   "landing": {
     "hero_title": "Gérez vos documents commerciaux de bout en bout.",
     "hero_subtitle": "Création, validation, signature électronique et paiement — sur une seule plateforme multi-tenant et conforme.",
