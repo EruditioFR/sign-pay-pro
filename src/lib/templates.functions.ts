@@ -203,7 +203,7 @@ export const instantiateTemplate = createServerFn({ method: "POST" })
 
     const { data: org } = await supabase
       .from("organizations")
-      .select("name, siret, vat_number, address_line1, iban, bic, email, phone")
+      .select("name, siret, vat_number, address_line1, iban, bic")
       .eq("id", me.organization_id)
       .maybeSingle();
 
