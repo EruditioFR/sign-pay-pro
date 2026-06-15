@@ -25,8 +25,54 @@ import {
   INVOICE_TYPE_CODES,
   PAYMENT_MEANS_CODES,
   VAT_CATEGORIES,
+  type EinvoiceProfile,
   type ReadinessIssue,
 } from "@/lib/einvoice";
+
+// ---------------------------------------------------------------------------
+// Profil Factur-X → URN guideline (BT-24)
+// ---------------------------------------------------------------------------
+
+const PROFILE_URNS: Record<EinvoiceProfile, string> = {
+  minimum:  "urn:factur-x.eu:1p0:minimum",
+  basic_wl: "urn:factur-x.eu:1p0:basicwl",
+  basic:    "urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic",
+  en16931:  "urn:cen.eu:en16931:2017",
+  extended: "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended",
+};
+
+/**
+ * Validation structurelle légère du XML CII (substitut au XSD officiel,
+ * non chargeable dans workerd). Vérifie l'existence des blocs EN 16931
+ * obligatoires et l'équilibre des balises. Renvoie la liste des erreurs.
+ */
+export function validateCiiXmlStructure(xml: string): string[] {
+  const errors: string[] = [];
+  if (!xml.startsWith("<?xml")) errors.push("Prologue XML manquant");
+  if (!xml.includes("<rsm:CrossIndustryInvoice")) errors.push("Racine CrossIndustryInvoice absente");
+
+  const required: Array<[string, string]> = [
+    ["ram:ID", "BT-1 numéro de facture"],
+    ["ram:TypeCode", "BT-3 code type"],
+    ["ram:IssueDateTime", "BT-2 date d'émission"],
+    ["ram:SellerTradeParty", "BG-4 vendeur"],
+    ["ram:BuyerTradeParty", "BG-7 acheteur"],
+    ["ram:InvoiceCurrencyCode", "BT-5 devise"],
+    ["ram:GrandTotalAmount", "BT-112 total TTC"],
+    ["ram:TaxBasisTotalAmount", "BT-109 total HT"],
+    ["ram:TaxTotalAmount", "BT-110 total TVA"],
+  ];
+  for (const [tagName, label] of required) {
+    if (!xml.includes(`<${tagName}`)) errors.push(`Champ obligatoire manquant : ${label}`);
+  }
+
+  const opens = xml.match(/<([a-zA-Z][\w:-]*)(\s[^>]*)?(?<!\/)>/g) ?? [];
+  const closes = xml.match(/<\/([a-zA-Z][\w:-]*)>/g) ?? [];
+  if (opens.length !== closes.length) {
+    errors.push(`Balises non équilibrées (${opens.length} ouvertes / ${closes.length} fermées)`);
+  }
+  return errors;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers XML
