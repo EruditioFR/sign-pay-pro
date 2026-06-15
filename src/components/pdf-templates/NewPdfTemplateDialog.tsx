@@ -49,6 +49,8 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
   const [documentType, setDocumentType] = useState("other");
   const [file, setFile] = useState<File | null>(null);
 
+  const [sp, setSp] = useState<SignersPaymentValue>(emptySignersPaymentValue());
+
   const mut = useMutation({
     mutationFn: async () => {
       if (!file) throw new Error("Sélectionnez un PDF");
@@ -66,7 +68,13 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
             title: name.trim() || file.name.replace(/\.pdf$/i, ""),
           },
         });
-        return { templateId, documentId: inst.document.id as string };
+        const documentId = inst.document.id as string;
+        await applySignersAndPayment(sp, {
+          documentId,
+          title: name.trim() || file.name.replace(/\.pdf$/i, ""),
+          currency: "EUR",
+        });
+        return { templateId, documentId };
       }
       return { templateId, documentId: null as string | null };
     },
@@ -78,6 +86,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       setDescription("");
       setDocumentType("other");
       setFile(null);
+      setSp(emptySignersPaymentValue());
       if (documentId) {
         toast.success("PDF importé — placez vos zones à saisir / signer");
         navigate({ to: "/app/documents/$id/editor", params: { id: documentId } });
