@@ -58,16 +58,15 @@ function NewDocumentPage() {
 
       {/* 3 main actions inspired by Signova execution actions */}
       <section className="grid gap-3 md:grid-cols-3">
-        <StartOptionCard
-          icon={<LayoutTemplate className="h-5 w-5" />}
-          title="Partir d'un modèle"
-          description="Réutilisez un PDF déjà importé (devis, facture, contrat, CERFA…)."
-          accent
-          onClick={() => {
-            document.getElementById("template-picker")?.scrollIntoView({ behavior: "smooth" });
-          }}
-          cta="Voir les modèles"
-        />
+        <Link to="/admin/business-verticals" className="block">
+          <StartOptionCard
+            icon={<LayoutTemplate className="h-5 w-5" />}
+            title="Partir d'un modèle"
+            description="Parcourez la bibliothèque des modèles par secteur métier."
+            accent
+            cta="Voir les modèles"
+          />
+        </Link>
         <NewPdfTemplateDialog
           trigger={
             <button type="button" className="text-left">
