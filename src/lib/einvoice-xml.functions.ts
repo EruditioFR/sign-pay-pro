@@ -110,6 +110,7 @@ function fmtDate(iso: string | null | undefined): string | null {
 // ---------------------------------------------------------------------------
 
 interface BuildInput {
+  profile?: EinvoiceProfile;
   doc: {
     id: string;
     invoice_number: string | null;
