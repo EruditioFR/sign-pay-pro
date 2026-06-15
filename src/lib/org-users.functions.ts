@@ -95,6 +95,54 @@ export const createOrgUser = createServerFn({ method: "POST" })
       await supabaseAdmin.from("organizations").delete().eq("id", autoOrgId);
     }
 
+    // Welcome / invitation email — best effort, never breaks user creation.
+    if (data.email && data.email.length > 0) {
+      try {
+        const { sendResendEmail, renderUserInviteEmail, getOriginFromRequest } = await import(
+          "@/lib/email-sender"
+        );
+        const { getRequest } = await import("@tanstack/react-start/server");
+        const origin = getOriginFromRequest(getRequest());
+        const [{ data: org }, { data: inviter }] = await Promise.all([
+          supabaseAdmin.from("organizations").select("name").eq("id", organizationId).maybeSingle(),
+          supabaseAdmin.from("profiles").select("full_name").eq("id", context.userId).maybeSingle(),
+        ]);
+        await sendResendEmail({
+          to: data.email,
+          subject: `Invitation à rejoindre ${org?.name ?? "votre organisation"}`,
+          html: renderUserInviteEmail({
+            fullName: data.fullName,
+            email: data.email,
+            temporaryPassword: data.password,
+            loginUrl: origin ? `${origin}/auth` : "/auth",
+            inviterOrg: org?.name ?? null,
+            inviterName: inviter?.full_name ?? null,
+            role: data.role,
+          }),
+        });
+        await supabaseAdmin.from("audit_logs").insert({
+          organization_id: organizationId,
+          user_id: context.userId,
+          action: "user.invited",
+          resource: `user:${newUserId}`,
+          metadata: { email: data.email, role: data.role },
+        });
+      } catch (e) {
+        console.error("invite email failed", e);
+        try {
+          const { reportServerError } = await import("@/lib/observability.server");
+          void reportServerError(e, {
+            source: "org_users.invite_email",
+            category: "technical",
+            organizationId,
+            context: { newUserId, email: data.email },
+          });
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
     return { userId: newUserId };
   });
 

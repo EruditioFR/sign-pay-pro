@@ -47,6 +47,7 @@ import { Route as AuthenticatedAdminBusinessVerticalsIndexRouteImport } from './
 import { Route as ApiPublicSignRequestTokenRouteImport } from './routes/api/public/sign-request.$token'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicCronSignatureRemindersRouteImport } from './routes/api/public/cron/signature-reminders'
 import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
@@ -261,6 +262,12 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronSignatureRemindersRoute =
+  ApiPublicCronSignatureRemindersRouteImport.update({
+    id: '/api/public/cron/signature-reminders',
+    path: '/api/public/cron/signature-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppDocumentsWysiwygRoute =
   AuthenticatedAppDocumentsWysiwygRouteImport.update({
     id: '/app/documents/wysiwyg',
@@ -346,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
@@ -393,6 +401,7 @@ export interface FileRoutesByTo {
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
@@ -442,6 +451,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
   '/api/public/sign-request/$token': typeof ApiPublicSignRequestTokenRoute
@@ -491,6 +501,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/api/public/cron/signature-reminders'
     | '/api/public/payments/webhook'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
@@ -538,6 +549,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/api/public/cron/signature-reminders'
     | '/api/public/payments/webhook'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
@@ -586,6 +598,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
     | '/_authenticated/app/documents/wysiwyg'
+    | '/api/public/cron/signature-reminders'
     | '/api/public/payments/webhook'
     | '/api/public/share/$token'
     | '/api/public/sign-request/$token'
@@ -611,6 +624,7 @@ export interface RootRouteChildren {
   PaySuccessRoute: typeof PaySuccessRoute
   STokenRoute: typeof STokenRoute
   GuestIndexRoute: typeof GuestIndexRoute
+  ApiPublicCronSignatureRemindersRoute: typeof ApiPublicCronSignatureRemindersRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicShareTokenRoute: typeof ApiPublicShareTokenRoute
   ApiPublicSignRequestTokenRoute: typeof ApiPublicSignRequestTokenRoute
@@ -884,6 +898,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/signature-reminders': {
+      id: '/api/public/cron/signature-reminders'
+      path: '/api/public/cron/signature-reminders'
+      fullPath: '/api/public/cron/signature-reminders'
+      preLoaderRoute: typeof ApiPublicCronSignatureRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/documents/wysiwyg': {
       id: '/_authenticated/app/documents/wysiwyg'
       path: '/app/documents/wysiwyg'
@@ -1046,6 +1067,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaySuccessRoute: PaySuccessRoute,
   STokenRoute: STokenRoute,
   GuestIndexRoute: GuestIndexRoute,
+  ApiPublicCronSignatureRemindersRoute: ApiPublicCronSignatureRemindersRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicShareTokenRoute: ApiPublicShareTokenRoute,
   ApiPublicSignRequestTokenRoute: ApiPublicSignRequestTokenRoute,
