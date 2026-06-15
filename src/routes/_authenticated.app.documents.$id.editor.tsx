@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
-  CheckSquare, PenLine, Signature, Loader2,
+  CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl } from "@/lib/sharing.functions";
