@@ -426,7 +426,7 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         .eq("document_id", doc.id),
     ]);
 
-    // 4) Validation minimale (warnings non bloquants)
+    // 4) Validation minimale legacy (compat UI existante)
     const issues: ReadinessIssue[] = checkEinvoiceReadiness({
       invoice_number: doc.invoice_number,
       invoice_type_code: doc.invoice_type_code,
@@ -440,8 +440,8 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
       buyer_legal_name: doc.buyer_legal_name ?? doc.third_party_name,
     });
 
-    // 5) Génération XML
-    const xml = buildCiiXml({
+    // 4b) Construire l'input CII normalisé
+    const buildInput: CiiBuildInput = {
       profile: data.profile,
       doc: {
         id: doc.id,
@@ -500,11 +500,29 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         vat_amount: Number(v.vat_amount ?? 0),
         exemption_reason: v.exemption_reason,
       })),
-    });
+    };
+
+    // 4c) Validation Factur-X complète (SIRET, TVA, adresses, totaux, mentions)
+    const validation = validateFacturXInput(buildInput);
+    if (data.strict && !validation.ok) {
+      throw new Error(formatValidationErrors(validation));
+    }
+    const validationIssues: ValidationIssue[] = [...validation.errors, ...validation.warnings];
+    for (const v of validationIssues) {
+      issues.push({ field: v.field, message: `[${v.code}] ${v.message}` });
+    }
+
+    // 5) Génération XML
+    const xml = buildCiiXml(buildInput);
 
     // 5b) Validation structurelle (substitut XSD côté serverless)
     const structureErrors = validateCiiXmlStructure(xml);
     for (const err of structureErrors) issues.push({ field: "xml", message: err });
+    if (data.strict && structureErrors.length > 0) {
+      throw new Error(
+        `XML CII structurellement invalide :\n${structureErrors.map((e) => `  • ${e}`).join("\n")}`,
+      );
+    }
 
     const invoiceNumber = doc.invoice_number ?? doc.reference ?? doc.id.slice(0, 8);
     const filename = `factur-x-${data.profile}-${String(invoiceNumber).replace(/[^A-Za-z0-9._-]/g, "_")}.xml`;
@@ -528,7 +546,12 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
         to_status: "ready",
         source: "internal",
         reason: `CII XML generated (profile=${data.profile})`,
-        payload: { user_id: userId, issues_count: issues.length, profile: data.profile },
+        payload: {
+          user_id: userId,
+          issues_count: issues.length,
+          profile: data.profile,
+          warnings: validation.warnings.length,
+        },
       });
     }
 
@@ -538,5 +561,6 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
       profile: data.profile,
       format: "factur_x" as const,
       issues,
+      validation,
     };
   });
