@@ -269,9 +269,9 @@
     }
   },
   "templates": {
-    "title": "Modèles PDF",
-    "subtitle": "Personnalisez l'apparence de vos documents générés.",
-    "new": "Nouveau modèle",
+    "title": "Modèles de marque",
+    "subtitle": "Personnalisez l'apparence de vos factures, devis et bons générés.",
+    "new": "Nouveau modèle de marque",
     "name": "Nom",
     "type": "Type de document",
     "primary_color": "Couleur principale",

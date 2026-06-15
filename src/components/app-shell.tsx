@@ -94,7 +94,7 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
           items: [
             { to: "/app/documents", label: t("nav_extra.documents"), icon: FileText },
             { to: "/app/pending-signatures", label: "Signatures en attente", icon: PenLine },
-            { to: "/admin/templates", label: t("nav_extra.templates"), icon: FileText },
+            { to: "/app/pdf-templates", label: t("nav_extra.templates"), icon: FileText },
           ],
         },
         {
