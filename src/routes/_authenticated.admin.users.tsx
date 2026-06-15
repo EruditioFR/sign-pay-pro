@@ -95,7 +95,6 @@ function UsersPage() {
   };
 
   const onDelete = async (u: OrgUser) => {
-    if (!confirm(`Supprimer définitivement ${u.email} ?`)) return;
     try {
       await remove({ data: { userId: u.id } });
       toast.success("Utilisateur supprimé.");
