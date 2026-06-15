@@ -19,6 +19,12 @@ import {
   createPdfTemplateFromUpload,
   createDocumentFromPdfTemplate,
 } from "@/lib/pdf-templates.functions";
+import {
+  SignersPaymentFields,
+  emptySignersPaymentValue,
+  applySignersAndPayment,
+  type SignersPaymentValue,
+} from "@/components/documents/SignersPaymentFields";
 
 interface Props {
   trigger?: ReactNode;
