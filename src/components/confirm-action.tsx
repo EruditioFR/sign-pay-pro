@@ -21,7 +21,7 @@ interface ConfirmActionProps {
   cancelLabel?: string;
   /** Destructive styling (red confirm button). Defaults to true. */
   destructive?: boolean;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => unknown | Promise<unknown>;
   disabled?: boolean;
 }
 
