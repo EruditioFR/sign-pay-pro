@@ -181,6 +181,10 @@ function FillOverlayPage() {
             </div>
           </Card>
 
+          <Card className="p-3">
+            <SignersPaymentFields value={sp} onChange={setSp} compact />
+          </Card>
+
           <Card className="p-3 space-y-2">
             <Button
               className="w-full"
