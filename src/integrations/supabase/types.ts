@@ -773,6 +773,7 @@ export type Database = {
           payment_means_code: string | null
           payment_terms: string | null
           pdp_provider: string | null
+          pdp_status: Database["public"]["Enums"]["pdp_status"]
           pdp_transmission_id: string | null
           previous_status: Database["public"]["Enums"]["document_status"] | null
           reference: string | null
@@ -834,6 +835,7 @@ export type Database = {
           payment_means_code?: string | null
           payment_terms?: string | null
           pdp_provider?: string | null
+          pdp_status?: Database["public"]["Enums"]["pdp_status"]
           pdp_transmission_id?: string | null
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
@@ -897,6 +899,7 @@ export type Database = {
           payment_means_code?: string | null
           payment_terms?: string | null
           pdp_provider?: string | null
+          pdp_status?: Database["public"]["Enums"]["pdp_status"]
           pdp_transmission_id?: string | null
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
@@ -1887,6 +1890,12 @@ export type Database = {
         | "error"
         | "cancelled"
       pdf_field_kind: "text" | "date" | "checkbox" | "signature" | "initials"
+      pdp_status:
+        | "pending"
+        | "submitted"
+        | "acknowledged"
+        | "rejected"
+        | "error"
       signature_level: "ses" | "aes" | "qes"
       signature_request_status: "pending" | "signed" | "declined" | "cancelled"
       workflow_step_status: "pending" | "approved" | "rejected" | "skipped"
@@ -2061,6 +2070,7 @@ export const Constants = {
         "cancelled",
       ],
       pdf_field_kind: ["text", "date", "checkbox", "signature", "initials"],
+      pdp_status: ["pending", "submitted", "acknowledged", "rejected", "error"],
       signature_level: ["ses", "aes", "qes"],
       signature_request_status: ["pending", "signed", "declined", "cancelled"],
       workflow_step_status: ["pending", "approved", "rejected", "skipped"],
