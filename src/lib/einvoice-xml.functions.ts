@@ -193,6 +193,8 @@ function pickAddress(
 
 function buildCiiXml(input: BuildInput): string {
   const { doc, org, lines, vat_breakdown } = input;
+  const profile: EinvoiceProfile = input.profile ?? "en16931";
+  const guidelineUrn = PROFILE_URNS[profile];
 
   const invoiceNumber = doc.invoice_number ?? doc.reference ?? doc.id.slice(0, 8);
   const typeCode = doc.invoice_type_code ?? INVOICE_TYPE_CODES.COMMERCIAL_INVOICE;
