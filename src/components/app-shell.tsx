@@ -163,42 +163,51 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
 }
 
 function NavList({
-  items,
+  groups,
   pathname,
   approvalsCount,
   onItemClick,
 }: {
-  items: NavItem[];
+  groups: NavGroup[];
   pathname: string;
   approvalsCount: number;
   onItemClick?: () => void;
 }) {
   return (
-    <nav className="flex-1 space-y-1 p-3">
-      {items.map((item) => {
-        const active = pathname === item.to;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              active
-                ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            <span className="flex-1">{item.label}</span>
-            {item.badgeKey === "approvals" && approvalsCount > 0 && (
-              <Badge variant="default" className="h-5 px-1.5 text-[10px]">
-                {approvalsCount}
-              </Badge>
-            )}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 space-y-6 overflow-y-auto p-3">
+      {groups.map((group) => (
+        <div key={group.title}>
+          <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {group.title}
+          </div>
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const active = pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={onItemClick}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
+                    active
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badgeKey === "approvals" && approvalsCount > 0 && (
+                    <Badge variant="default" className="h-5 px-1.5 text-[10px]">
+                      {approvalsCount}
+                    </Badge>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }
