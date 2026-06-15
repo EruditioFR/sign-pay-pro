@@ -38,6 +38,7 @@ import { Route as AuthenticatedAppAnalyticsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated.admin.settings'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated.admin.roles'
+import { Route as AuthenticatedAdminPdpQueueRouteImport } from './routes/_authenticated.admin.pdp-queue'
 import { Route as AuthenticatedAppPdfTemplatesIndexRouteImport } from './routes/_authenticated.app.pdf-templates.index'
 import { Route as AuthenticatedAppDraftsIndexRouteImport } from './routes/_authenticated.app.drafts.index'
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
@@ -209,6 +210,12 @@ const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
   path: '/admin/roles',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminPdpQueueRoute =
+  AuthenticatedAdminPdpQueueRouteImport.update({
+    id: '/admin/pdp-queue',
+    path: '/admin/pdp-queue',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppPdfTemplatesIndexRoute =
   AuthenticatedAppPdfTemplatesIndexRouteImport.update({
     id: '/app/pdf-templates/',
@@ -330,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/pay/success': typeof PaySuccessRoute
   '/s/$token': typeof STokenRoute
   '/guest/': typeof GuestIndexRoute
+  '/admin/pdp-queue': typeof AuthenticatedAdminPdpQueueRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -378,6 +386,7 @@ export interface FileRoutesByTo {
   '/pay/success': typeof PaySuccessRoute
   '/s/$token': typeof STokenRoute
   '/guest': typeof GuestIndexRoute
+  '/admin/pdp-queue': typeof AuthenticatedAdminPdpQueueRoute
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -428,6 +437,7 @@ export interface FileRoutesById {
   '/pay/success': typeof PaySuccessRoute
   '/s/$token': typeof STokenRoute
   '/guest/': typeof GuestIndexRoute
+  '/_authenticated/admin/pdp-queue': typeof AuthenticatedAdminPdpQueueRoute
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/s/$token'
     | '/guest/'
+    | '/admin/pdp-queue'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -526,6 +537,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/s/$token'
     | '/guest'
+    | '/admin/pdp-queue'
     | '/admin/roles'
     | '/admin/settings'
     | '/admin/users'
@@ -575,6 +587,7 @@ export interface FileRouteTypes {
     | '/pay/success'
     | '/s/$token'
     | '/guest/'
+    | '/_authenticated/admin/pdp-queue'
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
@@ -835,6 +848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/pdp-queue': {
+      id: '/_authenticated/admin/pdp-queue'
+      path: '/admin/pdp-queue'
+      fullPath: '/admin/pdp-queue'
+      preLoaderRoute: typeof AuthenticatedAdminPdpQueueRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/pdf-templates/': {
       id: '/_authenticated/app/pdf-templates/'
       path: '/app/pdf-templates'
@@ -981,6 +1001,7 @@ const AuthenticatedAppDocumentsIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedAdminPdpQueueRoute: typeof AuthenticatedAdminPdpQueueRoute
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -1014,6 +1035,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedAdminPdpQueueRoute: AuthenticatedAdminPdpQueueRoute,
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
