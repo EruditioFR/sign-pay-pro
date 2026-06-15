@@ -191,7 +191,8 @@ function pickAddress(
   };
 }
 
-function buildCiiXml(input: BuildInput): string {
+export type CiiBuildInput = BuildInput;
+export function buildCiiXml(input: BuildInput): string {
   const { doc, org, lines, vat_breakdown } = input;
   const profile: EinvoiceProfile = input.profile ?? "en16931";
   const guidelineUrn = PROFILE_URNS[profile];

@@ -23,6 +23,32 @@ import { z } from "zod";
 export type LegalDocumentKind = "invoice" | "quote" | "credit_note";
 
 /**
+ * Formate un numéro légal selon la convention PREFIX-YYYY-NNNN.
+ * Pur, sans I/O — sert de source de vérité pour les tests et l'aperçu UI.
+ */
+export function formatLegalNumber(args: {
+  prefix: string;
+  year: number;
+  sequence: number;
+  padWidth?: number;
+}): string {
+  const pad = Math.max(1, Math.min(10, args.padWidth ?? 4));
+  if (!/^[A-Za-z0-9_-]+$/.test(args.prefix)) {
+    throw new Error(`Invalid prefix: ${args.prefix}`);
+  }
+  if (!Number.isInteger(args.year) || args.year < 1900 || args.year > 9999) {
+    throw new Error(`Invalid year: ${args.year}`);
+  }
+  if (!Number.isInteger(args.sequence) || args.sequence < 1) {
+    throw new Error(`Invalid sequence: ${args.sequence}`);
+  }
+  return `${args.prefix}-${args.year}-${String(args.sequence).padStart(pad, "0")}`;
+}
+
+/** Regex de validation du format légal généré. */
+export const LEGAL_NUMBER_REGEX = /^[A-Za-z0-9_-]+-\d{4}-\d{1,10}$/;
+
+/**
  * `true` si le document doit obligatoirement recevoir un numéro légal.
  * (factures, avoirs, devis — pas les bons de commande / contrats / autres)
  */
