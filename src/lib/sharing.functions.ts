@@ -166,17 +166,43 @@ export const recordManualPayment = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => RecordPaymentSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+
+    // Load doc + clamp against remaining due so we never let two paths
+    // (manual + Stripe webhook, or two manual entries) double-mark a
+    // document as paid. Uses the same helpers as the public payment route
+    // — single source of truth.
+    const { data: doc, error: docErr } = await supabase
+      .from("documents")
+      .select("id, status, amount_ttc, amount_ht, currency")
+      .eq("id", data.document_id)
+      .maybeSingle();
+    if (docErr) throw new Error(docErr.message);
+    if (!doc) throw new Error("document_not_found");
+
+    const { computeRemainingDue, clampPayableAmount } = await import(
+      "@/lib/public-routes-security"
+    );
+    const remaining = await computeRemainingDue(supabase, doc);
+    if (remaining <= 0) {
+      throw new Error("document_already_paid");
+    }
+    const clamped = clampPayableAmount(data.amount, remaining);
+    if (clamped == null) {
+      throw new Error("amount_out_of_range");
+    }
+
     const { data: payment, error } = await supabase
       .from("document_payments")
       .insert({
         document_id: data.document_id,
-        amount: data.amount,
+        amount: clamped,
         currency: data.currency,
         method: data.method,
         status: "succeeded",
         provider_ref: data.provider_ref || null,
         paid_at: data.paid_at || new Date().toISOString(),
         recorded_by: userId,
+        metadata: { provider: "manual", source: "internal_ui" },
       })
       .select()
       .single();
@@ -191,7 +217,7 @@ export const recordManualPayment = createServerFn({ method: "POST" })
       console.error("[recordManualPayment] notify failed", e);
     }
 
-    return { payment };
+    return { payment, clamped_amount: clamped, requested_amount: data.amount };
   });
 
 export const getSignedPdfUrl = createServerFn({ method: "POST" })
