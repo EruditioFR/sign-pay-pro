@@ -165,6 +165,18 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             .from("document_signature_requests")
             .update({ status: "declined", decline_reason: body.reason ?? null })
             .eq("id", req.id);
+          try {
+            const { notifySignatureDeclined } = await import("@/lib/signature-notifications.server");
+            void notifySignatureDeclined(
+              supabaseAdmin,
+              req.document_id,
+              req.signer_name,
+              req.signer_email,
+              body.reason ?? null,
+            );
+          } catch (e) {
+            console.error("notifySignatureDeclined failed", e);
+          }
           return json({ ok: true });
         }
 
@@ -357,6 +369,32 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             signature_id: sig.id,
           })
           .eq("id", req.id);
+
+        // Fire-and-forget post-signature notifications.
+        try {
+          const origin =
+            (request.headers.get("origin") ||
+              (request.headers.get("host")
+                ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
+                : null));
+          const mod = await import("@/lib/signature-notifications.server");
+          // If sequential, advance to next signer.
+          if (req.sequential) {
+            void mod.notifyNextSequentialSigner(supabaseAdmin, req.document_id, origin);
+          }
+          // If all signers are done → notify everyone.
+          const { data: pendingLeft } = await supabaseAdmin
+            .from("document_signature_requests")
+            .select("id")
+            .eq("document_id", req.document_id)
+            .eq("status", "pending")
+            .limit(1);
+          if (!pendingLeft || pendingLeft.length === 0) {
+            void mod.notifySignatureCompleted(supabaseAdmin, req.document_id, origin);
+          }
+        } catch (e) {
+          console.error("post-sign notifications failed", e);
+        }
 
         return json({
           ok: true,
