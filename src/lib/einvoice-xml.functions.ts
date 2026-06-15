@@ -532,5 +532,3 @@ export const generateInvoiceCii = createServerFn({ method: "POST" })
       issues,
     };
   });
-    };
-  });
