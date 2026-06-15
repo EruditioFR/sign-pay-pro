@@ -109,7 +109,7 @@ function GuestDashboard() {
                       )}
                     </div>
                   </div>
-                  <Badge variant="outline">{d.status}</Badge>
+                  <DocumentStatusBadge status={d.status} />
                 </div>
 
                 {docSigners.length > 0 && (
@@ -130,17 +130,7 @@ function GuestDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                s.status === "signed"
-                                  ? "default"
-                                  : s.status === "pending"
-                                    ? "secondary"
-                                    : "outline"
-                              }
-                            >
-                              {s.status}
-                            </Badge>
+                            <SignerStatusBadge status={s.status} />
                             {s.status === "pending" && (
                               <Button
                                 size="icon"
