@@ -169,15 +169,29 @@ export const createDocument = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    // Numérotation légale : factures (+ avoirs) et devis reçoivent
+    // immédiatement un numéro de séquence inaltérable (FAC/DEV/AVO-YYYY-NNNN).
+    let document_number: string | null = null;
+    if (doc.type === "invoice" || doc.type === "quote") {
+      const { data: num, error: numErr } = await supabase.rpc(
+        "allocate_document_number",
+        { p_document_id: doc.id },
+      );
+      if (numErr) throw new Error(numErr.message);
+      document_number = (num as string) ?? null;
+    }
+
     await supabase.from("audit_logs").insert({
       organization_id: me.organization_id,
       user_id: userId,
       action: "document.created",
       resource: `document:${doc.id}`,
-      metadata: { type: doc.type, title: doc.title },
+      metadata: { type: doc.type, title: doc.title, document_number },
     });
 
-    return { document: doc };
+    return {
+      document: document_number ? { ...doc, document_number } : doc,
+    };
   });
 
 const UpdateDocSchema = CreateDocSchema.partial().extend({ id: z.string().uuid() });
