@@ -73,12 +73,11 @@ function NewDocumentPage() {
               <StartOptionCard
                 icon={<FileUp className="h-5 w-5" />}
                 title="Importer un PDF / CERFA"
-                description="Uploadez votre formulaire et posez des champs dynamiques + signature."
+                description="Uploadez votre formulaire puis placez les zones à saisir & signer."
                 cta="Importer un fichier"
               />
             </button>
           }
-          onCreated={(id) => navigate({ to: "/app/pdf-templates" })}
         />
         <Link to="/app/documents/wysiwyg" className="block">
           <StartOptionCard

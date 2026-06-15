@@ -60,7 +60,7 @@ function PdfTemplatesPage() {
             Réutilisez un document avec ses zones en un clic. Versions et historique conservés.
           </p>
         </div>
-        <NewPdfTemplateDialog />
+        <NewPdfTemplateDialog openEditorAfterImport={false} />
       </div>
 
       {isLoading ? (
@@ -69,7 +69,7 @@ function PdfTemplatesPage() {
         <Card>
           <CardContent className="flex flex-col items-start gap-3 p-6 text-sm text-muted-foreground">
             <p>Aucun modèle pour l'instant. Importez un PDF pour créer votre premier modèle.</p>
-            <NewPdfTemplateDialog />
+            <NewPdfTemplateDialog openEditorAfterImport={false} />
           </CardContent>
         </Card>
       ) : (

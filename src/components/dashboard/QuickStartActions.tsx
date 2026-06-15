@@ -1,11 +1,10 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { NewPdfTemplateDialog } from "@/components/pdf-templates/NewPdfTemplateDialog";
 import { LayoutTemplate, FileUp, Sparkles, ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function QuickStartActions() {
-  const navigate = useNavigate();
   return (
     <section>
       <div className="mb-3 flex items-baseline justify-between">
@@ -35,12 +34,11 @@ export function QuickStartActions() {
               <ActionCard
                 icon={<FileUp className="h-5 w-5" />}
                 title="Importer un PDF / CERFA"
-                description="Uploadez votre formulaire puis posez champs & signatures."
+                description="Uploadez votre formulaire puis placez les zones à saisir & signer."
                 cta="Importer un fichier"
               />
             </button>
           }
-          onCreated={() => navigate({ to: "/app/pdf-templates" })}
         />
         <Link to="/app/documents/wysiwyg" className="block">
           <ActionCard

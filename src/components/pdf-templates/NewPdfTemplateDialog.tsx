@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,17 +15,28 @@ import {
 } from "@/components/ui/select";
 import { FileUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createPdfTemplateFromUpload } from "@/lib/pdf-templates.functions";
+import {
+  createPdfTemplateFromUpload,
+  createDocumentFromPdfTemplate,
+} from "@/lib/pdf-templates.functions";
 
 interface Props {
   trigger?: ReactNode;
   onCreated?: (templateId: string) => void;
+  /**
+   * When true (default), the imported PDF is also instantiated as a new
+   * document and the user lands directly in the zone editor (fields to fill /
+   * sign). Set to false to only register a reusable template.
+   */
+  openEditorAfterImport?: boolean;
 }
 
-export function NewPdfTemplateDialog({ trigger, onCreated }: Props) {
+export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport = true }: Props) {
   const { t: tr } = useTranslation();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const createFn = useServerFn(createPdfTemplateFromUpload);
+  const instantiateFn = useServerFn(createDocumentFromPdfTemplate);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,25 +44,41 @@ export function NewPdfTemplateDialog({ trigger, onCreated }: Props) {
   const [file, setFile] = useState<File | null>(null);
 
   const mut = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!file) throw new Error("Sélectionnez un PDF");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("name", name.trim());
       fd.append("description", description.trim());
       fd.append("document_type", documentType);
-      return createFn({ data: fd });
+      const res = await createFn({ data: fd });
+      const templateId = (res as { template?: { id?: string } })?.template?.id ?? null;
+      if (openEditorAfterImport && templateId) {
+        const inst = await instantiateFn({
+          data: {
+            templateId,
+            title: name.trim() || file.name.replace(/\.pdf$/i, ""),
+          },
+        });
+        return { templateId, documentId: inst.document.id as string };
+      }
+      return { templateId, documentId: null as string | null };
     },
-    onSuccess: (res) => {
-      toast.success("Modèle PDF importé");
+    onSuccess: ({ templateId, documentId }) => {
       qc.invalidateQueries({ queryKey: ["pdf-templates"] });
+      qc.invalidateQueries({ queryKey: ["documents"] });
       setOpen(false);
       setName("");
       setDescription("");
       setDocumentType("other");
       setFile(null);
-      const id = (res as { template?: { id?: string } })?.template?.id;
-      if (id && onCreated) onCreated(id);
+      if (documentId) {
+        toast.success("PDF importé — placez vos zones à saisir / signer");
+        navigate({ to: "/app/documents/$id/editor", params: { id: documentId } });
+      } else {
+        toast.success("Modèle PDF importé");
+      }
+      if (templateId && onCreated) onCreated(templateId);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -66,7 +94,9 @@ export function NewPdfTemplateDialog({ trigger, onCreated }: Props) {
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Importer un modèle PDF</DialogTitle>
+          <DialogTitle>
+            {openEditorAfterImport ? "Importer un PDF à compléter & signer" : "Importer un modèle PDF"}
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
@@ -128,7 +158,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated }: Props) {
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mut.isPending}>Annuler</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending || !file || !name.trim()}>
             {mut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Importer le PDF
+            {openEditorAfterImport ? "Importer & placer les zones" : "Importer le PDF"}
           </Button>
         </DialogFooter>
       </DialogContent>
