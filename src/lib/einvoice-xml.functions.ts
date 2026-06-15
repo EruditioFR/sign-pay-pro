@@ -384,6 +384,8 @@ const InputSchema = z.object({
   mark_ready: z.boolean().optional().default(true),
   /** Profil Factur-X. Par défaut EN 16931 (profil européen complet). */
   profile: z.enum(["minimum", "basic_wl", "basic", "en16931", "extended"]).optional().default("en16931"),
+  /** Si true (défaut), refuse l'export quand la validation Factur-X échoue. */
+  strict: z.boolean().optional().default(true),
 });
 
 export const generateInvoiceCii = createServerFn({ method: "POST" })
