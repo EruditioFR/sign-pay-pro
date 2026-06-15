@@ -35,12 +35,11 @@ export function QuickStartActions() {
               <ActionCard
                 icon={<FileUp className="h-5 w-5" />}
                 title="Importer un PDF / CERFA"
-                description="Uploadez votre formulaire puis posez champs & signatures."
+                description="Uploadez votre formulaire puis placez les zones à saisir & signer."
                 cta="Importer un fichier"
               />
             </button>
           }
-          onCreated={() => navigate({ to: "/app/pdf-templates" })}
         />
         <Link to="/app/documents/wysiwyg" className="block">
           <ActionCard
