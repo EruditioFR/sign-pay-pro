@@ -255,7 +255,7 @@ export const generateDocumentPdf = createServerFn({ method: "POST" })
 
     const { data: org } = await supabase
       .from("organizations")
-      .select("name, country")
+      .select("name, country, logo_storage_path")
       .eq("id", doc.organization_id)
       .maybeSingle();
 
@@ -279,7 +279,24 @@ export const generateDocumentPdf = createServerFn({ method: "POST" })
       template = t?.[0] ?? null;
     }
 
-    const bytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, template);
+    // Best-effort: download the organization logo so it can be embedded.
+    let logoBytes: Uint8Array | null = null;
+    let logoMime: string | null = null;
+    const logoPath = (org as { logo_storage_path?: string | null } | null)?.logo_storage_path ?? null;
+    if (logoPath && !logoPath.endsWith(".svg")) {
+      const { data: blob } = await supabase.storage.from("org-logos").download(logoPath);
+      if (blob) {
+        logoBytes = new Uint8Array(await blob.arrayBuffer());
+        logoMime = blob.type || (logoPath.endsWith(".png") ? "image/png" : "image/jpeg");
+      }
+    }
+
+    const bytes = await buildDocumentPdf(
+      doc,
+      org ?? { name: "—", country: "FR" },
+      template,
+      { logoBytes, logoMime },
+    );
 
     // Upload as new version
     const ts = Date.now();
