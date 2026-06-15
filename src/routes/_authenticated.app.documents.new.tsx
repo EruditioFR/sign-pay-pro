@@ -58,11 +58,11 @@ function NewDocumentPage() {
 
       {/* 3 main actions inspired by Signova execution actions */}
       <section className="grid gap-3 md:grid-cols-3">
-        <Link to="/admin/business-verticals" className="block">
+        <Link to="/app/templates" className="block">
           <StartOptionCard
             icon={<LayoutTemplate className="h-5 w-5" />}
             title="Partir d'un modèle"
-            description="Parcourez la bibliothèque des modèles par secteur métier."
+            description="Sélectionnez un modèle : un duplicata est créé comme nouveau document."
             accent
             cta="Voir les modèles"
           />
