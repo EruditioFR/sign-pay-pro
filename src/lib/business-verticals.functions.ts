@@ -8,9 +8,9 @@ const VerticalSchema = z.object({
 });
 
 /**
- * Seed (idempotent) all document & workflow templates for a given business
- * vertical into the caller's organization. Skips templates that already exist
- * (matched on name + business_vertical).
+ * Seed/upsert all document & workflow templates for a given business vertical
+ * into the caller's organization. Upserts on (organization_id, business_vertical, name)
+ * so re-importing refreshes the body, required fields, etc.
  */
 export const seedBusinessVerticalTemplates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -29,17 +29,21 @@ export const seedBusinessVerticalTemplates = createServerFn({ method: "POST" })
     if (!me?.organization_id) throw new Error("Organisation introuvable");
     const orgId = me.organization_id;
 
-    // Existing document templates for this vertical (avoid duplicates)
+    // Existing rows to decide insert vs update (we need created/updated counts).
     const { data: existingDocs } = await supabase
       .from("document_templates")
-      .select("name")
+      .select("id, name")
       .eq("organization_id", orgId)
       .eq("business_vertical", vertical);
-    const existingDocNames = new Set((existingDocs ?? []).map((r) => r.name));
+    const existingByName = new Map(
+      (existingDocs ?? []).map((r) => [r.name, r.id as string]),
+    );
 
-    const docRows = def.documentTemplates
-      .filter((p) => !existingDocNames.has(p.name))
-      .map((p) => ({
+    let insertedDocs = 0;
+    let updatedDocs = 0;
+
+    for (const p of def.documentTemplates) {
+      const payload = {
         organization_id: orgId,
         business_vertical: vertical,
         name: p.name,
@@ -47,20 +51,30 @@ export const seedBusinessVerticalTemplates = createServerFn({ method: "POST" })
         primary_color: p.primary_color ?? "#1f2937",
         header_html: p.header_html ?? null,
         footer_html: p.footer_html ?? null,
+        body_html: p.body_html ?? null,
         legal_mentions: p.legal_mentions ?? null,
         payment_terms: p.payment_terms ?? null,
+        required_fields: p.required_fields ?? [],
         active: true,
         is_default: false,
-      }));
+      } as never;
 
-    let insertedDocs = 0;
-    if (docRows.length > 0) {
-      const { error } = await supabase.from("document_templates").insert(docRows);
-      if (error) throw new Error(error.message);
-      insertedDocs = docRows.length;
+      const existingId = existingByName.get(p.name);
+      if (existingId) {
+        const { error } = await supabase
+          .from("document_templates")
+          .update(payload)
+          .eq("id", existingId);
+        if (error) throw new Error(error.message);
+        updatedDocs += 1;
+      } else {
+        const { error } = await supabase.from("document_templates").insert(payload);
+        if (error) throw new Error(error.message);
+        insertedDocs += 1;
+      }
     }
 
-    // Existing workflow templates
+    // Workflow templates — skip if already present
     const { data: existingWf } = await supabase
       .from("workflow_templates")
       .select("name")
@@ -101,6 +115,7 @@ export const seedBusinessVerticalTemplates = createServerFn({ method: "POST" })
     return {
       vertical,
       inserted_document_templates: insertedDocs,
+      updated_document_templates: updatedDocs,
       inserted_workflow_templates: insertedWorkflows,
     };
   });
@@ -147,9 +162,58 @@ export const listBusinessVerticalsSummary = createServerFn({ method: "GET" })
         description: v.description,
         documentTypes: v.documentTypes,
         variables: v.variables,
+        documentTemplates: v.documentTemplates.map((t) => ({
+          name: t.name,
+          document_type: t.document_type,
+          required_fields: t.required_fields ?? [],
+        })),
         documentTemplatesCount: v.documentTemplates.length,
         workflowTemplatesCount: v.workflowTemplates.length,
         seeded: counts[v.id],
       })),
+    };
+  });
+
+/**
+ * For a given vertical, return the org's templates matched against the preset
+ * catalog so the UI can show which ones are imported and link to the editor.
+ */
+export const listVerticalTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => VerticalSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const vertical = data.vertical as BusinessVerticalId;
+    const def = BUSINESS_VERTICALS.find((v) => v.id === vertical);
+    if (!def) throw new Error("Secteur métier inconnu");
+
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!me?.organization_id) throw new Error("Organisation introuvable");
+
+    const { data: rows } = await supabase
+      .from("document_templates")
+      .select("id, name, document_type, updated_at")
+      .eq("organization_id", me.organization_id)
+      .eq("business_vertical", vertical);
+
+    const byName = new Map((rows ?? []).map((r) => [r.name, r]));
+
+    return {
+      vertical,
+      templates: def.documentTemplates.map((p) => {
+        const existing = byName.get(p.name);
+        return {
+          name: p.name,
+          document_type: p.document_type,
+          required_fields: p.required_fields ?? [],
+          seeded: !!existing,
+          id: existing?.id ?? null,
+          updated_at: existing?.updated_at ?? null,
+        };
+      }),
     };
   });
