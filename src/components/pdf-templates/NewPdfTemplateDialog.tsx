@@ -168,6 +168,11 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
               disabled={mut.isPending}
             />
           </div>
+          {openEditorAfterImport && (
+            <div className="pt-1">
+              <SignersPaymentFields value={sp} onChange={setSp} compact />
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mut.isPending}>Annuler</Button>
