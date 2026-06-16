@@ -284,7 +284,7 @@ function ManualDocumentForm() {
             <Select name="type" defaultValue="quote">
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(["purchase_order", "quote", "invoice", "contract", "other"] as DocumentType[]).map((tp) => (
+                {(["purchase_order", "contract", "other"] as DocumentType[]).map((tp) => (
                   <SelectItem key={tp} value={tp}>{t(`documents.types.${tp}`)}</SelectItem>
                 ))}
               </SelectContent>
