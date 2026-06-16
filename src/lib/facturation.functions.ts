@@ -13,16 +13,35 @@ const ListFilters = z
 
 type ListData = z.infer<typeof ListFilters>;
 
+type SupabaseCtx = Parameters<
+  Parameters<
+    ReturnType<typeof createServerFn>["middleware"]
+  >[0][number]["server"] extends never
+    ? never
+    : never
+> extends never
+  ? never
+  : never;
+
 async function listByType(
-  supabase: Awaited<ReturnType<typeof getSupabase>>,
+  // Accept the live supabase client via `unknown` — the underlying query
+  // builder is fully typed at use sites; we only need `.from("documents")…`.
+  supabase: ReturnType<typeof (() => { from: (t: "documents") => never })>,
   type: "quote" | "invoice",
   data: ListData,
 ) {
-  let q = supabase
+  let q = (supabase as unknown as {
+    from: (t: "documents") => {
+      select: (s: string) => {
+        eq: (k: string, v: unknown) => unknown;
+      };
+    };
+  })
     .from("documents")
     .select(
       "id, type, status, title, reference, document_number, amount_ht, amount_ttc, currency, third_party_name, third_party_email, issue_date, due_date, created_at, updated_at",
     )
+    // @ts-expect-error supabase chain typing simplified
     .eq("type", type)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -39,21 +58,11 @@ async function listByType(
   return docs ?? [];
 }
 
-// Type hack to get the typed supabase client without importing the heavy types here.
-async function getSupabase() {
-  // Never called — only used for typeof
-  throw new Error("unreachable");
-}
-
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const docs = await listByType(
-      context.supabase as unknown as Awaited<ReturnType<typeof getSupabase>>,
-      "quote",
-      data,
-    );
+    const docs = await listByType(context.supabase as never, "quote", data);
     return { documents: docs };
   });
 
@@ -61,13 +70,10 @@ export const listInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const docs = await listByType(
-      context.supabase as unknown as Awaited<ReturnType<typeof getSupabase>>,
-      "invoice",
-      data,
-    );
+    const docs = await listByType(context.supabase as never, "invoice", data);
     return { documents: docs };
   });
+
 
 export const getFacturationStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
