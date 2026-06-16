@@ -353,6 +353,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     groups={groups}
                     pathname={location.pathname}
                     approvalsCount={approvalsCount}
+                    pendingInvoicesCount={pendingInvoicesCount}
                     onItemClick={() => setMobileOpen(false)}
                   />
                   {me && (
