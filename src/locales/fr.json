@@ -241,7 +241,10 @@
     "approvals": "À valider",
     "workflows": "Workflows",
     "templates": "Modèles PDF",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "facturation_dashboard": "Tableau de bord",
+    "quotes": "Devis",
+    "invoices": "Factures"
   },
   "analytics": {
     "title": "Analytics métier",
