@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Send, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Save, ArrowRightLeft } from "lucide-react";
+import { SendQuoteDialog } from "@/components/facturation/SendQuoteDialog";
 import { toast } from "sonner";
 import { updateDocument } from "@/lib/documents.functions";
 import {
