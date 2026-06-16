@@ -13,35 +13,17 @@ const ListFilters = z
 
 type ListData = z.infer<typeof ListFilters>;
 
-type SupabaseCtx = Parameters<
-  Parameters<
-    ReturnType<typeof createServerFn>["middleware"]
-  >[0][number]["server"] extends never
-    ? never
-    : never
-> extends never
-  ? never
-  : never;
-
-async function listByType(
-  // Accept the live supabase client via `unknown` — the underlying query
-  // builder is fully typed at use sites; we only need `.from("documents")…`.
-  supabase: ReturnType<typeof (() => { from: (t: "documents") => never })>,
+function buildListQuery(
+  supabase: { from: (t: "documents") => unknown },
   type: "quote" | "invoice",
   data: ListData,
 ) {
-  let q = (supabase as unknown as {
-    from: (t: "documents") => {
-      select: (s: string) => {
-        eq: (k: string, v: unknown) => unknown;
-      };
-    };
-  })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q: any = supabase
     .from("documents")
     .select(
       "id, type, status, title, reference, document_number, amount_ht, amount_ttc, currency, third_party_name, third_party_email, issue_date, due_date, created_at, updated_at",
     )
-    // @ts-expect-error supabase chain typing simplified
     .eq("type", type)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -53,26 +35,35 @@ async function listByType(
     );
   if (data?.fromDate) q = q.gte("issue_date", data.fromDate);
   if (data?.toDate) q = q.lte("issue_date", data.toDate);
-  const { data: docs, error } = await q;
-  if (error) throw new Error(error.message);
-  return docs ?? [];
+  return q as Promise<{ data: unknown[] | null; error: { message: string } | null }>;
 }
 
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const docs = await listByType(context.supabase as never, "quote", data);
-    return { documents: docs };
+    const { data: docs, error } = await buildListQuery(
+      context.supabase,
+      "quote",
+      data,
+    );
+    if (error) throw new Error(error.message);
+    return { documents: (docs ?? []) as Array<Record<string, unknown>> };
   });
 
 export const listInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const docs = await listByType(context.supabase as never, "invoice", data);
-    return { documents: docs };
+    const { data: docs, error } = await buildListQuery(
+      context.supabase,
+      "invoice",
+      data,
+    );
+    if (error) throw new Error(error.message);
+    return { documents: (docs ?? []) as Array<Record<string, unknown>> };
   });
+
 
 
 export const getFacturationStats = createServerFn({ method: "GET" })
