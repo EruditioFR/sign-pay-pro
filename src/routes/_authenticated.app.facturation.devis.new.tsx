@@ -11,7 +11,6 @@ import { ArrowLeft, Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { createDocument } from "@/lib/documents.functions";
 import { saveDocumentLines } from "@/lib/facturation.functions";
-import { transitionInvoiceStatus } from "@/lib/invoice-lifecycle.functions";
 import {
   InvoiceLineItems, InvoiceTotals, emptyLine, computeTotals, type LineDraft,
 } from "@/components/facturation/InvoiceLineItems";

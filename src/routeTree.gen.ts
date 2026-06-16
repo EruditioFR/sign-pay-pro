@@ -64,6 +64,7 @@ import { Route as AuthenticatedAppDocumentsIdIndexRouteImport } from './routes/_
 import { Route as AuthenticatedAppTemplatesIdPreviewRouteImport } from './routes/_authenticated.app.templates.$id.preview'
 import { Route as AuthenticatedAppTemplatesIdFillRouteImport } from './routes/_authenticated.app.templates.$id.fill'
 import { Route as AuthenticatedAppTemplatesIdEditRouteImport } from './routes/_authenticated.app.templates.$id.edit'
+import { Route as AuthenticatedAppFacturationDevisNewRouteImport } from './routes/_authenticated.app.facturation.devis.new'
 import { Route as AuthenticatedAppDocumentsIdEditorRouteImport } from './routes/_authenticated.app.documents.$id.editor'
 import { Route as AuthenticatedAppDocumentsIdConfigureRouteImport } from './routes/_authenticated.app.documents.$id.configure'
 
@@ -374,6 +375,12 @@ const AuthenticatedAppTemplatesIdEditRoute =
     path: '/app/templates/$id/edit',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppFacturationDevisNewRoute =
+  AuthenticatedAppFacturationDevisNewRouteImport.update({
+    id: '/app/facturation/devis/new',
+    path: '/app/facturation/devis/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsIdEditorRoute =
   AuthenticatedAppDocumentsIdEditorRouteImport.update({
     id: '/app/documents/$id/editor',
@@ -439,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
   '/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
+  '/app/facturation/devis/new': typeof AuthenticatedAppFacturationDevisNewRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -497,6 +505,7 @@ export interface FileRoutesByTo {
   '/app/templates': typeof AuthenticatedAppTemplatesIndexRoute
   '/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
+  '/app/facturation/devis/new': typeof AuthenticatedAppFacturationDevisNewRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -557,6 +566,7 @@ export interface FileRoutesById {
   '/_authenticated/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
   '/_authenticated/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
   '/_authenticated/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
+  '/_authenticated/app/facturation/devis/new': typeof AuthenticatedAppFacturationDevisNewRoute
   '/_authenticated/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/_authenticated/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/_authenticated/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -617,6 +627,7 @@ export interface FileRouteTypes {
     | '/app/templates/'
     | '/app/documents/$id/configure'
     | '/app/documents/$id/editor'
+    | '/app/facturation/devis/new'
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
@@ -675,6 +686,7 @@ export interface FileRouteTypes {
     | '/app/templates'
     | '/app/documents/$id/configure'
     | '/app/documents/$id/editor'
+    | '/app/facturation/devis/new'
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
@@ -734,6 +746,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/templates/'
     | '/_authenticated/app/documents/$id/configure'
     | '/_authenticated/app/documents/$id/editor'
+    | '/_authenticated/app/facturation/devis/new'
     | '/_authenticated/app/templates/$id/edit'
     | '/_authenticated/app/templates/$id/fill'
     | '/_authenticated/app/templates/$id/preview'
@@ -1147,6 +1160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTemplatesIdEditRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/facturation/devis/new': {
+      id: '/_authenticated/app/facturation/devis/new'
+      path: '/app/facturation/devis/new'
+      fullPath: '/app/facturation/devis/new'
+      preLoaderRoute: typeof AuthenticatedAppFacturationDevisNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/$id/editor': {
       id: '/_authenticated/app/documents/$id/editor'
       path: '/app/documents/$id/editor'
@@ -1201,6 +1221,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppTemplatesIndexRoute: typeof AuthenticatedAppTemplatesIndexRoute
   AuthenticatedAppDocumentsIdConfigureRoute: typeof AuthenticatedAppDocumentsIdConfigureRoute
   AuthenticatedAppDocumentsIdEditorRoute: typeof AuthenticatedAppDocumentsIdEditorRoute
+  AuthenticatedAppFacturationDevisNewRoute: typeof AuthenticatedAppFacturationDevisNewRoute
   AuthenticatedAppTemplatesIdEditRoute: typeof AuthenticatedAppTemplatesIdEditRoute
   AuthenticatedAppTemplatesIdFillRoute: typeof AuthenticatedAppTemplatesIdFillRoute
   AuthenticatedAppTemplatesIdPreviewRoute: typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -1251,6 +1272,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAppDocumentsIdConfigureRoute,
   AuthenticatedAppDocumentsIdEditorRoute:
     AuthenticatedAppDocumentsIdEditorRoute,
+  AuthenticatedAppFacturationDevisNewRoute:
+    AuthenticatedAppFacturationDevisNewRoute,
   AuthenticatedAppTemplatesIdEditRoute: AuthenticatedAppTemplatesIdEditRoute,
   AuthenticatedAppTemplatesIdFillRoute: AuthenticatedAppTemplatesIdFillRoute,
   AuthenticatedAppTemplatesIdPreviewRoute:
