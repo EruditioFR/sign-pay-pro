@@ -1,6 +1,7 @@
 import type { Canvas } from "./schema";
 import { pageSize } from "./schema";
 import { findVariable, interpolate } from "./variables";
+import { computeTotals, formatMoney, lineTotalHt } from "./pricing";
 
 const MM = 3.78;
 
