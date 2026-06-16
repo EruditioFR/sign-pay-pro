@@ -425,62 +425,96 @@ const SendQuoteSchema = z.object({
   message: z.string().trim().max(2000).optional(),
 });
 
+async function sendDocumentEmails(args: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any;
+  documentId: string;
+  recipients: { name: string; email: string }[];
+  expectedType: "quote" | "invoice";
+}) {
+  const { supabase, documentId, recipients, expectedType } = args;
+  const { data: doc, error: e1 } = await supabase
+    .from("documents")
+    .select("id, type, title, document_number, organization_id, status")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (e1) throw new Error(e1.message);
+  if (!doc) throw new Error("Document introuvable");
+  if (doc.type !== expectedType) {
+    throw new Error(
+      expectedType === "quote" ? "Document non-devis" : "Document non-facture",
+    );
+  }
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", doc.organization_id)
+    .maybeSingle();
+
+  const { sendResendEmail, renderShareEmail, getOriginFromRequest } = await import(
+    "@/lib/email-sender"
+  );
+  const { getRequest } = await import("@tanstack/react-start/server");
+  const origin =
+    getOriginFromRequest(getRequest()) ||
+    process.env.APP_URL ||
+    "https://sign-pay-pro.lovable.app";
+  const url =
+    expectedType === "quote"
+      ? `${origin}/app/facturation/devis/${doc.id}/edit`
+      : `${origin}/app/facturation/factures/${doc.id}`;
+  const label = expectedType === "quote" ? "Devis" : "Facture";
+
+  const results: { email: string; ok: boolean; error?: string }[] = [];
+  for (const r of recipients) {
+    try {
+      await sendResendEmail({
+        to: r.email,
+        subject: `${label} ${doc.document_number ?? ""} — ${doc.title ?? ""}`.trim(),
+        html: renderShareEmail({
+          recipientName: r.name,
+          documentTitle: `${doc.document_number ? doc.document_number + " — " : ""}${doc.title ?? label}`,
+          url,
+          senderOrg: org?.name ?? null,
+        }),
+      });
+      results.push({ email: r.email, ok: true });
+    } catch (err) {
+      results.push({ email: r.email, ok: false, error: (err as Error).message });
+    }
+  }
+
+  if (results.some((r) => r.ok)) {
+    await supabase
+      .from("documents")
+      .update({ status: "sent", updated_at: new Date().toISOString() })
+      .eq("id", documentId);
+  }
+
+  return { ok: true, results };
+}
+
 export const sendQuoteToRecipients = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => SendQuoteSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: doc, error: e1 } = await supabase
-      .from("documents")
-      .select("id, type, title, document_number, organization_id, status")
-      .eq("id", data.documentId)
-      .maybeSingle();
-    if (e1) throw new Error(e1.message);
-    if (!doc) throw new Error("Devis introuvable");
-    if (doc.type !== "quote") throw new Error("Document non-devis");
+    return sendDocumentEmails({
+      supabase: context.supabase,
+      documentId: data.documentId,
+      recipients: data.recipients,
+      expectedType: "quote",
+    });
+  });
 
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("name")
-      .eq("id", doc.organization_id)
-      .maybeSingle();
-
-    const { sendResendEmail, renderShareEmail, getOriginFromRequest } = await import("@/lib/email-sender");
-    const { getRequest } = await import("@tanstack/react-start/server");
-    const origin =
-      getOriginFromRequest(getRequest()) ||
-      process.env.APP_URL ||
-      "https://sign-pay-pro.lovable.app";
-    const url = `${origin}/app/facturation/devis/${doc.id}/edit`;
-    const ordered = data.sequential
-      ? data.recipients
-      : data.recipients;
-
-    const results: { email: string; ok: boolean; error?: string }[] = [];
-    for (const r of ordered) {
-      try {
-        await sendResendEmail({
-          to: r.email,
-          subject: `Devis ${doc.document_number ?? ""} — ${doc.title ?? ""}`.trim(),
-          html: renderShareEmail({
-            recipientName: r.name,
-            documentTitle: `${doc.document_number ? doc.document_number + " — " : ""}${doc.title ?? "Devis"}`,
-            url,
-            senderOrg: org?.name ?? null,
-          }),
-        });
-        results.push({ email: r.email, ok: true });
-      } catch (err) {
-        results.push({ email: r.email, ok: false, error: (err as Error).message });
-      }
-    }
-
-    if (results.some((r) => r.ok)) {
-      await supabase
-        .from("documents")
-        .update({ status: "sent", updated_at: new Date().toISOString() })
-        .eq("id", data.documentId);
-    }
-
-    return { ok: true, results };
+export const sendInvoiceToRecipients = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SendQuoteSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    return sendDocumentEmails({
+      supabase: context.supabase,
+      documentId: data.documentId,
+      recipients: data.recipients,
+      expectedType: "invoice",
+    });
   });
