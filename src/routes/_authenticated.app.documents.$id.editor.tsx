@@ -185,28 +185,55 @@ function PdfEditorPage() {
     return () => { cancelled = true; };
   }, [urlQ.data?.url]);
 
+  const renderPage = useRef<() => void>(() => {});
+
   useEffect(() => {
     const doc = pdfDocRef.current;
     const canvas = canvasRef.current;
-    if (!doc || !canvas || pageCount === 0) return;
+    const container = scrollContainerRef.current;
+    if (!doc || !canvas || !container || pageCount === 0) return;
     let cancelled = false;
-    (async () => {
+
+    const doRender = async () => {
       const page = await doc.getPage(pageIndex + 1);
       const baseViewport = page.getViewport({ scale: 1 });
-      const containerW = canvas.parentElement?.clientWidth ?? 800;
-      const scale = Math.min(containerW / baseViewport.width, 2);
+      const containerW = container.clientWidth;
+      const scale = Math.min(containerW / baseViewport.width, 2.5);
       const viewport = page.getViewport({ scale });
       if (cancelled) return;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext("2d")!;
-      await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+      if (renderTaskRef.current) {
+        try { renderTaskRef.current.cancel(); } catch { /* ignore */ }
+      }
+      const task = page.render({ canvasContext: ctx, viewport });
+      renderTaskRef.current = task;
+      await task.promise;
+      renderTaskRef.current = null;
       if (cancelled) return;
       setPageDims({ w: baseViewport.width, h: baseViewport.height });
       setRenderScale(scale);
-    })();
-    return () => { cancelled = true; };
+    };
+
+    renderPage.current = doRender;
+    doRender();
+
+    return () => {
+      cancelled = true;
+      if (renderTaskRef.current) {
+        try { renderTaskRef.current.cancel(); } catch { /* ignore */ }
+      }
+    };
   }, [pageIndex, pageCount, urlQ.data?.url]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      renderPage.current();
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const createField = (kind: PdfFieldKind, rect?: { x: number; y: number; w: number; h: number }) => {
     const meta = KIND_META[kind];
