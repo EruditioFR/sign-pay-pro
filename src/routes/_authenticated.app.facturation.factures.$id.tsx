@@ -64,10 +64,16 @@ function InvoiceDetailPage() {
   }
 
   const doc = q.data.document as Record<string, unknown>;
+  const status = (doc.status as string) ?? "draft";
+
+  // Brouillons: éditeur stepper conforme (Art. L441-9 C.com)
+  if (status === "draft") {
+    return <InvoiceDraftEditor id={id} />;
+  }
+
   const lines = q.data.lines as Array<Record<string, unknown>>;
   const payments = q.data.payments as Array<Record<string, unknown>>;
   const events = q.data.events as Array<Record<string, unknown>>;
-  const status = (doc.status as string) ?? "draft";
   const amountTtc = Number(doc.amount_ttc) || 0;
   const amountHt = Number(doc.amount_ht) || 0;
   const currency = (doc.currency as string) ?? "EUR";
@@ -88,6 +94,11 @@ function InvoiceDetailPage() {
   );
   const originQuoteId = tagOrigin ? tagOrigin.slice("origin_quote:".length) : null;
 
+  const complianceChecks = checkInvoiceCompliance(
+    { ...(doc as unknown as InvoiceDoc), line_count: lines.length },
+    (orgQ.data ?? null) as OrgProfile | null,
+  );
+
   return (
     <div className="space-y-4">
       <Button asChild variant="ghost" size="sm">
@@ -106,7 +117,10 @@ function InvoiceDetailPage() {
             {(doc.title as string) ?? ""}
           </p>
         </div>
-        <InvoiceStatusBadge status={status} />
+        <div className="flex items-center gap-2">
+          <InvoiceComplianceIndicator checks={complianceChecks} />
+          <InvoiceStatusBadge status={status} />
+        </div>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-3">
