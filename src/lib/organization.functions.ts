@@ -182,7 +182,10 @@ export const getMyBillingProfile = createServerFn({ method: "GET" })
       .eq("id", profile.organization_id)
       .maybeSingle()) as { data: Record<string, unknown> | null; error: { message: string } | null };
     if (error) throw new Error(error.message);
-    return data;
+    // Cast to a JSON-serializable shape for TanStack serializer.
+    return (data ?? null) as unknown as {
+      [k: string]: string | number | boolean | null;
+    } | null;
   });
 
 const BillingSchema = z.object({
