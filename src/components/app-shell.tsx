@@ -281,9 +281,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     retry: false,
     refetchInterval: 60_000,
   });
+  const fetchPendingInvoices = useServerFn(getPendingInvoicesCount);
+  const { data: pendingInvoices } = useQuery({
+    queryKey: ["pending_invoices_count", session?.user.id],
+    queryFn: () => fetchPendingInvoices({}),
+    enabled: !authLoading && !!session && !!me,
+    retry: false,
+    refetchInterval: 60_000,
+  });
   const approvalsCount = approvals?.steps.length ?? 0;
+  const pendingInvoicesCount = pendingInvoices?.count ?? 0;
 
   const groups = me ? navGroupsForRole(me.primaryRole, t) : [];
+
 
   const onLogout = async () => {
     await supabase.auth.signOut();
