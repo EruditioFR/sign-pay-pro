@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { getCurrentUser, type AppRole } from "@/lib/auth.functions";
+import { getPendingInvoicesCount } from "@/lib/facturation.functions";
 import { listMyPendingApprovals } from "@/lib/workflows.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
