@@ -178,18 +178,17 @@ function EditQuotePage() {
           </Button>
         )}
         {(status === "draft" || status === "issued") && (
-          <Button
-            disabled={save.isPending}
-            onClick={async () => {
-              await save.mutateAsync();
-              await updateFn({ data: { id, status: "sent" } });
-              toast.success("Devis marqué comme envoyé.");
-              qc.invalidateQueries({ queryKey: ["facturation_quote", id] });
+        {(status === "draft" || status === "issued") && (
+          <SendQuoteDialog
+            documentId={id}
+            defaultRecipient={{
+              name: (d.third_party_name as string) ?? "",
+              email: (d.third_party_email as string) ?? "",
             }}
-            variant="outline"
-          >
-            <Send className="mr-1 h-4 w-4" /> Marquer comme envoyé
-          </Button>
+            onSent={async () => {
+              await save.mutateAsync().catch(() => {});
+            }}
+          />
         )}
         {(status === "issued" || status === "sent" || status === "viewed") && (
           <Button
