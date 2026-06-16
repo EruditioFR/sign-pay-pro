@@ -8,6 +8,7 @@ import {
   Eye,
   Save,
   Building2,
+  Calculator,
 } from "lucide-react";
 import type { Block } from "@/lib/template-canvas/schema";
 
