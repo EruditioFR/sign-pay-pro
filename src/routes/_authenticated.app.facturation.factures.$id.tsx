@@ -330,7 +330,7 @@ function InvoiceDetailPage() {
             <CardHeader><CardTitle className="text-base">Client</CardTitle></CardHeader>
             <CardContent className="text-sm space-y-1">
               <div className="font-medium">{(doc.third_party_name as string) ?? "—"}</div>
-              {doc.third_party_email && (
+              {Boolean(doc.third_party_email) && (
                 <div className="text-muted-foreground flex items-center gap-1">
                   <Mail className="h-3 w-3" />
                   {doc.third_party_email as string}
