@@ -181,8 +181,9 @@ function EditQuotePage() {
             disabled={save.isPending}
             onClick={async () => {
               await save.mutateAsync();
-              await updateFn({ data: { id /* status change handled separately */ } });
-              toast.success("Devis prêt à être envoyé.");
+              await updateFn({ data: { id, status: "sent" } });
+              toast.success("Devis marqué comme envoyé.");
+              qc.invalidateQueries({ queryKey: ["facturation_quote", id] });
             }}
             variant="outline"
           >
