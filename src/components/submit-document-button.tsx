@@ -1,57 +1,42 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listWorkflowTemplates, submitDocumentForValidation } from "@/lib/workflows.functions";
+import { updateDocument } from "@/lib/documents.functions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
   documentId: string;
-  documentType: string;
+  /** kept for API compatibility */
+  documentType?: string;
 }
 
-export function SubmitDocumentButton({ documentId, documentType }: Props) {
-  const { t } = useTranslation();
+/**
+ * "Prêt à envoyer" — replaces the legacy workflow / "soumettre à validation" flow.
+ * Asks a single confirmation, then transitions the draft to `validated` so the
+ * user can immediately use the signature / share actions.
+ */
+export function SubmitDocumentButton({ documentId }: Props) {
   const [open, setOpen] = useState(false);
-  const [tplId, setTplId] = useState<string | undefined>();
   const qc = useQueryClient();
-  const list = useServerFn(listWorkflowTemplates);
-  const submit = useServerFn(submitDocumentForValidation);
-
-  const { data } = useQuery({
-    queryKey: ["workflow_templates"],
-    queryFn: () => list(),
-    enabled: open,
-  });
-
-  const templates = (data?.templates ?? []).filter(
-    (tpl) => tpl.active && (!tpl.document_type || tpl.document_type === documentType)
-  );
+  const updateFn = useServerFn(updateDocument);
 
   const mut = useMutation({
-    mutationFn: () => submit({ data: { documentId, templateId: tplId! } }),
+    mutationFn: () => updateFn({ data: { id: documentId, status: "validated" } }),
     onSuccess: () => {
-      toast.success("Document soumis à validation.");
+      toast.success("Document prêt — vous pouvez l'envoyer aux signataires.");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["document", documentId] });
-      qc.invalidateQueries({ queryKey: ["my_approvals"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -60,31 +45,25 @@ export function SubmitDocumentButton({ documentId, documentType }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm">
-          <Send className="mr-1 h-4 w-4" />Soumettre à validation
+          <Send className="mr-1 h-4 w-4" />Prêt à envoyer
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Choisir un workflow</DialogTitle>
+          <DialogTitle>Envoyer le document aux signataires&nbsp;?</DialogTitle>
+          <DialogDescription>
+            Votre document est-il prêt&nbsp;? Une fois confirmé, vous pourrez
+            l'envoyer immédiatement aux signataires depuis les actions
+            «&nbsp;Signataires&nbsp;» et «&nbsp;Partager&nbsp;».
+          </DialogDescription>
         </DialogHeader>
-        {templates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Aucun modèle de workflow disponible. Créez-en un d'abord.
-          </p>
-        ) : (
-          <Select value={tplId} onValueChange={setTplId}>
-            <SelectTrigger><SelectValue placeholder="Sélectionnez un workflow" /></SelectTrigger>
-            <SelectContent>
-              {templates.map((tpl) => (
-                <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>{t("common.cancel")}</Button>
-          <Button onClick={() => mut.mutate()} disabled={!tplId || mut.isPending}>
-            {mut.isPending ? t("common.loading") : t("common.save")}
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={mut.isPending}>
+            Pas encore
+          </Button>
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
+            {mut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            Oui, c'est prêt
           </Button>
         </DialogFooter>
       </DialogContent>
