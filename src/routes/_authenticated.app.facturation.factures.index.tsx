@@ -55,11 +55,17 @@ function FacturesListPage() {
             Cycle de vie complet : émission, envoi, paiement, archivage.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link to="/app/facturation/devis">
-            Convertir depuis un devis →
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link to="/app/facturation/devis">Convertir depuis un devis →</Link>
+          </Button>
+          <Button
+            asChild
+            className="bg-[color:var(--facturation)] text-[color:var(--facturation-foreground)] hover:bg-[color:var(--facturation)]/90"
+          >
+            <Link to="/app/facturation/factures/new">Nouvelle facture</Link>
+          </Button>
+        </div>
       </header>
 
       <Card>

@@ -172,6 +172,12 @@ export const createInvoiceFromQuote = createServerFn({ method: "POST" })
     const lineageTag = `origin_quote:${quote.id}`;
     const newTags = Array.from(new Set([...baseTags, lineageTag]));
 
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("*")
+      .eq("id", quote.organization_id)
+      .maybeSingle();
+
     const { data: invoice, error: iErr } = await supabase
       .from("documents")
       .insert({
@@ -190,12 +196,41 @@ export const createInvoiceFromQuote = createServerFn({ method: "POST" })
         tags: newTags,
         created_by: userId,
         payment_terms: quote.payment_terms,
+        service_date: quote.service_date,
+        transaction_type: quote.transaction_type,
+        client_legal_form: quote.client_legal_form,
+        client_reference: quote.client_reference,
+        client_delivery_address: quote.client_delivery_address,
+        buyer_siret: quote.buyer_siret,
+        buyer_vat_number: quote.buyer_vat_number,
+        buyer_address: quote.buyer_address,
+        late_penalty_rate: quote.late_penalty_rate,
+        recovery_indemnity: quote.recovery_indemnity,
+        early_discount_text: quote.early_discount_text,
+        payment_bank_details: quote.payment_bank_details,
+        header_note: quote.header_note,
+        footer_note: quote.footer_note,
       })
       .select()
       .single();
     if (iErr) throw new Error(iErr.message);
 
     await supabase.rpc("allocate_document_number", { p_document_id: invoice.id });
+
+    // Auto-remplissage mentions légales conformité (Art. L441-9 C.com).
+    try {
+      const { buildLegalMentions } = await import("@/lib/invoice-compliance");
+      const mentions = buildLegalMentions(
+        org as Parameters<typeof buildLegalMentions>[0],
+        { ...invoice, type: "invoice" } as Parameters<typeof buildLegalMentions>[1],
+      );
+      if (mentions.trim()) {
+        await supabase
+          .from("documents")
+          .update({ legal_mentions: mentions })
+          .eq("id", invoice.id);
+      }
+    } catch { /* mentions non bloquantes */ }
 
     const { data: lines } = await supabase
       .from("document_invoice_lines")
