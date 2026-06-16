@@ -763,6 +763,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          advance_paid: number | null
           amount_ht: number | null
           amount_ttc: number | null
           archived_at: string | null
@@ -773,6 +774,9 @@ export type Database = {
           buyer_peppol_id: string | null
           buyer_siret: string | null
           buyer_vat_number: string | null
+          client_delivery_address: string | null
+          client_legal_form: string | null
+          client_reference: string | null
           corrected_invoice_id: string | null
           created_at: string
           created_by: string | null
@@ -783,6 +787,7 @@ export type Database = {
           document_number: string | null
           document_numbered_at: string | null
           due_date: string | null
+          early_discount_text: string | null
           einvoice_format: Database["public"]["Enums"]["einvoice_format"] | null
           einvoice_last_event_at: string | null
           einvoice_payload: Json | null
@@ -794,24 +799,32 @@ export type Database = {
           einvoice_submitted_at: string | null
           einvoice_xml_path: string | null
           first_viewed_at: string | null
+          footer_note: string | null
           guest_session_id: string | null
+          header_note: string | null
           id: string
+          internal_note: string | null
           invoice_number: string | null
           invoice_type_code: string | null
           issue_date: string | null
+          late_penalty_rate: number | null
+          legal_mentions: string | null
           organization_id: string
+          payment_bank_details: string | null
           payment_means_code: string | null
           payment_terms: string | null
           pdp_provider: string | null
           pdp_status: Database["public"]["Enums"]["pdp_status"]
           pdp_transmission_id: string | null
           previous_status: Database["public"]["Enums"]["document_status"] | null
+          recovery_indemnity: number | null
           reference: string | null
           retention_until: string | null
           seller_address: Json | null
           seller_legal_name: string | null
           seller_siret: string | null
           seller_vat_number: string | null
+          service_date: string | null
           status: Database["public"]["Enums"]["document_status"]
           tags: string[]
           third_party_email: string | null
@@ -819,10 +832,13 @@ export type Database = {
           title: string
           total_discount: number | null
           total_vat: number | null
+          transaction_type: string | null
           type: Database["public"]["Enums"]["document_type"]
           updated_at: string
+          validity_date: string | null
         }
         Insert: {
+          advance_paid?: number | null
           amount_ht?: number | null
           amount_ttc?: number | null
           archived_at?: string | null
@@ -833,6 +849,9 @@ export type Database = {
           buyer_peppol_id?: string | null
           buyer_siret?: string | null
           buyer_vat_number?: string | null
+          client_delivery_address?: string | null
+          client_legal_form?: string | null
+          client_reference?: string | null
           corrected_invoice_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -843,6 +862,7 @@ export type Database = {
           document_number?: string | null
           document_numbered_at?: string | null
           due_date?: string | null
+          early_discount_text?: string | null
           einvoice_format?:
             | Database["public"]["Enums"]["einvoice_format"]
             | null
@@ -856,12 +876,18 @@ export type Database = {
           einvoice_submitted_at?: string | null
           einvoice_xml_path?: string | null
           first_viewed_at?: string | null
+          footer_note?: string | null
           guest_session_id?: string | null
+          header_note?: string | null
           id?: string
+          internal_note?: string | null
           invoice_number?: string | null
           invoice_type_code?: string | null
           issue_date?: string | null
+          late_penalty_rate?: number | null
+          legal_mentions?: string | null
           organization_id: string
+          payment_bank_details?: string | null
           payment_means_code?: string | null
           payment_terms?: string | null
           pdp_provider?: string | null
@@ -870,12 +896,14 @@ export type Database = {
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
             | null
+          recovery_indemnity?: number | null
           reference?: string | null
           retention_until?: string | null
           seller_address?: Json | null
           seller_legal_name?: string | null
           seller_siret?: string | null
           seller_vat_number?: string | null
+          service_date?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           tags?: string[]
           third_party_email?: string | null
@@ -883,10 +911,13 @@ export type Database = {
           title: string
           total_discount?: number | null
           total_vat?: number | null
+          transaction_type?: string | null
           type?: Database["public"]["Enums"]["document_type"]
           updated_at?: string
+          validity_date?: string | null
         }
         Update: {
+          advance_paid?: number | null
           amount_ht?: number | null
           amount_ttc?: number | null
           archived_at?: string | null
@@ -897,6 +928,9 @@ export type Database = {
           buyer_peppol_id?: string | null
           buyer_siret?: string | null
           buyer_vat_number?: string | null
+          client_delivery_address?: string | null
+          client_legal_form?: string | null
+          client_reference?: string | null
           corrected_invoice_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -907,6 +941,7 @@ export type Database = {
           document_number?: string | null
           document_numbered_at?: string | null
           due_date?: string | null
+          early_discount_text?: string | null
           einvoice_format?:
             | Database["public"]["Enums"]["einvoice_format"]
             | null
@@ -920,12 +955,18 @@ export type Database = {
           einvoice_submitted_at?: string | null
           einvoice_xml_path?: string | null
           first_viewed_at?: string | null
+          footer_note?: string | null
           guest_session_id?: string | null
+          header_note?: string | null
           id?: string
+          internal_note?: string | null
           invoice_number?: string | null
           invoice_type_code?: string | null
           issue_date?: string | null
+          late_penalty_rate?: number | null
+          legal_mentions?: string | null
           organization_id?: string
+          payment_bank_details?: string | null
           payment_means_code?: string | null
           payment_terms?: string | null
           pdp_provider?: string | null
@@ -934,12 +975,14 @@ export type Database = {
           previous_status?:
             | Database["public"]["Enums"]["document_status"]
             | null
+          recovery_indemnity?: number | null
           reference?: string | null
           retention_until?: string | null
           seller_address?: Json | null
           seller_legal_name?: string | null
           seller_siret?: string | null
           seller_vat_number?: string | null
+          service_date?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           tags?: string[]
           third_party_email?: string | null
@@ -947,8 +990,10 @@ export type Database = {
           title?: string
           total_discount?: number | null
           total_vat?: number | null
+          transaction_type?: string | null
           type?: Database["public"]["Enums"]["document_type"]
           updated_at?: string
+          validity_date?: string | null
         }
         Relationships: [
           {
@@ -1193,11 +1238,15 @@ export type Database = {
           country: string
           country_code: string | null
           created_at: string
+          default_early_discount: string | null
+          default_payment_terms: string | null
           guest_session_id: string | null
           iban: string | null
           id: string
+          is_autoentrepreneur: boolean
           is_guest: boolean
           is_reseller: boolean
+          late_penalty_rate: number | null
           legal_form: string | null
           legal_name: string | null
           logo_storage_path: string | null
@@ -1207,11 +1256,16 @@ export type Database = {
           peppol_id: string | null
           plan: string
           postal_code: string | null
+          rcs_city: string | null
+          recovery_indemnity: number | null
           reseller_id: string | null
+          rm_number: string | null
+          share_capital: number | null
           siren: string | null
           siret: string | null
           updated_at: string
           vat_number: string | null
+          vat_regime: string | null
         }
         Insert: {
           active?: boolean
@@ -1222,11 +1276,15 @@ export type Database = {
           country?: string
           country_code?: string | null
           created_at?: string
+          default_early_discount?: string | null
+          default_payment_terms?: string | null
           guest_session_id?: string | null
           iban?: string | null
           id?: string
+          is_autoentrepreneur?: boolean
           is_guest?: boolean
           is_reseller?: boolean
+          late_penalty_rate?: number | null
           legal_form?: string | null
           legal_name?: string | null
           logo_storage_path?: string | null
@@ -1236,11 +1294,16 @@ export type Database = {
           peppol_id?: string | null
           plan?: string
           postal_code?: string | null
+          rcs_city?: string | null
+          recovery_indemnity?: number | null
           reseller_id?: string | null
+          rm_number?: string | null
+          share_capital?: number | null
           siren?: string | null
           siret?: string | null
           updated_at?: string
           vat_number?: string | null
+          vat_regime?: string | null
         }
         Update: {
           active?: boolean
@@ -1251,11 +1314,15 @@ export type Database = {
           country?: string
           country_code?: string | null
           created_at?: string
+          default_early_discount?: string | null
+          default_payment_terms?: string | null
           guest_session_id?: string | null
           iban?: string | null
           id?: string
+          is_autoentrepreneur?: boolean
           is_guest?: boolean
           is_reseller?: boolean
+          late_penalty_rate?: number | null
           legal_form?: string | null
           legal_name?: string | null
           logo_storage_path?: string | null
@@ -1265,11 +1332,16 @@ export type Database = {
           peppol_id?: string | null
           plan?: string
           postal_code?: string | null
+          rcs_city?: string | null
+          recovery_indemnity?: number | null
           reseller_id?: string | null
+          rm_number?: string | null
+          share_capital?: number | null
           siren?: string | null
           siret?: string | null
           updated_at?: string
           vat_number?: string | null
+          vat_regime?: string | null
         }
         Relationships: [
           {

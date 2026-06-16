@@ -1,100 +1,103 @@
-# Module Facturation — Plan d'implémentation
+# Mentions légales obligatoires — Devis & Factures
 
-## Diagnostic (rapide)
+Objectif : guider l'utilisateur à saisir toutes les mentions exigées par l'art. L441-9 du Code de commerce et le CGI, avec validation, pré-remplissage automatique depuis le profil émetteur, et indicateur de conformité.
 
-Côté backend, tout existe déjà : table `documents` avec `type='quote'|'invoice'`, tables `document_invoice_lines` et `document_vat_breakdown`, `invoice-lifecycle.ts` (state machine + tones), `transitionInvoiceStatus`, `createDocumentPaymentLink`, `PaymentDialog`, `ExportFacturXButton`, `allocate_document_number` (Postgres). Il manque l'UX dédiée et 2-3 server fns d'agrégat. Aucune migration de schéma nécessaire.
+## Lot 1 — Schéma de base (migration)
 
-La sidebar vit dans `src/components/app-shell.tsx` (fonction `navGroupsForRole`) — on y branche le nouveau groupe.
+Une seule migration ajoute les colonnes manquantes (les colonnes déjà présentes comme `seller_*`, `buyer_*`, `payment_terms`, `delivery_date` sont conservées et réutilisées) :
 
-## Identité visuelle
+**`organizations`** (profil émetteur)
+- `legal_form`, `share_capital`, `siret`, `rcs_city`, `rm_number`, `naf_code`
+- `vat_number`, `vat_regime` (default `'debits'`), `is_autoentrepreneur` (default `false`)
+- `iban`, `bic`
+- `late_penalty_rate` (default `12.0`), `recovery_indemnity` (default `40.0`)
+- `default_payment_terms`, `default_early_discount` (default `'Pas d''escompte pour paiement anticipé'`)
 
-Token couleur dédié : on ajoute `--facturation` / `--facturation-foreground` dans `src/styles.css` (palette emerald). Toutes les surfaces du module (cards KPI, badges statut, CTAs primaires) consomment ce token, pas un `bg-emerald-600` en dur — pour respecter le design system.
+**`documents`** (champs spécifiques au document, complètent `seller_*`/`buyer_*` déjà présents)
+- `service_date`, `validity_date`, `transaction_type` (default `'B2B'`)
+- `client_delivery_address`, `client_legal_form`, `client_reference`
+- `payment_bank_details`, `late_penalty_rate`, `recovery_indemnity` (default `40.0`)
+- `early_discount_text`, `advance_paid` (default `0`)
+- `header_note`, `footer_note`, `internal_note`, `legal_mentions`
 
-## Livrables par lot (ordre demandé)
+Note : `client_siret` et `client_vat_number` sont déjà disponibles via `buyer_siret`/`buyer_vat_number`.
 
-### Lot 1 — Sidebar + structure de routes
-- Dans `app-shell.tsx`, pour `admin_client` et `user/manager`, ajouter un groupe **Facturation** entre Documents et Workflows :
-  - Icône : `Receipt` (lucide), couleur emerald via `text-[hsl(var(--facturation))]` sur l'icône active.
-  - 3 entrées : `/app/facturation` (Tableau de bord), `/app/facturation/devis`, `/app/facturation/factures`.
-  - Badge sur "Factures" = nombre de factures `sent`+`viewed`+`partially_paid` (via une server fn de comptage, mêmes patterns que `listMyPendingApprovals`).
-- Créer les 6 fichiers routes vides (squelettes `createFileRoute` + composant placeholder) :
-  - `_authenticated.app.facturation.index.tsx`
-  - `_authenticated.app.facturation.devis.index.tsx`
-  - `_authenticated.app.facturation.devis.new.tsx`
-  - `_authenticated.app.facturation.devis.$id.edit.tsx`
-  - `_authenticated.app.facturation.factures.index.tsx`
-  - `_authenticated.app.facturation.factures.$id.tsx`
+Politiques RLS : héritées des tables (aucune nouvelle policy nécessaire, seules les colonnes sont ajoutées).
 
-### Lot 2 — Server fns d'agrégat
-Nouveau fichier `src/lib/facturation.functions.ts` :
-- `listQuotes({ search?, status?, from?, to? })` — wrap `listDocuments` avec `type='quote'`.
-- `listInvoices({ search?, status?, from?, to? })` — wrap `listDocuments` avec `type='invoice'`.
-- `getFacturationStats()` — 4 KPI sur le mois courant (total facturé, en attente, payé, devis en cours), basé sur `documents` + `document_payments`.
-- `createInvoiceFromQuote({ quoteId, dueDate, sendImmediately })` — copie le devis (`documents` + `document_invoice_lines` + `document_vat_breakdown`) en `type='invoice', status='draft'`, écrit `corrected_invoice_id`/équivalent dans une colonne dédiée si présente (sinon `metadata.origin_quote_id`), bascule le devis vers `paid` (= accepté) via `updateDocument`.
-- `sendInvoiceToClient({ invoiceId, includeStripeLink, subject?, body? })` — réutilise `createDocumentPaymentLink` si demandé puis `transitionInvoiceStatus` vers `sent`, envoie l'email (réutiliser `email-sender.ts`).
+## Lot 2 — Bibliothèque de conformité
 
-Création de devis/facture en brouillon : on réutilise `createDocument` existant (pas de nouvelle fn `createQuote`).
+Nouveau fichier `src/lib/invoice-compliance.ts` :
 
-### Lot 3 — Dashboard `/app/facturation`
-- 4 `FacturationKPICards` (composant à créer) consommant `getFacturationStats` — surfaces emerald.
-- 2 mini-tableaux côte à côte (Derniers devis / Dernières factures, 5 lignes) avec CTA "+ Nouveau devis" / "+ Nouvelle facture".
+```ts
+export type ComplianceLevel = 'required' | 'recommended' | 'electronic_2026'
+export interface ComplianceCheck {
+  field: string; label: string; level: ComplianceLevel;
+  satisfied: boolean; message?: string;
+}
+export function checkInvoiceCompliance(doc, org): ComplianceCheck[]
+export function complianceSummary(checks): { status: 'ok'|'partial'|'ko'; required: number; satisfied: number }
+export function buildLegalMentions(org, doc): string
+```
 
-### Lot 4 — Liste Devis `/app/facturation/devis`
-- Filtres (statut, recherche client, date), tableau colonnes `N° / Client / Date / HT / Statut / Actions`.
-- Nouveau composant `QuoteStatusBadge` (tons emerald-friendly distincts du `DocumentStatusBadge`).
-- Actions ligne : Aperçu, Modifier (si `draft`), Envoyer (réutilise `ShareLinkDialog` ou nouveau `SendQuoteDialog` léger), **Convertir en facture** (si `sent`/`viewed`), Annuler.
+Règles `required`, `recommended` et `electronic_2026` strictement comme spécifié.
+`buildLegalMentions` génère automatiquement le bloc de mentions (forme + capital, RCS/RM, TVA, pénalités, indemnité 40 €, mention auto-entrepreneur art. 293 B).
 
-### Lot 5 — Liste Factures `/app/facturation/factures`
-- Mêmes patterns. Nouveau composant `InvoiceStatusBadge` qui consomme `INVOICE_STATUS_TONE` (déjà exporté par `invoice-lifecycle.ts`) en mode emerald-first.
-- Colonne paiement = `PaymentStatusBadge` existant.
-- Actions ligne : Aperçu, Envoyer (`SendInvoiceDialog`), Créer lien Stripe (`createDocumentPaymentLink`), Exporter Factur-X (`ExportFacturXButton`), Marquer payée (`transitionInvoiceStatus → paid`), Archiver (`archiveDocument`).
+## Lot 3 — Profil de facturation (Paramètres)
 
-### Lot 6 — Formulaires Devis (`new` + `$id/edit`)
-Stepper horizontal 3 étapes :
-- **Étape 1** — Infos générales (numéro auto via `allocate_document_number` au moment de l'émission, dates, objet, client, conditions de paiement).
-- **Étape 2** — Lignes éditables (nouveau composant `InvoiceLineItems` + `InvoiceTotals`) avec calcul TVA multi-taux (0/5.5/10/20) et remise globale ; persistance via `document_invoice_lines` + `document_vat_breakdown` (déjà en base).
-- **Étape 3** — Note interne, CGV (textarea ou modèle), choix du template PDF (réutilise `pdf_templates`), aperçu PDF, CTA "Brouillon" / "Émettre" (transition `draft → issued`).
+Nouvelle route `/_authenticated/app/settings/billing-profile.tsx` + entrée dans la nav settings :
+- Sections : Identité, Adresse, Identifiants légaux, TVA, Coordonnées bancaires, Conditions de paiement par défaut
+- Champ `is_autoentrepreneur` qui masque dynamiquement capital + RCS + TVA
+- Sauvegarde via une nouvelle server fn `updateOrganizationBilling` (clé `requireSupabaseAuth` + check `is_org_admin`)
+- Indicateur de complétude (réutilise `checkInvoiceCompliance` filtré sur champs émetteur)
+- Aperçu de l'en-tête tel qu'il apparaîtra sur les documents
 
-### Lot 7 — Conversion Devis → Facture
-- `ConvertToInvoiceDialog` : montre le numéro de facture prévisualisé, date, échéance (30j par défaut), toggle "envoyer immédiatement".
-- Valide → `createInvoiceFromQuote` → redirige vers `/app/facturation/factures/$id`.
+## Lot 4 — Stepper 4 étapes (devis & factures)
 
-### Lot 8 — Détail Facture `/app/facturation/factures/$id`
-**Strictement zéro composant signature** (pas de `MultiSignersDialog`, `SignDocumentDialog`, etc.).
-- Colonne gauche (2/3) : viewer PDF (`SignedPdfPreview`/`pdf.functions`) + boutons Télécharger PDF / Exporter Factur-X.
-- Colonne droite (1/3) :
-  - Statut (`InvoiceStatusBadge`) + `InvoiceTimeline` (nouveau composant : transitions calculées depuis `audit_logs` filtrés par `action='invoice.transition'` qui existe déjà via le trigger `tg_audit_invoice_transition`).
-  - Actions contextuelles selon statut courant (utilise `manualNextStatuses` de `invoice-lifecycle.ts`).
-  - Bloc Paiement : montant TTC, lien Stripe avec bouton Copier, `PaymentDialog` réutilisé pour saisie manuelle, montant restant dû.
-  - Bloc Client : nom/email/adresse + bouton "Envoyer un rappel" (si en retard).
-  - Bloc Infos : n° facture, dates, lien vers devis d'origine (via `metadata.origin_quote_id`).
+Nouveau composant partagé `src/components/facturation/DocumentStepper.tsx` utilisé par :
+- `_authenticated.app.facturation.devis.$id.edit.tsx`
+- `_authenticated.app.facturation.devis.new.tsx`
+- `_authenticated.app.facturation.factures.$id.tsx` (mode édition pour brouillons)
+- nouvelle route `_authenticated.app.facturation.factures.new.tsx`
 
-### Lot 9 — Cloisonnement du module Documents existant
-- `listDocuments` : ajouter un filtre `excludeTypes?: DocumentType[]` (ou un toggle côté UI) — passé depuis `/app/documents` pour exclure `quote` et `invoice`.
-- Sur `/app/documents` : bannière info "Les devis et factures sont dans le module Facturation →" (lien vers `/app/facturation`).
-- Sur `/app/documents/new` : retirer les options `quote` et `invoice` du sélecteur de type ; remplacer par un lien vers `/app/facturation/devis/new`.
+Étapes :
+1. **Émetteur & Destinataire** — bloc émetteur pré-rempli depuis l'org (modifiable, écrit dans `seller_*`), bloc client (`third_party_*`, `buyer_*`, `client_delivery_address`, `client_legal_form`, `client_reference`)
+2. **Informations document** — n° (auto), dates émission/service/échéance/validité, objet, transaction_type, conditions de règlement (modes, IBAN/BIC, taux de pénalité, indemnité 40 €, escompte)
+3. **Lignes & Montants** — table existante `InvoiceLineItems` enrichie : `unit`, `vat_exemption_reason` (si exonéré), drag-and-drop (HTML5 natif comme `SendQuoteDialog`), récap TVA par taux depuis `document_vat_breakdown`, sous-total, total HT net, total TTC, acompte, net à payer. Si `org.is_autoentrepreneur` : tous les `vat_rate` forcés à 0, colonnes TVA masquées, mention auto art. 293 B affichée
+4. **Mentions & Finalisation** — `header_note`, `footer_note`, `internal_note`, `legal_mentions` (auto-générées par `buildLegalMentions`, éditables), sélection template PDF, `InvoiceComplianceIndicator`, actions "Brouillon" / "Émettre" / "Émettre et envoyer"
+
+Navigation entre étapes via bouton précédent/suivant, libre lorsque le doc est en brouillon.
+
+## Lot 5 — Composant `InvoiceComplianceIndicator`
+
+`src/components/facturation/InvoiceComplianceIndicator.tsx` :
+- Badge synthétique 🟢/🟡/🔴 + popover détaillant les checks groupés par niveau
+- Variante compacte (page liste) et complète (formulaire / page détail)
+- Affiché en haut du stepper et sur la page détail facture
+
+## Lot 6 — Mentions automatiques sur les documents existants
+
+- À l'enregistrement d'un devis/facture, si `legal_mentions` est vide, le pré-remplir via `buildLegalMentions`
+- Affichage des mentions calculées dans la page détail (lecture seule si statut ≠ brouillon)
 
 ## Détails techniques
 
-- **Routing** : aucun `_authenticated.app.facturation.tsx` (layout) requis — chaque page est autonome. Les fichiers suivent la convention dot (`facturation.devis.index.tsx`).
-- **Data** : tous les loaders/components utilisent le pattern canonique `ensureQueryData` + `useSuspenseQuery`.
-- **Numérotation** : déjà gérée par `allocate_document_number` (Postgres) — appelée à l'émission (`draft → issued`).
-- **TVA / lignes** : tables existantes — pas de migration. On vérifie juste les GRANTs/RLS au moment d'écrire les server fns (déjà OK d'après le schéma).
-- **Couleurs** : un seul token CSS `--facturation` à ajouter ; tout le reste consomme `bg-[hsl(var(--facturation))]` / `text-...` — pas de `emerald-600` en dur.
-- **i18n** : nouvelles clés sous `nav_extra.facturation`, `facturation.*` (dashboard/devis/factures/dialogs). FR + EN.
+- Pas de table `organization_billing_profile` séparée : toutes les colonnes vivent dans `organizations` (cohérent avec l'existant `seller_*` côté `documents`).
+- Validation côté serveur via Zod dans `updateOrganizationBilling` et `updateDocument` : `siret` regex 14 chiffres, `vat_number` regex `^[A-Z]{2}[A-Z0-9]{2,12}$`, `iban` regex IBAN.
+- Calculs TVA factorisés dans `computeTotals` (déjà présent) ; ajout d'un helper `vatBreakdown(lines)` pour le tableau récap.
+- Auto-entrepreneur : helper `applyAutoEntrepreneurMode(lines)` qui force `vat_rate=0`.
+- Numérotation : conserve `allocate_document_number` existant ; "Émettre" déclenche la transition `draft → issued` puis appel RPC.
+- Tests visuels via `browser--view_preview` après chaque lot.
 
-## Hors périmètre (non livré)
+## Ordre d'exécution
 
-- CRM clients (sélecteur avec recherche : saisie libre dans Lot 6, intégration CRM ultérieure).
-- Relances automatiques par cron.
-- Webhook Stripe (déjà en place via `STRIPE_WEBHOOK_SECRET` — on ne touche pas).
-- Modèles d'email personnalisables côté admin (envoi standard FR pour l'instant).
+1. Migration (Lot 1) — attendre approbation
+2. `invoice-compliance.ts` (Lot 2) + composant indicateur (Lot 5)
+3. Page Profil de facturation (Lot 3)
+4. Stepper 4 étapes partagé (Lot 4) — branche devis puis factures
+5. Mentions automatiques (Lot 6)
 
-## Validation
+## Hors périmètre (à valider ensuite si besoin)
 
-Après chaque lot, vérifier :
-1. Build propre + types OK.
-2. Navigation visible et active state correct sur les 3 entrées Facturation.
-3. Une facture créée depuis `/app/facturation/factures/...` n'apparaît PAS dans `/app/documents`, et inversement, un contrat n'apparaît PAS dans Facturation.
-4. Conversion devis → facture : devis passe en `paid`, facture créée en `draft` avec mêmes lignes/TVA, redirection OK.
-5. Page détail facture : aucun composant signature monté (grep du fichier confirme).
+- Génération PDF reformatée intégrant header/footer/legal_mentions
+- Migration des organisations existantes pour remplir `legal_form`, `siret` etc. (à faire à la main par l'utilisateur via la nouvelle page Profil)
+- Intégration PDP (facturation électronique 2026) — déjà partiellement présente via `einvoice_*`
