@@ -13,14 +13,33 @@ const ListFilters = z
 
 type ListData = z.infer<typeof ListFilters>;
 
-function buildListQuery(
+export type FacturationDocRow = {
+  id: string;
+  type: string;
+  status: string;
+  title: string;
+  reference: string | null;
+  document_number: string | null;
+  amount_ht: number | null;
+  amount_ttc: number | null;
+  currency: string;
+  third_party_name: string | null;
+  third_party_email: string | null;
+  issue_date: string | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+async function runList(
   supabase: { from: (t: "documents") => unknown },
   type: "quote" | "invoice",
   data: ListData,
-) {
+): Promise<FacturationDocRow[]> {
+  // The supabase client is fully typed in callers; the builder shape varies
+  // per call so we use `any` locally and re-narrow on return.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let q: any = supabase
-    .from("documents")
+  let q: any = (supabase.from("documents") as any)
     .select(
       "id, type, status, title, reference, document_number, amount_ht, amount_ttc, currency, third_party_name, third_party_email, issue_date, due_date, created_at, updated_at",
     )
@@ -35,34 +54,30 @@ function buildListQuery(
     );
   if (data?.fromDate) q = q.gte("issue_date", data.fromDate);
   if (data?.toDate) q = q.lte("issue_date", data.toDate);
-  return q as Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+  const { data: docs, error } = (await q) as {
+    data: FacturationDocRow[] | null;
+    error: { message: string } | null;
+  };
+  if (error) throw new Error(error.message);
+  return docs ?? [];
 }
 
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: docs, error } = await buildListQuery(
-      context.supabase,
-      "quote",
-      data,
-    );
-    if (error) throw new Error(error.message);
-    return { documents: (docs ?? []) as Array<Record<string, unknown>> };
+    const documents = await runList(context.supabase, "quote", data);
+    return { documents };
   });
 
 export const listInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: docs, error } = await buildListQuery(
-      context.supabase,
-      "invoice",
-      data,
-    );
-    if (error) throw new Error(error.message);
-    return { documents: (docs ?? []) as Array<Record<string, unknown>> };
+    const documents = await runList(context.supabase, "invoice", data);
+    return { documents };
   });
+
 
 
 
