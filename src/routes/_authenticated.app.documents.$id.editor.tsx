@@ -400,6 +400,21 @@ function PdfEditorPage() {
             {saveMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
             Enregistrer
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (fields.length === 0) return;
+              if (!confirm("Supprimer toutes les zones de l'éditeur ? (utile si elles sont déjà incrustées dans le PDF)")) return;
+              setFields([]);
+              setSelectedId(null);
+              saveMut.mutate();
+            }}
+            disabled={fields.length === 0 || saveMut.isPending}
+            title="Vider toutes les zones (à utiliser après un PDF final pour éviter les doublons)"
+          >
+            <Trash2 className="mr-1 h-4 w-4" /> Vider les zones
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setTplOpen(true)} disabled={fields.length === 0}>
             <BookmarkPlus className="mr-1 h-4 w-4" /> Enregistrer comme modèle
           </Button>
