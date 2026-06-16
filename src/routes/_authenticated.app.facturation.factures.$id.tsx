@@ -18,6 +18,7 @@ import { formatEUR } from "@/components/facturation/FacturationKPICard";
 import { PaymentDialog } from "@/components/payment-dialog";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { ExportFacturXButton } from "@/components/export-factur-x-button";
+import { SendQuoteDialog } from "@/components/facturation/SendQuoteDialog";
 
 export const Route = createFileRoute("/_authenticated/app/facturation/factures/$id")({
   component: InvoiceDetailPage,
