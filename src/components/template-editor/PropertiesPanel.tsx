@@ -217,19 +217,211 @@ function ImageProps({ block, onUpdate }: { block: Extract<Block, { type: "image"
 }
 
 function TableProps({ block, onUpdate }: { block: Extract<Block, { type: "table" }>; onUpdate: (id: string, p: Partial<Block>) => void }) {
+  const headers = block.headers.length
+    ? [...block.headers]
+    : Array.from({ length: block.columns }, (_, i) => `Col ${i + 1}`);
+  const data = Array.from({ length: block.rows }, (_, r) =>
+    Array.from({ length: block.columns }, (_, c) => block.data[r]?.[c] ?? ""),
+  );
+
+  const updateCols = (cols: number) => {
+    const c = Math.max(1, Math.min(12, Math.round(cols)));
+    onUpdate(block.id, {
+      columns: c,
+      headers: Array.from({ length: c }, (_, i) => headers[i] ?? `Col ${i + 1}`),
+      data: data.map((row) => Array.from({ length: c }, (_, i) => row[i] ?? "")),
+    } as Partial<Block>);
+  };
+  const updateRows = (rows: number) => {
+    const r = Math.max(1, Math.min(60, Math.round(rows)));
+    onUpdate(block.id, {
+      rows: r,
+      data: Array.from({ length: r }, (_, i) =>
+        data[i] ?? Array.from({ length: block.columns }, () => ""),
+      ),
+    } as Partial<Block>);
+  };
+  const setHeader = (i: number, v: string) => {
+    const next = [...headers];
+    next[i] = v;
+    onUpdate(block.id, { headers: next } as Partial<Block>);
+  };
+  const setCell = (r: number, c: number, v: string) => {
+    const next = data.map((row) => [...row]);
+    next[r][c] = v;
+    onUpdate(block.id, { data: next } as Partial<Block>);
+  };
+
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-2 gap-2">
-        <NumberField label="Colonnes" value={block.columns} onChange={(v) => onUpdate(block.id, { columns: Math.max(1, Math.round(v)) } as Partial<Block>)} />
-        <NumberField label="Lignes" value={block.rows} onChange={(v) => onUpdate(block.id, { rows: Math.max(1, Math.round(v)) } as Partial<Block>)} />
+        <NumberField label="Colonnes" value={block.columns} onChange={updateCols} />
+        <NumberField label="Lignes" value={block.rows} onChange={updateRows} />
       </div>
       <div>
-        <Label className="text-xs">En-têtes (séparés par ,)</Label>
-        <Input
-          value={block.headers.join(",")}
-          onChange={(e) => onUpdate(block.id, { headers: e.target.value.split(",").map((s) => s.trim()) } as Partial<Block>)}
-        />
+        <Label className="text-xs mb-1 block">Contenu</Label>
+        <div className="border rounded-md overflow-hidden">
+          <div className="grid" style={{ gridTemplateColumns: `repeat(${block.columns}, minmax(0,1fr))` }}>
+            {headers.slice(0, block.columns).map((h, i) => (
+              <input
+                key={`h-${i}`}
+                value={h}
+                onChange={(e) => setHeader(i, e.target.value)}
+                placeholder={`Col ${i + 1}`}
+                className="h-7 text-xs font-medium bg-muted border-b border-r last:border-r-0 px-1.5 outline-none focus:bg-background"
+              />
+            ))}
+            {data.map((row, r) =>
+              row.map((cell, c) => (
+                <input
+                  key={`c-${r}-${c}`}
+                  value={cell}
+                  onChange={(e) => setCell(r, c, e.target.value)}
+                  className="h-7 text-xs border-b border-r last:border-r-0 px-1.5 outline-none focus:bg-accent/40"
+                />
+              )),
+            )}
+          </div>
+        </div>
       </div>
+      <NumberField label="Taille (pt)" value={block.fontSize} onChange={(v) => onUpdate(block.id, { fontSize: v } as Partial<Block>)} />
+    </div>
+  );
+}
+
+function PricingTableProps({
+  block,
+  onUpdate,
+}: {
+  block: Extract<Block, { type: "pricing_table" }>;
+  onUpdate: (id: string, p: Partial<Block>) => void;
+}) {
+  const setItems = (items: typeof block.items) => onUpdate(block.id, { items } as Partial<Block>);
+  const updateItem = (i: number, patch: Partial<(typeof block.items)[number]>) => {
+    const next = block.items.map((it, idx) => (idx === i ? { ...it, ...patch } : it));
+    setItems(next);
+  };
+  const addItem = () =>
+    setItems([...block.items, { label: "Nouvelle ligne", qty: 1, unitPriceHt: 0 }]);
+  const removeItem = (i: number) => setItems(block.items.filter((_, idx) => idx !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= block.items.length) return;
+    const next = [...block.items];
+    [next[i], next[j]] = [next[j], next[i]];
+    setItems(next);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <Label className="text-xs">Lignes du devis</Label>
+          <Button type="button" size="sm" variant="ghost" className="h-7 px-2" onClick={addItem}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
+          </Button>
+        </div>
+        <div className="space-y-1.5">
+          {block.items.length === 0 && (
+            <p className="text-xs text-muted-foreground italic">Aucune ligne. Ajoutez votre première prestation.</p>
+          )}
+          {block.items.map((it, i) => (
+            <div key={i} className="rounded-md border bg-background p-2 space-y-1.5">
+              <div className="flex items-start gap-1">
+                <button
+                  type="button"
+                  className="flex flex-col mt-0.5 text-muted-foreground hover:text-foreground"
+                  title="Réorganiser"
+                >
+                  <GripVertical className="h-3 w-3" />
+                </button>
+                <Textarea
+                  rows={2}
+                  value={it.label}
+                  onChange={(e) => updateItem(i, { label: e.target.value })}
+                  placeholder="Désignation"
+                  className="text-xs min-h-[44px]"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 shrink-0 text-destructive"
+                  onClick={() => removeItem(i)}
+                  title="Supprimer la ligne"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <div>
+                  <Label className="text-[10px] uppercase text-muted-foreground">Qté</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    className="h-7 text-xs"
+                    value={it.qty}
+                    onChange={(e) => updateItem(i, { qty: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase text-muted-foreground">PU HT</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    className="h-7 text-xs"
+                    value={it.unitPriceHt}
+                    onChange={(e) => updateItem(i, { unitPriceHt: Number(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground pt-0.5">
+                <div className="flex gap-1">
+                  <button type="button" className="hover:text-foreground" onClick={() => move(i, -1)}>↑</button>
+                  <button type="button" className="hover:text-foreground" onClick={() => move(i, 1)}>↓</button>
+                </div>
+                <span>
+                  Total HT&nbsp;:&nbsp;
+                  {(Math.round(it.qty * it.unitPriceHt * 100) / 100).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: block.currency,
+                  })}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 border-t pt-2">
+        <div>
+          <Label className="text-xs">TVA (%)</Label>
+          <Input
+            type="number"
+            step="0.1"
+            className="h-8"
+            value={block.vatRate}
+            onChange={(e) => onUpdate(block.id, { vatRate: Number(e.target.value) || 0 } as Partial<Block>)}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Devise</Label>
+          <Select
+            value={block.currency}
+            onValueChange={(v) => onUpdate(block.id, { currency: v } as Partial<Block>)}
+          >
+            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EUR">EUR €</SelectItem>
+              <SelectItem value="USD">USD $</SelectItem>
+              <SelectItem value="GBP">GBP £</SelectItem>
+              <SelectItem value="CHF">CHF</SelectItem>
+              <SelectItem value="CAD">CAD $</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <NumberField label="Taille (pt)" value={block.fontSize} onChange={(v) => onUpdate(block.id, { fontSize: v } as Partial<Block>)} />
     </div>
   );
 }
