@@ -275,6 +275,15 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       .single();
     if (fileErr) throw new Error(fileErr.message);
 
+    // Les valeurs des champs sont désormais incrustées dans le PDF :
+    // on supprime les enregistrements d'overlay pour éviter un double
+    // affichage (valeurs imprimées + surcouche éditable) lors d'une
+    // réouverture du document dans l'éditeur.
+    await supabase
+      .from("document_pdf_fields")
+      .delete()
+      .eq("document_id", doc.id);
+
     await supabase.from("audit_logs").insert({
       organization_id: doc.organization_id,
       user_id: userId,
