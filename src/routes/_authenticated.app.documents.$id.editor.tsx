@@ -147,6 +147,8 @@ function PdfEditorPage() {
 
   const pdfDocRef = useRef<PdfJs.PDFDocumentProxy | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
 
   useEffect(() => {
     if (!fieldsQ.data) return;
