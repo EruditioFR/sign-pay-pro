@@ -118,7 +118,7 @@ function DocumentDetailPage() {
                   </Link>
                 </Button>
               )}
-              {!readOnly && ["validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
+              {!readOnly && ["draft", "validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
                 <>
                   <GeneratePdfButton documentId={doc.id} />
                   <ShareLinkDialog documentId={doc.id} />
