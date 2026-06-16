@@ -445,8 +445,12 @@ export const sendQuoteToRecipients = createServerFn({ method: "POST" })
       .eq("id", doc.organization_id)
       .maybeSingle();
 
-    const { sendResendEmail, renderShareEmail } = await import("@/lib/email-sender");
-    const origin = process.env.APP_URL ?? "";
+    const { sendResendEmail, renderShareEmail, getOriginFromRequest } = await import("@/lib/email-sender");
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const origin =
+      getOriginFromRequest(getRequest()) ||
+      process.env.APP_URL ||
+      "https://sign-pay-pro.lovable.app";
     const url = `${origin}/app/facturation/devis/${doc.id}/edit`;
     const ordered = data.sequential
       ? data.recipients
