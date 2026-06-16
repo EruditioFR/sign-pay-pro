@@ -41,6 +41,7 @@ import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminPdpQueueRouteImport } from './routes/_authenticated.admin.pdp-queue'
 import { Route as AuthenticatedAppTemplatesIndexRouteImport } from './routes/_authenticated.app.templates.index'
 import { Route as AuthenticatedAppPdfTemplatesIndexRouteImport } from './routes/_authenticated.app.pdf-templates.index'
+import { Route as AuthenticatedAppFacturationIndexRouteImport } from './routes/_authenticated.app.facturation.index'
 import { Route as AuthenticatedAppDraftsIndexRouteImport } from './routes/_authenticated.app.drafts.index'
 import { Route as AuthenticatedAppDocumentsIndexRouteImport } from './routes/_authenticated.app.documents.index'
 import { Route as AuthenticatedAdminWorkflowsIndexRouteImport } from './routes/_authenticated.admin.workflows.index'
@@ -235,6 +236,12 @@ const AuthenticatedAppPdfTemplatesIndexRoute =
     path: '/app/pdf-templates/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppFacturationIndexRoute =
+  AuthenticatedAppFacturationIndexRouteImport.update({
+    id: '/app/facturation/',
+    path: '/app/facturation/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDraftsIndexRoute =
   AuthenticatedAppDraftsIndexRouteImport.update({
     id: '/app/drafts/',
@@ -420,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
   '/app/drafts/': typeof AuthenticatedAppDraftsIndexRoute
+  '/app/facturation/': typeof AuthenticatedAppFacturationIndexRoute
   '/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
   '/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
@@ -476,6 +484,7 @@ export interface FileRoutesByTo {
   '/admin/workflows': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/app/documents': typeof AuthenticatedAppDocumentsIndexRoute
   '/app/drafts': typeof AuthenticatedAppDraftsIndexRoute
+  '/app/facturation': typeof AuthenticatedAppFacturationIndexRoute
   '/app/pdf-templates': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/app/templates': typeof AuthenticatedAppTemplatesIndexRoute
   '/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
@@ -534,6 +543,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/workflows/': typeof AuthenticatedAdminWorkflowsIndexRoute
   '/_authenticated/app/documents/': typeof AuthenticatedAppDocumentsIndexRoute
   '/_authenticated/app/drafts/': typeof AuthenticatedAppDraftsIndexRoute
+  '/_authenticated/app/facturation/': typeof AuthenticatedAppFacturationIndexRoute
   '/_authenticated/app/pdf-templates/': typeof AuthenticatedAppPdfTemplatesIndexRoute
   '/_authenticated/app/templates/': typeof AuthenticatedAppTemplatesIndexRoute
   '/_authenticated/app/documents/$id/configure': typeof AuthenticatedAppDocumentsIdConfigureRoute
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/admin/workflows/'
     | '/app/documents/'
     | '/app/drafts/'
+    | '/app/facturation/'
     | '/app/pdf-templates/'
     | '/app/templates/'
     | '/app/documents/$id/configure'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/admin/workflows'
     | '/app/documents'
     | '/app/drafts'
+    | '/app/facturation'
     | '/app/pdf-templates'
     | '/app/templates'
     | '/app/documents/$id/configure'
@@ -705,6 +717,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workflows/'
     | '/_authenticated/app/documents/'
     | '/_authenticated/app/drafts/'
+    | '/_authenticated/app/facturation/'
     | '/_authenticated/app/pdf-templates/'
     | '/_authenticated/app/templates/'
     | '/_authenticated/app/documents/$id/configure'
@@ -960,6 +973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPdfTemplatesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/facturation/': {
+      id: '/_authenticated/app/facturation/'
+      path: '/app/facturation'
+      fullPath: '/app/facturation/'
+      preLoaderRoute: typeof AuthenticatedAppFacturationIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/drafts/': {
       id: '/_authenticated/app/drafts/'
       path: '/app/drafts'
@@ -1156,6 +1176,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminWorkflowsIndexRoute: typeof AuthenticatedAdminWorkflowsIndexRoute
   AuthenticatedAppDocumentsIndexRoute: typeof AuthenticatedAppDocumentsIndexRoute
   AuthenticatedAppDraftsIndexRoute: typeof AuthenticatedAppDraftsIndexRoute
+  AuthenticatedAppFacturationIndexRoute: typeof AuthenticatedAppFacturationIndexRoute
   AuthenticatedAppPdfTemplatesIndexRoute: typeof AuthenticatedAppPdfTemplatesIndexRoute
   AuthenticatedAppTemplatesIndexRoute: typeof AuthenticatedAppTemplatesIndexRoute
   AuthenticatedAppDocumentsIdConfigureRoute: typeof AuthenticatedAppDocumentsIdConfigureRoute
@@ -1201,6 +1222,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminWorkflowsIndexRoute: AuthenticatedAdminWorkflowsIndexRoute,
   AuthenticatedAppDocumentsIndexRoute: AuthenticatedAppDocumentsIndexRoute,
   AuthenticatedAppDraftsIndexRoute: AuthenticatedAppDraftsIndexRoute,
+  AuthenticatedAppFacturationIndexRoute: AuthenticatedAppFacturationIndexRoute,
   AuthenticatedAppPdfTemplatesIndexRoute:
     AuthenticatedAppPdfTemplatesIndexRoute,
   AuthenticatedAppTemplatesIndexRoute: AuthenticatedAppTemplatesIndexRoute,
