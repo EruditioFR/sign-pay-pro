@@ -113,7 +113,9 @@ function DocumentsPage() {
     placeholderData: keepPreviousData,
   });
 
-  const rows = data?.rows ?? [];
+  // Hide quotes/invoices — they live in the dedicated /app/facturation module.
+  const allRows = data?.rows ?? [];
+  const rows = allRows.filter((r) => r.type !== "quote" && r.type !== "invoice");
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / search.pageSize));
 
