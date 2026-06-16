@@ -1,6 +1,7 @@
 import { useRef, useState, type MouseEvent } from "react";
 import type { Block } from "@/lib/template-canvas/schema";
 import { findVariable } from "@/lib/template-canvas/variables";
+import { computeTotals, formatMoney, lineTotalHt } from "@/lib/template-canvas/pricing";
 import { cn } from "@/lib/utils";
 
 export interface BlockViewProps {
