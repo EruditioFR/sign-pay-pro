@@ -113,67 +113,88 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
             {openEditorAfterImport ? "Importer un PDF à compléter & signer" : "Importer un modèle PDF"}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="pdf-template-file">PDF source</Label>
-            <Input
-              id="pdf-template-file"
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => {
-                const selected = e.target.files?.[0] ?? null;
-                if (selected && selected.type !== "application/pdf") {
-                  toast.error("Sélectionnez un fichier PDF");
-                  e.target.value = "";
-                  setFile(null);
-                  return;
-                }
-                setFile(selected);
-                if (selected && !name.trim()) setName(selected.name.replace(/\.pdf$/i, ""));
-              }}
-              disabled={mut.isPending}
-            />
-            <p className="text-xs text-muted-foreground">PDF uniquement, 25 Mo maximum.</p>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="pdf-template-name">Nom</Label>
-            <Input
-              id="pdf-template-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex : CERFA, contrat, mandat…"
-              disabled={mut.isPending}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="pdf-template-type">Type de document</Label>
-            <Select value={documentType} onValueChange={setDocumentType} disabled={mut.isPending}>
-              <SelectTrigger id="pdf-template-type"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(["purchase_order", "quote", "invoice", "contract", "other"] as const).map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {tr(`documents.types.${type}`, { defaultValue: type })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="pdf-template-description">Description</Label>
-            <Textarea
-              id="pdf-template-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Usage interne, version du formulaire, consignes…"
-              disabled={mut.isPending}
-            />
-          </div>
+        <div className="grid gap-4">
           {openEditorAfterImport && (
-            <div className="pt-1">
+            <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                  1
+                </span>
+                <h3 className="text-sm font-semibold">Signataires</h3>
+                <span className="text-xs text-muted-foreground">
+                  — qui doit signer&nbsp;? (recommandé)
+                </span>
+              </div>
               <SignersPaymentFields value={sp} onChange={setSp} compact />
-            </div>
+            </section>
           )}
+
+          <section className="rounded-md border border-border p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold">
+                {openEditorAfterImport ? 2 : 1}
+              </span>
+              <h3 className="text-sm font-semibold">Document PDF</h3>
+            </div>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="pdf-template-file">PDF source</Label>
+                <Input
+                  id="pdf-template-file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => {
+                    const selected = e.target.files?.[0] ?? null;
+                    if (selected && selected.type !== "application/pdf") {
+                      toast.error("Sélectionnez un fichier PDF");
+                      e.target.value = "";
+                      setFile(null);
+                      return;
+                    }
+                    setFile(selected);
+                    if (selected && !name.trim()) setName(selected.name.replace(/\.pdf$/i, ""));
+                  }}
+                  disabled={mut.isPending}
+                />
+                <p className="text-xs text-muted-foreground">PDF uniquement, 25 Mo maximum.</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="pdf-template-name">Nom</Label>
+                <Input
+                  id="pdf-template-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex : CERFA, contrat, mandat…"
+                  disabled={mut.isPending}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="pdf-template-type">Type de document</Label>
+                <Select value={documentType} onValueChange={setDocumentType} disabled={mut.isPending}>
+                  <SelectTrigger id="pdf-template-type"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(["purchase_order", "quote", "invoice", "contract", "other"] as const).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {tr(`documents.types.${type}`, { defaultValue: type })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="pdf-template-description">Description</Label>
+                <Textarea
+                  id="pdf-template-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Usage interne, version du formulaire, consignes…"
+                  disabled={mut.isPending}
+                />
+              </div>
+            </div>
+          </section>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mut.isPending}>Annuler</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending || !file || !name.trim()}>
