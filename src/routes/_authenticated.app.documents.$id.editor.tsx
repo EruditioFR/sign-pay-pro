@@ -564,14 +564,24 @@ function PdfEditorPage() {
                   const cssH = f.height * renderScale;
                   const isSelected = selectedId === f.tempId;
                   const drawingMode = activeTool !== "select";
+                  const handleDot: React.CSSProperties = {
+                    width: 10, height: 10, background: "hsl(var(--primary))",
+                    border: "2px solid white", borderRadius: 2, boxShadow: "0 0 0 1px hsl(var(--primary))",
+                  };
                   return (
                     <Rnd
                       key={f.tempId}
                       size={{ width: cssW, height: cssH }}
                       position={{ x: cssLeft, y: cssTop }}
                       bounds="parent"
+                      minWidth={12}
+                      minHeight={12}
                       disableDragging={drawingMode}
                       enableResizing={!drawingMode}
+                      resizeHandleStyles={isSelected ? {
+                        topLeft: handleDot, topRight: handleDot,
+                        bottomLeft: handleDot, bottomRight: handleDot,
+                      } : undefined}
                       style={{ pointerEvents: drawingMode ? "none" : "auto" }}
                       onDragStop={(_, dd) => {
                         const newX = dd.x / renderScale;
@@ -589,11 +599,11 @@ function PdfEditorPage() {
                         });
                       }}
                       onMouseDown={() => setSelectedId(f.tempId)}
-                      className={`flex items-center justify-center text-[10px] font-medium ${
+                      className={`flex items-center justify-center font-medium ${
                         isSelected ? "border-2 border-primary bg-primary/15" : "border border-primary/60 bg-primary/10"
                       }`}
                     >
-                      <FieldPreview field={f} onSignClick={() => setSigOpenFor(f.tempId)} />
+                      <FieldPreview field={f} scale={renderScale} onSignClick={() => setSigOpenFor(f.tempId)} />
                     </Rnd>
                   );
                 })}
@@ -810,7 +820,7 @@ function PdfEditorPage() {
   );
 }
 
-function FieldPreview({ field, onSignClick }: { field: Field; onSignClick: () => void }) {
+function FieldPreview({ field, scale, onSignClick }: { field: Field; scale: number; onSignClick: () => void }) {
   if (field.kind === "signature" || field.kind === "initials") {
     if (field.value?.startsWith("data:image/")) {
       return <img src={field.value} alt="" className="h-full w-full object-contain pointer-events-none" />;
@@ -822,15 +832,16 @@ function FieldPreview({ field, onSignClick }: { field: Field; onSignClick: () =>
     );
   }
   if (field.kind === "checkbox") {
-    return <span>{field.value === "true" ? "✓" : ""}</span>;
+    return <span style={{ fontSize: Math.max(8, field.height * scale * 0.8) }}>{field.value === "true" ? "✓" : ""}</span>;
   }
   const value = field.value || "";
+  const fontStyle: React.CSSProperties = { fontSize: field.font_size * scale, lineHeight: 1.1 };
   if (!value) {
-    return <span className="truncate px-1 italic text-muted-foreground">{`« ${KIND_META[field.kind].label} »`}</span>;
+    return <span className="truncate px-1 italic text-muted-foreground" style={fontStyle}>{`« ${KIND_META[field.kind].label} »`}</span>;
   }
   const parts = value.split(/(\{\{\s*[a-zA-Z0-9_]+\s*\}\})/g);
   return (
-    <span className="truncate px-1">
+    <span className="truncate px-1" style={fontStyle}>
       {parts.map((p, i) =>
         /^\{\{\s*[a-zA-Z0-9_]+\s*\}\}$/.test(p) ? (
           <span key={i} className="rounded bg-primary/20 px-1 text-primary">{p}</span>
