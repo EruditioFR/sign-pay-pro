@@ -110,6 +110,7 @@ function BlockProps({
       {block.type === "text" && <TextProps block={block} onUpdate={onUpdate} />}
       {block.type === "image" && <ImageProps block={block} onUpdate={onUpdate} />}
       {block.type === "table" && <TableProps block={block} onUpdate={onUpdate} />}
+      {block.type === "pricing_table" && <PricingTableProps block={block} onUpdate={onUpdate} />}
       {block.type === "dynamic" && <DynamicProps block={block} onUpdate={onUpdate} />}
       {block.type === "user_zone" && <UserZoneProps block={block} onUpdate={onUpdate} />}
 
