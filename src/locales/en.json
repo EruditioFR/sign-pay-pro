@@ -241,7 +241,10 @@
     "approvals": "To approve",
     "workflows": "Workflows",
     "templates": "PDF templates",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "facturation_dashboard": "Dashboard",
+    "quotes": "Quotes",
+    "invoices": "Invoices"
   },
   "analytics": {
     "title": "Business analytics",
