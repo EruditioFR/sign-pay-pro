@@ -207,7 +207,7 @@ function PdfEditorPage() {
       if (renderTaskRef.current) {
         try { renderTaskRef.current.cancel(); } catch { /* ignore */ }
       }
-      const task = page.render({ canvasContext: ctx, viewport });
+      const task = page.render({ canvas, canvasContext: ctx, viewport });
       renderTaskRef.current = task;
       await task.promise;
       renderTaskRef.current = null;
