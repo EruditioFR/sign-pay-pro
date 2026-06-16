@@ -178,7 +178,6 @@ function EditQuotePage() {
           </Button>
         )}
         {(status === "draft" || status === "issued") && (
-        {(status === "draft" || status === "issued") && (
           <SendQuoteDialog
             documentId={id}
             defaultRecipient={{
