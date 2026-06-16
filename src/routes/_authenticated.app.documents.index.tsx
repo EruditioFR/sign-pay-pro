@@ -126,15 +126,21 @@ function DocumentsPage() {
           <div className="min-w-0">
             <CardTitle className="truncate">{t("documents.title")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {total > 0
-                ? t("docs_search.results_count", { count: total })
-                : t("documents.subtitle")}
+              Contrats, commandes et autres documents à signer.
             </p>
           </div>
           <Button asChild className="shrink-0">
             <Link to="/app/documents/new">
               <Plus className="mr-1 h-4 w-4" /> {t("documents.new")}
             </Link>
+          </Button>
+        </div>
+        <div className="mt-3 rounded-md border border-[color:var(--facturation)]/30 bg-[color:var(--facturation-soft)]/40 px-3 py-2 text-sm flex items-center justify-between gap-2">
+          <span>
+            Les <strong>devis</strong> et <strong>factures</strong> sont gérés dans le module Facturation.
+          </span>
+          <Button asChild size="sm" variant="ghost" className="text-[color:var(--facturation)]">
+            <Link to="/app/facturation">Ouvrir Facturation →</Link>
           </Button>
         </div>
       </CardHeader>
