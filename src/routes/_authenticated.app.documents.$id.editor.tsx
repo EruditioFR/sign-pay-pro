@@ -564,14 +564,24 @@ function PdfEditorPage() {
                   const cssH = f.height * renderScale;
                   const isSelected = selectedId === f.tempId;
                   const drawingMode = activeTool !== "select";
+                  const handleDot: React.CSSProperties = {
+                    width: 10, height: 10, background: "hsl(var(--primary))",
+                    border: "2px solid white", borderRadius: 2, boxShadow: "0 0 0 1px hsl(var(--primary))",
+                  };
                   return (
                     <Rnd
                       key={f.tempId}
                       size={{ width: cssW, height: cssH }}
                       position={{ x: cssLeft, y: cssTop }}
                       bounds="parent"
+                      minWidth={12}
+                      minHeight={12}
                       disableDragging={drawingMode}
                       enableResizing={!drawingMode}
+                      resizeHandleStyles={isSelected ? {
+                        topLeft: handleDot, topRight: handleDot,
+                        bottomLeft: handleDot, bottomRight: handleDot,
+                      } : undefined}
                       style={{ pointerEvents: drawingMode ? "none" : "auto" }}
                       onDragStop={(_, dd) => {
                         const newX = dd.x / renderScale;
@@ -589,11 +599,11 @@ function PdfEditorPage() {
                         });
                       }}
                       onMouseDown={() => setSelectedId(f.tempId)}
-                      className={`flex items-center justify-center text-[10px] font-medium ${
+                      className={`flex items-center justify-center font-medium ${
                         isSelected ? "border-2 border-primary bg-primary/15" : "border border-primary/60 bg-primary/10"
                       }`}
                     >
-                      <FieldPreview field={f} onSignClick={() => setSigOpenFor(f.tempId)} />
+                      <FieldPreview field={f} scale={renderScale} onSignClick={() => setSigOpenFor(f.tempId)} />
                     </Rnd>
                   );
                 })}
