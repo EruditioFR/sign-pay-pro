@@ -25,7 +25,7 @@ import { DocumentActivityPdfButton } from "@/components/document-activity-pdf-bu
 import { ExportFacturXButton } from "@/components/export-factur-x-button";
 import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/app/documents/$id")({
+export const Route = createFileRoute("/_authenticated/app/documents/$id/")({
   component: DocumentDetailPage,
 });
 

@@ -54,11 +54,11 @@ import { Route as AuthenticatedAppTemplatesNewRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppTemplatesImportRouteImport } from './routes/_authenticated.app.templates.import'
 import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
-import { Route as AuthenticatedAppDocumentsIdRouteImport } from './routes/_authenticated.app.documents.$id'
 import { Route as AuthenticatedAdminWorkflowsNewRouteImport } from './routes/_authenticated.admin.workflows.new'
 import { Route as AuthenticatedAdminWorkflowsIdRouteImport } from './routes/_authenticated.admin.workflows.$id'
 import { Route as AuthenticatedAdminTemplatesNewRouteImport } from './routes/_authenticated.admin.templates.new'
 import { Route as AuthenticatedAdminTemplatesIdRouteImport } from './routes/_authenticated.admin.templates.$id'
+import { Route as AuthenticatedAppDocumentsIdIndexRouteImport } from './routes/_authenticated.app.documents.$id.index'
 import { Route as AuthenticatedAppTemplatesIdPreviewRouteImport } from './routes/_authenticated.app.templates.$id.preview'
 import { Route as AuthenticatedAppTemplatesIdFillRouteImport } from './routes/_authenticated.app.templates.$id.fill'
 import { Route as AuthenticatedAppTemplatesIdEditRouteImport } from './routes/_authenticated.app.templates.$id.edit'
@@ -312,12 +312,6 @@ const AuthenticatedAppDocumentsNewRoute =
     path: '/app/documents/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAppDocumentsIdRoute =
-  AuthenticatedAppDocumentsIdRouteImport.update({
-    id: '/app/documents/$id',
-    path: '/app/documents/$id',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedAdminWorkflowsNewRoute =
   AuthenticatedAdminWorkflowsNewRouteImport.update({
     id: '/admin/workflows/new',
@@ -342,6 +336,12 @@ const AuthenticatedAdminTemplatesIdRoute =
     path: '/admin/templates/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppDocumentsIdIndexRoute =
+  AuthenticatedAppDocumentsIdIndexRouteImport.update({
+    id: '/app/documents/$id/',
+    path: '/app/documents/$id/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppTemplatesIdPreviewRoute =
   AuthenticatedAppTemplatesIdPreviewRouteImport.update({
     id: '/app/templates/$id/preview',
@@ -362,15 +362,15 @@ const AuthenticatedAppTemplatesIdEditRoute =
   } as any)
 const AuthenticatedAppDocumentsIdEditorRoute =
   AuthenticatedAppDocumentsIdEditorRouteImport.update({
-    id: '/editor',
-    path: '/editor',
-    getParentRoute: () => AuthenticatedAppDocumentsIdRoute,
+    id: '/app/documents/$id/editor',
+    path: '/app/documents/$id/editor',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAppDocumentsIdConfigureRoute =
   AuthenticatedAppDocumentsIdConfigureRouteImport.update({
-    id: '/configure',
-    path: '/configure',
-    getParentRoute: () => AuthenticatedAppDocumentsIdRoute,
+    id: '/app/documents/$id/configure',
+    path: '/app/documents/$id/configure',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -407,7 +407,6 @@ export interface FileRoutesByFullPath {
   '/admin/templates/new': typeof AuthenticatedAdminTemplatesNewRoute
   '/admin/workflows/$id': typeof AuthenticatedAdminWorkflowsIdRoute
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
-  '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
@@ -428,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
+  '/app/documents/$id/': typeof AuthenticatedAppDocumentsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -463,7 +463,6 @@ export interface FileRoutesByTo {
   '/admin/templates/new': typeof AuthenticatedAdminTemplatesNewRoute
   '/admin/workflows/$id': typeof AuthenticatedAdminWorkflowsIdRoute
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
-  '/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
@@ -484,6 +483,7 @@ export interface FileRoutesByTo {
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
+  '/app/documents/$id': typeof AuthenticatedAppDocumentsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -521,7 +521,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/templates/new': typeof AuthenticatedAdminTemplatesNewRoute
   '/_authenticated/admin/workflows/$id': typeof AuthenticatedAdminWorkflowsIdRoute
   '/_authenticated/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
-  '/_authenticated/app/documents/$id': typeof AuthenticatedAppDocumentsIdRouteWithChildren
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
   '/_authenticated/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
@@ -542,6 +541,7 @@ export interface FileRoutesById {
   '/_authenticated/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/_authenticated/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/_authenticated/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
+  '/_authenticated/app/documents/$id/': typeof AuthenticatedAppDocumentsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -579,7 +579,6 @@ export interface FileRouteTypes {
     | '/admin/templates/new'
     | '/admin/workflows/$id'
     | '/admin/workflows/new'
-    | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
     | '/app/templates/import'
@@ -600,6 +599,7 @@ export interface FileRouteTypes {
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
+    | '/app/documents/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -635,7 +635,6 @@ export interface FileRouteTypes {
     | '/admin/templates/new'
     | '/admin/workflows/$id'
     | '/admin/workflows/new'
-    | '/app/documents/$id'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
     | '/app/templates/import'
@@ -656,6 +655,7 @@ export interface FileRouteTypes {
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
+    | '/app/documents/$id'
   id:
     | '__root__'
     | '/'
@@ -692,7 +692,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/templates/new'
     | '/_authenticated/admin/workflows/$id'
     | '/_authenticated/admin/workflows/new'
-    | '/_authenticated/app/documents/$id'
     | '/_authenticated/app/documents/new'
     | '/_authenticated/app/documents/wysiwyg'
     | '/_authenticated/app/templates/import'
@@ -713,6 +712,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/templates/$id/edit'
     | '/_authenticated/app/templates/$id/fill'
     | '/_authenticated/app/templates/$id/preview'
+    | '/_authenticated/app/documents/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1051,13 +1051,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDocumentsNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/app/documents/$id': {
-      id: '/_authenticated/app/documents/$id'
-      path: '/app/documents/$id'
-      fullPath: '/app/documents/$id'
-      preLoaderRoute: typeof AuthenticatedAppDocumentsIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/admin/workflows/new': {
       id: '/_authenticated/admin/workflows/new'
       path: '/admin/workflows/new'
@@ -1086,6 +1079,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTemplatesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/documents/$id/': {
+      id: '/_authenticated/app/documents/$id/'
+      path: '/app/documents/$id'
+      fullPath: '/app/documents/$id/'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/templates/$id/preview': {
       id: '/_authenticated/app/templates/$id/preview'
       path: '/app/templates/$id/preview'
@@ -1109,38 +1109,20 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/app/documents/$id/editor': {
       id: '/_authenticated/app/documents/$id/editor'
-      path: '/editor'
+      path: '/app/documents/$id/editor'
       fullPath: '/app/documents/$id/editor'
       preLoaderRoute: typeof AuthenticatedAppDocumentsIdEditorRouteImport
-      parentRoute: typeof AuthenticatedAppDocumentsIdRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/app/documents/$id/configure': {
       id: '/_authenticated/app/documents/$id/configure'
-      path: '/configure'
+      path: '/app/documents/$id/configure'
       fullPath: '/app/documents/$id/configure'
       preLoaderRoute: typeof AuthenticatedAppDocumentsIdConfigureRouteImport
-      parentRoute: typeof AuthenticatedAppDocumentsIdRoute
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
-
-interface AuthenticatedAppDocumentsIdRouteChildren {
-  AuthenticatedAppDocumentsIdConfigureRoute: typeof AuthenticatedAppDocumentsIdConfigureRoute
-  AuthenticatedAppDocumentsIdEditorRoute: typeof AuthenticatedAppDocumentsIdEditorRoute
-}
-
-const AuthenticatedAppDocumentsIdRouteChildren: AuthenticatedAppDocumentsIdRouteChildren =
-  {
-    AuthenticatedAppDocumentsIdConfigureRoute:
-      AuthenticatedAppDocumentsIdConfigureRoute,
-    AuthenticatedAppDocumentsIdEditorRoute:
-      AuthenticatedAppDocumentsIdEditorRoute,
-  }
-
-const AuthenticatedAppDocumentsIdRouteWithChildren =
-  AuthenticatedAppDocumentsIdRoute._addFileChildren(
-    AuthenticatedAppDocumentsIdRouteChildren,
-  )
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1165,7 +1147,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminTemplatesNewRoute: typeof AuthenticatedAdminTemplatesNewRoute
   AuthenticatedAdminWorkflowsIdRoute: typeof AuthenticatedAdminWorkflowsIdRoute
   AuthenticatedAdminWorkflowsNewRoute: typeof AuthenticatedAdminWorkflowsNewRoute
-  AuthenticatedAppDocumentsIdRoute: typeof AuthenticatedAppDocumentsIdRouteWithChildren
   AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
   AuthenticatedAppDocumentsWysiwygRoute: typeof AuthenticatedAppDocumentsWysiwygRoute
   AuthenticatedAppTemplatesImportRoute: typeof AuthenticatedAppTemplatesImportRoute
@@ -1177,9 +1158,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppDraftsIndexRoute: typeof AuthenticatedAppDraftsIndexRoute
   AuthenticatedAppPdfTemplatesIndexRoute: typeof AuthenticatedAppPdfTemplatesIndexRoute
   AuthenticatedAppTemplatesIndexRoute: typeof AuthenticatedAppTemplatesIndexRoute
+  AuthenticatedAppDocumentsIdConfigureRoute: typeof AuthenticatedAppDocumentsIdConfigureRoute
+  AuthenticatedAppDocumentsIdEditorRoute: typeof AuthenticatedAppDocumentsIdEditorRoute
   AuthenticatedAppTemplatesIdEditRoute: typeof AuthenticatedAppTemplatesIdEditRoute
   AuthenticatedAppTemplatesIdFillRoute: typeof AuthenticatedAppTemplatesIdFillRoute
   AuthenticatedAppTemplatesIdPreviewRoute: typeof AuthenticatedAppTemplatesIdPreviewRoute
+  AuthenticatedAppDocumentsIdIndexRoute: typeof AuthenticatedAppDocumentsIdIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1207,8 +1191,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminTemplatesNewRoute: AuthenticatedAdminTemplatesNewRoute,
   AuthenticatedAdminWorkflowsIdRoute: AuthenticatedAdminWorkflowsIdRoute,
   AuthenticatedAdminWorkflowsNewRoute: AuthenticatedAdminWorkflowsNewRoute,
-  AuthenticatedAppDocumentsIdRoute:
-    AuthenticatedAppDocumentsIdRouteWithChildren,
   AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
   AuthenticatedAppDocumentsWysiwygRoute: AuthenticatedAppDocumentsWysiwygRoute,
   AuthenticatedAppTemplatesImportRoute: AuthenticatedAppTemplatesImportRoute,
@@ -1222,10 +1204,15 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppPdfTemplatesIndexRoute:
     AuthenticatedAppPdfTemplatesIndexRoute,
   AuthenticatedAppTemplatesIndexRoute: AuthenticatedAppTemplatesIndexRoute,
+  AuthenticatedAppDocumentsIdConfigureRoute:
+    AuthenticatedAppDocumentsIdConfigureRoute,
+  AuthenticatedAppDocumentsIdEditorRoute:
+    AuthenticatedAppDocumentsIdEditorRoute,
   AuthenticatedAppTemplatesIdEditRoute: AuthenticatedAppTemplatesIdEditRoute,
   AuthenticatedAppTemplatesIdFillRoute: AuthenticatedAppTemplatesIdFillRoute,
   AuthenticatedAppTemplatesIdPreviewRoute:
     AuthenticatedAppTemplatesIdPreviewRoute,
+  AuthenticatedAppDocumentsIdIndexRoute: AuthenticatedAppDocumentsIdIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -1253,13 +1240,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
