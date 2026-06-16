@@ -499,7 +499,7 @@ function PdfEditorPage() {
         </Card>
 
         {/* Canvas + overlay */}
-        <div className="relative overflow-auto rounded-md border border-border bg-muted">
+        <div ref={scrollContainerRef} className="relative overflow-auto rounded-md border border-border bg-muted">
           <div className="relative inline-block">
             <canvas ref={canvasRef} className="block" />
             {pageCount > 0 && pageDims.h > 0 && (
