@@ -11,12 +11,13 @@ const ListFilters = z
   })
   .optional();
 
+type ListData = z.infer<typeof ListFilters>;
+
 async function listByType(
-  ctx: { supabase: { from: (t: string) => unknown } },
+  supabase: Awaited<ReturnType<typeof getSupabase>>,
   type: "quote" | "invoice",
-  data?: { search?: string; status?: string; fromDate?: string; toDate?: string },
+  data: ListData,
 ) {
-  const supabase = ctx.supabase as unknown as ReturnType<typeof getSb>;
   let q = supabase
     .from("documents")
     .select(
@@ -27,7 +28,10 @@ async function listByType(
     .limit(200);
   if (data?.status) q = q.eq("status", data.status);
   else q = q.not("status", "in", "(archived,cancelled)");
-  if (data?.search) q = q.or(`title.ilike.%${data.search}%,third_party_name.ilike.%${data.search}%,document_number.ilike.%${data.search}%`);
+  if (data?.search)
+    q = q.or(
+      `title.ilike.%${data.search}%,third_party_name.ilike.%${data.search}%,document_number.ilike.%${data.search}%`,
+    );
   if (data?.fromDate) q = q.gte("issue_date", data.fromDate);
   if (data?.toDate) q = q.lte("issue_date", data.toDate);
   const { data: docs, error } = await q;
@@ -35,20 +39,21 @@ async function listByType(
   return docs ?? [];
 }
 
-// Minimal helper to satisfy typing without importing the full supabase type tree
-function getSb() {
-  return null as unknown as {
-    from: (t: string) => {
-      select: (...a: unknown[]) => unknown;
-    };
-  };
+// Type hack to get the typed supabase client without importing the heavy types here.
+async function getSupabase() {
+  // Never called — only used for typeof
+  throw new Error("unreachable");
 }
 
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const docs = await listByType(context, "quote", data);
+    const docs = await listByType(
+      context.supabase as unknown as Awaited<ReturnType<typeof getSupabase>>,
+      "quote",
+      data,
+    );
     return { documents: docs };
   });
 
@@ -56,7 +61,11 @@ export const listInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ListFilters.parse(input))
   .handler(async ({ data, context }) => {
-    const docs = await listByType(context, "invoice", data);
+    const docs = await listByType(
+      context.supabase as unknown as Awaited<ReturnType<typeof getSupabase>>,
+      "invoice",
+      data,
+    );
     return { documents: docs };
   });
 
@@ -146,7 +155,10 @@ export const createInvoiceFromQuote = createServerFn({ method: "POST" })
         return d.toISOString().slice(0, 10);
       })();
 
-    const meta = (quote.metadata as Record<string, unknown> | null) ?? {};
+    // Track lineage via tags (no metadata column on documents).
+    const baseTags = (quote.tags ?? []) as string[];
+    const lineageTag = `origin_quote:${quote.id}`;
+    const newTags = Array.from(new Set([...baseTags, lineageTag]));
 
     const { data: invoice, error: iErr } = await supabase
       .from("documents")
@@ -163,21 +175,16 @@ export const createInvoiceFromQuote = createServerFn({ method: "POST" })
         third_party_email: quote.third_party_email,
         issue_date: today,
         due_date: due,
-        tags: quote.tags ?? [],
+        tags: newTags,
         created_by: userId,
         payment_terms: quote.payment_terms,
-        metadata: { ...meta, origin_quote_id: quote.id },
       })
       .select()
       .single();
     if (iErr) throw new Error(iErr.message);
 
-    // Numérotation FAC-…
-    await supabase.rpc("allocate_document_number", {
-      p_document_id: invoice.id,
-    });
+    await supabase.rpc("allocate_document_number", { p_document_id: invoice.id });
 
-    // Copy lines
     const { data: lines } = await supabase
       .from("document_invoice_lines")
       .select("*")
@@ -217,7 +224,6 @@ export const createInvoiceFromQuote = createServerFn({ method: "POST" })
       );
     }
 
-    // Mark quote as accepted (paid in lifecycle)
     await supabase
       .from("documents")
       .update({ status: "paid", updated_at: new Date().toISOString() })
@@ -278,7 +284,6 @@ export const getInvoiceFull = createServerFn({ method: "GET" })
     };
   });
 
-// Save invoice/quote lines (replace all). Used by edit forms.
 const SaveLinesSchema = z.object({
   documentId: z.string().uuid(),
   lines: z
@@ -300,7 +305,6 @@ export const saveDocumentLines = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
-    // Compute totals + VAT breakdown
     type Bucket = { base_ht: number; vat_amount: number };
     const buckets = new Map<number, Bucket>();
     let totalHt = 0;
