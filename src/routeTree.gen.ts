@@ -66,6 +66,7 @@ import { Route as AuthenticatedAppDocumentsIdIndexRouteImport } from './routes/_
 import { Route as AuthenticatedAppTemplatesIdPreviewRouteImport } from './routes/_authenticated.app.templates.$id.preview'
 import { Route as AuthenticatedAppTemplatesIdFillRouteImport } from './routes/_authenticated.app.templates.$id.fill'
 import { Route as AuthenticatedAppTemplatesIdEditRouteImport } from './routes/_authenticated.app.templates.$id.edit'
+import { Route as AuthenticatedAppFacturationFacturesNewRouteImport } from './routes/_authenticated.app.facturation.factures.new'
 import { Route as AuthenticatedAppFacturationFacturesIdRouteImport } from './routes/_authenticated.app.facturation.factures.$id'
 import { Route as AuthenticatedAppFacturationDevisNewRouteImport } from './routes/_authenticated.app.facturation.devis.new'
 import { Route as AuthenticatedAppDocumentsIdEditorRouteImport } from './routes/_authenticated.app.documents.$id.editor'
@@ -391,6 +392,12 @@ const AuthenticatedAppTemplatesIdEditRoute =
     path: '/app/templates/$id/edit',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppFacturationFacturesNewRoute =
+  AuthenticatedAppFacturationFacturesNewRouteImport.update({
+    id: '/app/facturation/factures/new',
+    path: '/app/facturation/factures/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppFacturationFacturesIdRoute =
   AuthenticatedAppFacturationFacturesIdRouteImport.update({
     id: '/app/facturation/factures/$id',
@@ -477,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/app/facturation/devis/new': typeof AuthenticatedAppFacturationDevisNewRoute
   '/app/facturation/factures/$id': typeof AuthenticatedAppFacturationFacturesIdRoute
+  '/app/facturation/factures/new': typeof AuthenticatedAppFacturationFacturesNewRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -540,6 +548,7 @@ export interface FileRoutesByTo {
   '/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/app/facturation/devis/new': typeof AuthenticatedAppFacturationDevisNewRoute
   '/app/facturation/factures/$id': typeof AuthenticatedAppFacturationFacturesIdRoute
+  '/app/facturation/factures/new': typeof AuthenticatedAppFacturationFacturesNewRoute
   '/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -605,6 +614,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents/$id/editor': typeof AuthenticatedAppDocumentsIdEditorRoute
   '/_authenticated/app/facturation/devis/new': typeof AuthenticatedAppFacturationDevisNewRoute
   '/_authenticated/app/facturation/factures/$id': typeof AuthenticatedAppFacturationFacturesIdRoute
+  '/_authenticated/app/facturation/factures/new': typeof AuthenticatedAppFacturationFacturesNewRoute
   '/_authenticated/app/templates/$id/edit': typeof AuthenticatedAppTemplatesIdEditRoute
   '/_authenticated/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/_authenticated/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -670,6 +680,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id/editor'
     | '/app/facturation/devis/new'
     | '/app/facturation/factures/$id'
+    | '/app/facturation/factures/new'
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/app/documents/$id/editor'
     | '/app/facturation/devis/new'
     | '/app/facturation/factures/$id'
+    | '/app/facturation/factures/new'
     | '/app/templates/$id/edit'
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
@@ -797,6 +809,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents/$id/editor'
     | '/_authenticated/app/facturation/devis/new'
     | '/_authenticated/app/facturation/factures/$id'
+    | '/_authenticated/app/facturation/factures/new'
     | '/_authenticated/app/templates/$id/edit'
     | '/_authenticated/app/templates/$id/fill'
     | '/_authenticated/app/templates/$id/preview'
@@ -1226,6 +1239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTemplatesIdEditRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/facturation/factures/new': {
+      id: '/_authenticated/app/facturation/factures/new'
+      path: '/app/facturation/factures/new'
+      fullPath: '/app/facturation/factures/new'
+      preLoaderRoute: typeof AuthenticatedAppFacturationFacturesNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/facturation/factures/$id': {
       id: '/_authenticated/app/facturation/factures/$id'
       path: '/app/facturation/factures/$id'
@@ -1304,6 +1324,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppDocumentsIdEditorRoute: typeof AuthenticatedAppDocumentsIdEditorRoute
   AuthenticatedAppFacturationDevisNewRoute: typeof AuthenticatedAppFacturationDevisNewRoute
   AuthenticatedAppFacturationFacturesIdRoute: typeof AuthenticatedAppFacturationFacturesIdRoute
+  AuthenticatedAppFacturationFacturesNewRoute: typeof AuthenticatedAppFacturationFacturesNewRoute
   AuthenticatedAppTemplatesIdEditRoute: typeof AuthenticatedAppTemplatesIdEditRoute
   AuthenticatedAppTemplatesIdFillRoute: typeof AuthenticatedAppTemplatesIdFillRoute
   AuthenticatedAppTemplatesIdPreviewRoute: typeof AuthenticatedAppTemplatesIdPreviewRoute
@@ -1362,6 +1383,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAppFacturationDevisNewRoute,
   AuthenticatedAppFacturationFacturesIdRoute:
     AuthenticatedAppFacturationFacturesIdRoute,
+  AuthenticatedAppFacturationFacturesNewRoute:
+    AuthenticatedAppFacturationFacturesNewRoute,
   AuthenticatedAppTemplatesIdEditRoute: AuthenticatedAppTemplatesIdEditRoute,
   AuthenticatedAppTemplatesIdFillRoute: AuthenticatedAppTemplatesIdFillRoute,
   AuthenticatedAppTemplatesIdPreviewRoute:
