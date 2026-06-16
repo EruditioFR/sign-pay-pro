@@ -1,6 +1,7 @@
 import { useRef, useState, type MouseEvent } from "react";
 import type { Block } from "@/lib/template-canvas/schema";
 import { findVariable } from "@/lib/template-canvas/variables";
+import { computeTotals, formatMoney, lineTotalHt } from "@/lib/template-canvas/pricing";
 import { cn } from "@/lib/utils";
 
 export interface BlockViewProps {
@@ -161,6 +162,51 @@ function BlockContent({ block, scale }: { block: Block; scale: number }) {
                 ))}
               </tr>
             ))}
+          </tbody>
+        </table>
+      );
+    }
+    case "pricing_table": {
+      const totals = computeTotals(block.items, block.vatRate);
+      const fs = block.fontSize * (scale / 3.78) * 0.75;
+      const border = block.borderColor ?? "#9ca3af";
+      const headBg = block.headerBg ?? "#f3f4f6";
+      const cellStyle = { border: `1px solid ${border}`, padding: "2px 4px" };
+      return (
+        <table className="w-full border-collapse" style={{ fontSize: fs }}>
+          <thead>
+            <tr>
+              <th style={{ ...cellStyle, background: headBg, textAlign: "left" }}>{block.labels.label}</th>
+              <th style={{ ...cellStyle, background: headBg, textAlign: "right", width: "10%" }}>{block.labels.qty}</th>
+              <th style={{ ...cellStyle, background: headBg, textAlign: "right", width: "18%" }}>{block.labels.unit}</th>
+              <th style={{ ...cellStyle, background: headBg, textAlign: "right", width: "18%" }}>{block.labels.total}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(block.items.length ? block.items : [{ label: "—", qty: 0, unitPriceHt: 0 }]).map((it, i) => (
+              <tr key={i}>
+                <td style={cellStyle}>{it.label || <span style={{ color: "#9ca3af" }}>—</span>}</td>
+                <td style={{ ...cellStyle, textAlign: "right" }}>{it.qty}</td>
+                <td style={{ ...cellStyle, textAlign: "right" }}>{formatMoney(it.unitPriceHt, block.currency)}</td>
+                <td style={{ ...cellStyle, textAlign: "right" }}>{formatMoney(lineTotalHt(it), block.currency)}</td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={3} style={{ ...cellStyle, textAlign: "right", fontWeight: 600 }}>{block.labels.subtotal}</td>
+              <td style={{ ...cellStyle, textAlign: "right" }}>{formatMoney(totals.subtotalHt, block.currency)}</td>
+            </tr>
+            <tr>
+              <td colSpan={3} style={{ ...cellStyle, textAlign: "right", fontWeight: 600 }}>
+                {block.labels.vat} ({block.vatRate}%)
+              </td>
+              <td style={{ ...cellStyle, textAlign: "right" }}>{formatMoney(totals.vatAmount, block.currency)}</td>
+            </tr>
+            <tr>
+              <td colSpan={3} style={{ ...cellStyle, textAlign: "right", fontWeight: 700, background: headBg }}>{block.labels.grandTotal}</td>
+              <td style={{ ...cellStyle, textAlign: "right", fontWeight: 700, background: headBg }}>
+                {formatMoney(totals.totalTtc, block.currency)}
+              </td>
+            </tr>
           </tbody>
         </table>
       );

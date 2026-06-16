@@ -60,12 +60,37 @@ export function TemplateEditor({
       case "table":
         block = { ...base, width: 160, height: 60, type: "table", columns: 3, rows: 3, headers: [], data: [], fontSize: 10 };
         break;
+      case "pricing_table":
+        block = {
+          ...base,
+          width: 170,
+          height: 80,
+          type: "pricing_table",
+          items: [
+            { label: "Prestation 1", qty: 1, unitPriceHt: 100 },
+          ],
+          vatRate: 20,
+          currency: "EUR",
+          fontSize: 10,
+          labels: {
+            label: "Désignation",
+            qty: "Qté",
+            unit: "PU HT",
+            total: "Total HT",
+            subtotal: "Total HT",
+            vat: "TVA",
+            grandTotal: "Total TTC",
+          },
+        };
+        break;
       case "dynamic":
         block = { ...base, type: "dynamic", variableKey: "client.full_name", fontSize: 12 };
         break;
       case "user_zone":
         block = { ...base, width: 70, height: 25, type: "user_zone", zoneKind: "signature", label: "" };
         break;
+      default:
+        return;
     }
     setCanvas((c) => ({ ...c, blocks: [...c.blocks, block] }));
     setSelectedId(block.id);

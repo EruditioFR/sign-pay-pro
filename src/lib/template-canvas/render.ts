@@ -1,6 +1,7 @@
 import type { Canvas } from "./schema";
 import { pageSize } from "./schema";
 import { findVariable, interpolate } from "./variables";
+import { computeTotals, formatMoney, lineTotalHt } from "./pricing";
 
 const MM = 3.78;
 
@@ -77,6 +78,31 @@ export function renderCanvasToHtml(
           .join("");
         parts.push(
           `<div style="${style}"><table style="width:100%;border-collapse:collapse;font-size:${b.fontSize}pt;"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`,
+        );
+        break;
+      }
+      case "pricing_table": {
+        const totals = computeTotals(b.items, b.vatRate);
+        const border = b.borderColor ?? "#9ca3af";
+        const headBg = b.headerBg ?? "#f3f4f6";
+        const th = (txt: string, align: "left" | "right" = "left", width?: string) =>
+          `<th style="border:1px solid ${border};background:${headBg};padding:3px 5px;text-align:${align};font-weight:600;${width ? `width:${width};` : ""}">${escapeHtml(txt)}</th>`;
+        const td = (txt: string, opts: { align?: "left" | "right"; bold?: boolean; bg?: string } = {}) =>
+          `<td style="border:1px solid ${border};padding:3px 5px;text-align:${opts.align ?? "left"};${opts.bold ? "font-weight:700;" : ""}${opts.bg ? `background:${opts.bg};` : ""}">${escapeHtml(txt)}</td>`;
+        const rows = b.items
+          .map(
+            (it) =>
+              `<tr>${td(it.label)}${td(String(it.qty), { align: "right" })}${td(formatMoney(it.unitPriceHt, b.currency), { align: "right" })}${td(formatMoney(lineTotalHt(it), b.currency), { align: "right" })}</tr>`,
+          )
+          .join("");
+        parts.push(
+          `<div style="${style}"><table style="width:100%;border-collapse:collapse;font-size:${b.fontSize}pt;">` +
+            `<thead><tr>${th(b.labels.label, "left")}${th(b.labels.qty, "right", "10%")}${th(b.labels.unit, "right", "18%")}${th(b.labels.total, "right", "18%")}</tr></thead>` +
+            `<tbody>${rows}` +
+            `<tr><td colspan="3" style="border:1px solid ${border};padding:3px 5px;text-align:right;font-weight:600;">${escapeHtml(b.labels.subtotal)}</td>${td(formatMoney(totals.subtotalHt, b.currency), { align: "right" })}</tr>` +
+            `<tr><td colspan="3" style="border:1px solid ${border};padding:3px 5px;text-align:right;font-weight:600;">${escapeHtml(b.labels.vat)} (${b.vatRate}%)</td>${td(formatMoney(totals.vatAmount, b.currency), { align: "right" })}</tr>` +
+            `<tr><td colspan="3" style="border:1px solid ${border};padding:3px 5px;text-align:right;font-weight:700;background:${headBg};">${escapeHtml(b.labels.grandTotal)}</td>${td(formatMoney(totals.totalTtc, b.currency), { align: "right", bold: true, bg: headBg })}</tr>` +
+            `</tbody></table></div>`,
         );
         break;
       }

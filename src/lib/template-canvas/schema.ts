@@ -78,10 +78,49 @@ export const UserZoneBlockSchema = BaseBlock.extend({
   assignedRole: z.string().default("recipient").optional(),
 });
 
+export const PricingItemSchema = z.object({
+  label: z.string().default(""),
+  qty: z.number().default(1),
+  unitPriceHt: z.number().default(0),
+});
+
+export const PricingTableBlockSchema = BaseBlock.extend({
+  type: z.literal("pricing_table"),
+  items: z.array(PricingItemSchema).default([]),
+  vatRate: z.number().min(0).max(100).default(20), // percent
+  currency: z.string().default("EUR"),
+  fontSize: z.number().min(6).max(36).default(10),
+  borderColor: z.string().default("#9ca3af").optional(),
+  headerBg: z.string().default("#f3f4f6").optional(),
+  labels: z
+    .object({
+      label: z.string().default("Désignation"),
+      qty: z.string().default("Qté"),
+      unit: z.string().default("PU HT"),
+      total: z.string().default("Total HT"),
+      subtotal: z.string().default("Total HT"),
+      vat: z.string().default("TVA"),
+      grandTotal: z.string().default("Total TTC"),
+    })
+    .default({
+      label: "Désignation",
+      qty: "Qté",
+      unit: "PU HT",
+      total: "Total HT",
+      subtotal: "Total HT",
+      vat: "TVA",
+      grandTotal: "Total TTC",
+    }),
+});
+
+export type PricingItem = z.infer<typeof PricingItemSchema>;
+export type PricingTableBlock = z.infer<typeof PricingTableBlockSchema>;
+
 export const BlockSchema = z.discriminatedUnion("type", [
   TextBlockSchema,
   ImageBlockSchema,
   TableBlockSchema,
+  PricingTableBlockSchema,
   DynamicFieldBlockSchema,
   UserZoneBlockSchema,
 ]);
