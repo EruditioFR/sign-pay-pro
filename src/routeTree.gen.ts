@@ -59,6 +59,7 @@ import { Route as AuthenticatedAdminWorkflowsNewRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminWorkflowsIdRouteImport } from './routes/_authenticated.admin.workflows.$id'
 import { Route as AuthenticatedAdminTemplatesNewRouteImport } from './routes/_authenticated.admin.templates.new'
 import { Route as AuthenticatedAdminTemplatesIdRouteImport } from './routes/_authenticated.admin.templates.$id'
+import { Route as AuthenticatedAppFacturationDevisIndexRouteImport } from './routes/_authenticated.app.facturation.devis.index'
 import { Route as AuthenticatedAppDocumentsIdIndexRouteImport } from './routes/_authenticated.app.documents.$id.index'
 import { Route as AuthenticatedAppTemplatesIdPreviewRouteImport } from './routes/_authenticated.app.templates.$id.preview'
 import { Route as AuthenticatedAppTemplatesIdFillRouteImport } from './routes/_authenticated.app.templates.$id.fill'
@@ -343,6 +344,12 @@ const AuthenticatedAdminTemplatesIdRoute =
     path: '/admin/templates/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppFacturationDevisIndexRoute =
+  AuthenticatedAppFacturationDevisIndexRouteImport.update({
+    id: '/app/facturation/devis/',
+    path: '/app/facturation/devis/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsIdIndexRoute =
   AuthenticatedAppDocumentsIdIndexRouteImport.update({
     id: '/app/documents/$id/',
@@ -436,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
   '/app/documents/$id/': typeof AuthenticatedAppDocumentsIdIndexRoute
+  '/app/facturation/devis/': typeof AuthenticatedAppFacturationDevisIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -493,6 +501,7 @@ export interface FileRoutesByTo {
   '/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
   '/app/documents/$id': typeof AuthenticatedAppDocumentsIdIndexRoute
+  '/app/facturation/devis': typeof AuthenticatedAppFacturationDevisIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -552,6 +561,7 @@ export interface FileRoutesById {
   '/_authenticated/app/templates/$id/fill': typeof AuthenticatedAppTemplatesIdFillRoute
   '/_authenticated/app/templates/$id/preview': typeof AuthenticatedAppTemplatesIdPreviewRoute
   '/_authenticated/app/documents/$id/': typeof AuthenticatedAppDocumentsIdIndexRoute
+  '/_authenticated/app/facturation/devis/': typeof AuthenticatedAppFacturationDevisIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
     | '/app/documents/$id/'
+    | '/app/facturation/devis/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -668,6 +679,7 @@ export interface FileRouteTypes {
     | '/app/templates/$id/fill'
     | '/app/templates/$id/preview'
     | '/app/documents/$id'
+    | '/app/facturation/devis'
   id:
     | '__root__'
     | '/'
@@ -726,6 +738,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/templates/$id/fill'
     | '/_authenticated/app/templates/$id/preview'
     | '/_authenticated/app/documents/$id/'
+    | '/_authenticated/app/facturation/devis/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1099,6 +1112,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTemplatesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/facturation/devis/': {
+      id: '/_authenticated/app/facturation/devis/'
+      path: '/app/facturation/devis'
+      fullPath: '/app/facturation/devis/'
+      preLoaderRoute: typeof AuthenticatedAppFacturationDevisIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/$id/': {
       id: '/_authenticated/app/documents/$id/'
       path: '/app/documents/$id'
@@ -1185,6 +1205,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppTemplatesIdFillRoute: typeof AuthenticatedAppTemplatesIdFillRoute
   AuthenticatedAppTemplatesIdPreviewRoute: typeof AuthenticatedAppTemplatesIdPreviewRoute
   AuthenticatedAppDocumentsIdIndexRoute: typeof AuthenticatedAppDocumentsIdIndexRoute
+  AuthenticatedAppFacturationDevisIndexRoute: typeof AuthenticatedAppFacturationDevisIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1235,6 +1256,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppTemplatesIdPreviewRoute:
     AuthenticatedAppTemplatesIdPreviewRoute,
   AuthenticatedAppDocumentsIdIndexRoute: AuthenticatedAppDocumentsIdIndexRoute,
+  AuthenticatedAppFacturationDevisIndexRoute:
+    AuthenticatedAppFacturationDevisIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
