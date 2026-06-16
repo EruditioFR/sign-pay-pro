@@ -164,6 +164,7 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
             { to: "/app/facturation", label: t("nav_extra.facturation_dashboard"), icon: Receipt, accent: "facturation" },
             { to: "/app/facturation/devis", label: t("nav_extra.quotes"), icon: FileText, accent: "facturation" },
             { to: "/app/facturation/factures", label: t("nav_extra.invoices"), icon: Receipt, accent: "facturation", badgeKey: "pendingInvoices" },
+            { to: "/app/settings/billing-profile", label: "Profil de facturation", icon: Settings, accent: "facturation" },
           ],
         },
         {
