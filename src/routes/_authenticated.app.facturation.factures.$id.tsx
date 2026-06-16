@@ -35,11 +35,16 @@ function InvoiceDetailPage() {
   const transitionFn = useServerFn(transitionInvoiceStatus);
   const createLinkFn = useServerFn(createDocumentPaymentLink);
   const archiveFn = useServerFn(archiveDocument);
+  const getOrgFn = useServerFn(getMyBillingProfile);
   const [creatingLink, setCreatingLink] = useState(false);
 
   const q = useQuery({
     queryKey: ["facturation_invoice", id],
     queryFn: () => getFn({ data: { documentId: id } }),
+  });
+  const orgQ = useQuery({
+    queryKey: ["billing-profile"],
+    queryFn: () => getOrgFn(),
   });
 
   const transition = useMutation({
