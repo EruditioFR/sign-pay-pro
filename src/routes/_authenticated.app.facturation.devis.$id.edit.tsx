@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Send, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Save, ArrowRightLeft } from "lucide-react";
+import { SendQuoteDialog } from "@/components/facturation/SendQuoteDialog";
 import { toast } from "sonner";
 import { updateDocument } from "@/lib/documents.functions";
 import {
@@ -177,18 +178,16 @@ function EditQuotePage() {
           </Button>
         )}
         {(status === "draft" || status === "issued") && (
-          <Button
-            disabled={save.isPending}
-            onClick={async () => {
-              await save.mutateAsync();
-              await updateFn({ data: { id, status: "sent" } });
-              toast.success("Devis marqué comme envoyé.");
-              qc.invalidateQueries({ queryKey: ["facturation_quote", id] });
+          <SendQuoteDialog
+            documentId={id}
+            defaultRecipient={{
+              name: (d.third_party_name as string) ?? "",
+              email: (d.third_party_email as string) ?? "",
             }}
-            variant="outline"
-          >
-            <Send className="mr-1 h-4 w-4" /> Marquer comme envoyé
-          </Button>
+            onSent={async () => {
+              await save.mutateAsync().catch(() => {});
+            }}
+          />
         )}
         {(status === "issued" || status === "sent" || status === "viewed") && (
           <Button

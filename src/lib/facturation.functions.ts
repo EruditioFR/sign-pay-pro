@@ -409,3 +409,74 @@ export const getPendingInvoicesCount = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
   });
+
+const SendQuoteSchema = z.object({
+  documentId: z.string().uuid(),
+  recipients: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(120),
+        email: z.string().trim().email().max(200),
+      }),
+    )
+    .min(1)
+    .max(20),
+  sequential: z.boolean().optional(),
+  message: z.string().trim().max(2000).optional(),
+});
+
+export const sendQuoteToRecipients = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SendQuoteSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: doc, error: e1 } = await supabase
+      .from("documents")
+      .select("id, type, title, document_number, organization_id, status")
+      .eq("id", data.documentId)
+      .maybeSingle();
+    if (e1) throw new Error(e1.message);
+    if (!doc) throw new Error("Devis introuvable");
+    if (doc.type !== "quote") throw new Error("Document non-devis");
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", doc.organization_id)
+      .maybeSingle();
+
+    const { sendResendEmail, renderShareEmail } = await import("@/lib/email-sender");
+    const origin = process.env.APP_URL ?? "";
+    const url = `${origin}/app/facturation/devis/${doc.id}/edit`;
+    const ordered = data.sequential
+      ? data.recipients
+      : data.recipients;
+
+    const results: { email: string; ok: boolean; error?: string }[] = [];
+    for (const r of ordered) {
+      try {
+        await sendResendEmail({
+          to: r.email,
+          subject: `Devis ${doc.document_number ?? ""} — ${doc.title ?? ""}`.trim(),
+          html: renderShareEmail({
+            recipientName: r.name,
+            documentTitle: `${doc.document_number ? doc.document_number + " — " : ""}${doc.title ?? "Devis"}`,
+            url,
+            senderOrg: org?.name ?? null,
+          }),
+        });
+        results.push({ email: r.email, ok: true });
+      } catch (err) {
+        results.push({ email: r.email, ok: false, error: (err as Error).message });
+      }
+    }
+
+    if (results.some((r) => r.ok)) {
+      await supabase
+        .from("documents")
+        .update({ status: "sent", updated_at: new Date().toISOString() })
+        .eq("id", data.documentId);
+    }
+
+    return { ok: true, results };
+  });
