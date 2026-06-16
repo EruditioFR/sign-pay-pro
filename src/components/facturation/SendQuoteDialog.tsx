@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GripVertical, Plus, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { sendQuoteToRecipients } from "@/lib/facturation.functions";
+import { sendQuoteToRecipients, sendInvoiceToRecipients } from "@/lib/facturation.functions";
 
 type Recipient = { id: string; name: string; email: string };
 
@@ -31,11 +31,14 @@ interface Props {
   defaultRecipient?: { name?: string | null; email?: string | null };
   disabled?: boolean;
   onSent?: () => void;
+  kind?: "quote" | "invoice";
 }
 
-export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent }: Props) {
+export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent, kind = "quote" }: Props) {
   const qc = useQueryClient();
-  const sendFn = useServerFn(sendQuoteToRecipients);
+  const sendFn = useServerFn(kind === "invoice" ? sendInvoiceToRecipients : sendQuoteToRecipients);
+  const kindLabel = kind === "invoice" ? "la facture" : "le devis";
+  const sentLabel = kind === "invoice" ? "Facture envoyée" : "Devis envoyé";
   const [open, setOpen] = useState(false);
   const [sequential, setSequential] = useState(false);
   const [rows, setRows] = useState<Recipient[]>(() => [
@@ -82,10 +85,13 @@ export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent
     onSuccess: (res) => {
       const ok = res.results.filter((r) => r.ok).length;
       const fail = res.results.length - ok;
-      if (fail === 0) toast.success(`Devis envoyé à ${ok} destinataire(s).`);
+      if (fail === 0) toast.success(`${sentLabel} à ${ok} destinataire(s).`);
       else toast.warning(`Envoyé à ${ok}, échec ${fail}.`);
       qc.invalidateQueries({ queryKey: ["facturation_quote", documentId] });
       qc.invalidateQueries({ queryKey: ["facturation_quotes"] });
+      qc.invalidateQueries({ queryKey: ["facturation_invoice", documentId] });
+      qc.invalidateQueries({ queryKey: ["facturation_invoices"] });
+      qc.invalidateQueries({ queryKey: ["pending_invoices_count"] });
       setOpen(false);
       onSent?.();
     },
@@ -104,7 +110,7 @@ export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Envoyer le devis</DialogTitle>
+          <DialogTitle>Envoyer {kindLabel}</DialogTitle>
           <DialogDescription>
             Ajoutez les destinataires et définissez leur ordre de priorité par
             glisser-déposer.
