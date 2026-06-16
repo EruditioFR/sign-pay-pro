@@ -85,10 +85,13 @@ export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent
     onSuccess: (res) => {
       const ok = res.results.filter((r) => r.ok).length;
       const fail = res.results.length - ok;
-      if (fail === 0) toast.success(`Devis envoyé à ${ok} destinataire(s).`);
+      if (fail === 0) toast.success(`${sentLabel} à ${ok} destinataire(s).`);
       else toast.warning(`Envoyé à ${ok}, échec ${fail}.`);
       qc.invalidateQueries({ queryKey: ["facturation_quote", documentId] });
       qc.invalidateQueries({ queryKey: ["facturation_quotes"] });
+      qc.invalidateQueries({ queryKey: ["facturation_invoice", documentId] });
+      qc.invalidateQueries({ queryKey: ["facturation_invoices"] });
+      qc.invalidateQueries({ queryKey: ["pending_invoices_count"] });
       setOpen(false);
       onSent?.();
     },
@@ -107,7 +110,7 @@ export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Envoyer le devis</DialogTitle>
+          <DialogTitle>Envoyer {kindLabel}</DialogTitle>
           <DialogDescription>
             Ajoutez les destinataires et définissez leur ordre de priorité par
             glisser-déposer.
