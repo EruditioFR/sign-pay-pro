@@ -35,6 +35,9 @@ export function Toolbar({ onAdd, onSave, onPreview, saving }: ToolbarProps) {
       <Button size="sm" variant="outline" onClick={() => onAdd("table")}>
         <TableIcon className="h-4 w-4 mr-1.5" /> Tableau
       </Button>
+      <Button size="sm" variant="outline" onClick={() => onAdd("pricing_table")}>
+        <Calculator className="h-4 w-4 mr-1.5" /> Tableau devis
+      </Button>
       <Button size="sm" variant="outline" onClick={() => onAdd("dynamic")}>
         <Tag className="h-4 w-4 mr-1.5" /> Champ dynamique
       </Button>
