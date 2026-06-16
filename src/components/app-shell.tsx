@@ -45,12 +45,14 @@ interface NavItem {
   to: string;
   label: string;
   icon: typeof Home;
-  badgeKey?: "approvals";
+  badgeKey?: "approvals" | "pendingInvoices";
+  accent?: "facturation";
 }
 
 interface NavGroup {
   title: string;
   items: NavItem[];
+  accent?: "facturation";
 }
 
 function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
