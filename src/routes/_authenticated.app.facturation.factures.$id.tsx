@@ -191,14 +191,19 @@ function InvoiceDetailPage() {
                   </Button>
                 )}
                 {(status === "issued") && (
-                  <Button
-                    size="sm"
-                    onClick={() => transition.mutate("sent")}
-                    disabled={transition.isPending}
-                    className="bg-[color:var(--facturation)] text-[color:var(--facturation-foreground)] hover:bg-[color:var(--facturation)]/90"
-                  >
-                    <Send className="mr-1 h-4 w-4" /> Marquer comme envoyée
-                  </Button>
+                  <SendQuoteDialog
+                    documentId={id}
+                    kind="invoice"
+                    defaultRecipient={{
+                      name: (doc.third_party_name as string) ?? null,
+                      email: (doc.third_party_email as string) ?? null,
+                    }}
+                    onSent={() => {
+                      qc.invalidateQueries({ queryKey: ["facturation_invoice", id] });
+                      qc.invalidateQueries({ queryKey: ["facturation_invoices"] });
+                      qc.invalidateQueries({ queryKey: ["pending_invoices_count"] });
+                    }}
+                  />
                 )}
                 {(status === "sent" || status === "viewed" || status === "partially_paid") && (
                   <Button
