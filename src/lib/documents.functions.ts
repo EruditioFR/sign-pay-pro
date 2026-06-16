@@ -194,7 +194,10 @@ export const createDocument = createServerFn({ method: "POST" })
     };
   });
 
-const UpdateDocSchema = CreateDocSchema.partial().extend({ id: z.string().uuid() });
+const UpdateDocSchema = CreateDocSchema.partial().extend({
+  id: z.string().uuid(),
+  status: DocumentStatusEnum.optional(),
+});
 
 export const updateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
