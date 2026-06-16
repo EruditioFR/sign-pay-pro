@@ -187,23 +187,33 @@ function NavList({
   groups,
   pathname,
   approvalsCount,
+  pendingInvoicesCount,
   onItemClick,
 }: {
   groups: NavGroup[];
   pathname: string;
   approvalsCount: number;
+  pendingInvoicesCount: number;
   onItemClick?: () => void;
 }) {
   return (
     <nav className="flex-1 space-y-6 overflow-y-auto p-3">
       {groups.map((group) => (
         <div key={group.title}>
-          <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <div
+            className={cn(
+              "mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider",
+              group.accent === "facturation"
+                ? "text-[color:var(--facturation)]/80"
+                : "text-muted-foreground/70",
+            )}
+          >
             {group.title}
           </div>
           <div className="space-y-0.5">
             {group.items.map((item) => {
               const active = pathname === item.to;
+              const isFact = item.accent === "facturation";
               return (
                 <Link
                   key={item.to}
@@ -211,16 +221,32 @@ function NavList({
                   onClick={onItemClick}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
-                    active
-                      ? "bg-accent text-accent-foreground font-medium"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    active && isFact
+                      ? "bg-[color:var(--facturation-soft)] text-[color:var(--facturation)] font-medium"
+                      : active
+                        ? "bg-accent text-accent-foreground font-medium"
+                        : isFact
+                          ? "text-muted-foreground hover:bg-[color:var(--facturation-soft)] hover:text-[color:var(--facturation)]"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon
+                    className={cn(
+                      "h-4 w-4",
+                      isFact && (active || true) && "text-[color:var(--facturation)]",
+                    )}
+                  />
                   <span className="flex-1">{item.label}</span>
                   {item.badgeKey === "approvals" && approvalsCount > 0 && (
                     <Badge variant="default" className="h-5 px-1.5 text-[10px]">
                       {approvalsCount}
+                    </Badge>
+                  )}
+                  {item.badgeKey === "pendingInvoices" && pendingInvoicesCount > 0 && (
+                    <Badge
+                      className="h-5 px-1.5 text-[10px] bg-[color:var(--facturation)] text-[color:var(--facturation-foreground)] hover:bg-[color:var(--facturation)]"
+                    >
+                      {pendingInvoicesCount}
                     </Badge>
                   )}
                 </Link>
@@ -232,6 +258,7 @@ function NavList({
     </nav>
   );
 }
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
