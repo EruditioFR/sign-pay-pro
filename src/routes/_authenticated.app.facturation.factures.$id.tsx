@@ -19,6 +19,10 @@ import { PaymentDialog } from "@/components/payment-dialog";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { ExportFacturXButton } from "@/components/export-factur-x-button";
 import { SendQuoteDialog } from "@/components/facturation/SendQuoteDialog";
+import { InvoiceDraftEditor } from "@/components/facturation/InvoiceDraftEditor";
+import { InvoiceComplianceIndicator } from "@/components/facturation/InvoiceComplianceIndicator";
+import { checkInvoiceCompliance, type OrgProfile, type InvoiceDoc } from "@/lib/invoice-compliance";
+import { getMyBillingProfile } from "@/lib/organization.functions";
 
 export const Route = createFileRoute("/_authenticated/app/facturation/factures/$id")({
   component: InvoiceDetailPage,
