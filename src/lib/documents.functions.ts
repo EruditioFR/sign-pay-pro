@@ -197,6 +197,25 @@ export const createDocument = createServerFn({ method: "POST" })
 const UpdateDocSchema = CreateDocSchema.partial().extend({
   id: z.string().uuid(),
   status: DocumentStatusEnum.optional(),
+  // Champs profil de facturation / mentions légales (Art. L441-9 C.com)
+  service_date: z.string().optional().nullable(),
+  validity_date: z.string().optional().nullable(),
+  transaction_type: z.string().max(5).optional().nullable(),
+  client_delivery_address: z.string().max(500).optional().nullable(),
+  client_legal_form: z.string().max(40).optional().nullable(),
+  client_reference: z.string().max(120).optional().nullable(),
+  buyer_siret: z.string().max(20).optional().nullable(),
+  buyer_vat_number: z.string().max(20).optional().nullable(),
+  payment_terms: z.string().max(500).optional().nullable(),
+  payment_bank_details: z.string().max(500).optional().nullable(),
+  late_penalty_rate: z.number().min(0).max(100).optional().nullable(),
+  recovery_indemnity: z.number().min(0).optional().nullable(),
+  early_discount_text: z.string().max(500).optional().nullable(),
+  advance_paid: z.number().min(0).optional().nullable(),
+  header_note: z.string().max(2000).optional().nullable(),
+  footer_note: z.string().max(2000).optional().nullable(),
+  internal_note: z.string().max(2000).optional().nullable(),
+  legal_mentions: z.string().max(4000).optional().nullable(),
 });
 
 export const updateDocument = createServerFn({ method: "POST" })

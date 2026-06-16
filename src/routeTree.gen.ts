@@ -53,6 +53,7 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicCronSignatureRemindersRouteImport } from './routes/api/public/cron/signature-reminders'
 import { Route as AuthenticatedAppTemplatesNewRouteImport } from './routes/_authenticated.app.templates.new'
 import { Route as AuthenticatedAppTemplatesImportRouteImport } from './routes/_authenticated.app.templates.import'
+import { Route as AuthenticatedAppSettingsBillingProfileRouteImport } from './routes/_authenticated.app.settings.billing-profile'
 import { Route as AuthenticatedAppDocumentsWysiwygRouteImport } from './routes/_authenticated.app.documents.wysiwyg'
 import { Route as AuthenticatedAppDocumentsNewRouteImport } from './routes/_authenticated.app.documents.new'
 import { Route as AuthenticatedAdminWorkflowsNewRouteImport } from './routes/_authenticated.admin.workflows.new'
@@ -312,6 +313,12 @@ const AuthenticatedAppTemplatesImportRoute =
     path: '/app/templates/import',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppSettingsBillingProfileRoute =
+  AuthenticatedAppSettingsBillingProfileRouteImport.update({
+    id: '/app/settings/billing-profile',
+    path: '/app/settings/billing-profile',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppDocumentsWysiwygRoute =
   AuthenticatedAppDocumentsWysiwygRouteImport.update({
     id: '/app/documents/wysiwyg',
@@ -451,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/app/settings/billing-profile': typeof AuthenticatedAppSettingsBillingProfileRoute
   '/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
   '/app/templates/new': typeof AuthenticatedAppTemplatesNewRoute
   '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
@@ -513,6 +521,7 @@ export interface FileRoutesByTo {
   '/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/app/settings/billing-profile': typeof AuthenticatedAppSettingsBillingProfileRoute
   '/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
   '/app/templates/new': typeof AuthenticatedAppTemplatesNewRoute
   '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
@@ -577,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/workflows/new': typeof AuthenticatedAdminWorkflowsNewRoute
   '/_authenticated/app/documents/new': typeof AuthenticatedAppDocumentsNewRoute
   '/_authenticated/app/documents/wysiwyg': typeof AuthenticatedAppDocumentsWysiwygRoute
+  '/_authenticated/app/settings/billing-profile': typeof AuthenticatedAppSettingsBillingProfileRoute
   '/_authenticated/app/templates/import': typeof AuthenticatedAppTemplatesImportRoute
   '/_authenticated/app/templates/new': typeof AuthenticatedAppTemplatesNewRoute
   '/api/public/cron/signature-reminders': typeof ApiPublicCronSignatureRemindersRoute
@@ -641,6 +651,7 @@ export interface FileRouteTypes {
     | '/admin/workflows/new'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/app/settings/billing-profile'
     | '/app/templates/import'
     | '/app/templates/new'
     | '/api/public/cron/signature-reminders'
@@ -703,6 +714,7 @@ export interface FileRouteTypes {
     | '/admin/workflows/new'
     | '/app/documents/new'
     | '/app/documents/wysiwyg'
+    | '/app/settings/billing-profile'
     | '/app/templates/import'
     | '/app/templates/new'
     | '/api/public/cron/signature-reminders'
@@ -766,6 +778,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workflows/new'
     | '/_authenticated/app/documents/new'
     | '/_authenticated/app/documents/wysiwyg'
+    | '/_authenticated/app/settings/billing-profile'
     | '/_authenticated/app/templates/import'
     | '/_authenticated/app/templates/new'
     | '/api/public/cron/signature-reminders'
@@ -1122,6 +1135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTemplatesImportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/settings/billing-profile': {
+      id: '/_authenticated/app/settings/billing-profile'
+      path: '/app/settings/billing-profile'
+      fullPath: '/app/settings/billing-profile'
+      preLoaderRoute: typeof AuthenticatedAppSettingsBillingProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/documents/wysiwyg': {
       id: '/_authenticated/app/documents/wysiwyg'
       path: '/app/documents/wysiwyg'
@@ -1269,6 +1289,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminWorkflowsNewRoute: typeof AuthenticatedAdminWorkflowsNewRoute
   AuthenticatedAppDocumentsNewRoute: typeof AuthenticatedAppDocumentsNewRoute
   AuthenticatedAppDocumentsWysiwygRoute: typeof AuthenticatedAppDocumentsWysiwygRoute
+  AuthenticatedAppSettingsBillingProfileRoute: typeof AuthenticatedAppSettingsBillingProfileRoute
   AuthenticatedAppTemplatesImportRoute: typeof AuthenticatedAppTemplatesImportRoute
   AuthenticatedAppTemplatesNewRoute: typeof AuthenticatedAppTemplatesNewRoute
   AuthenticatedAdminBusinessVerticalsIndexRoute: typeof AuthenticatedAdminBusinessVerticalsIndexRoute
@@ -1319,6 +1340,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminWorkflowsNewRoute: AuthenticatedAdminWorkflowsNewRoute,
   AuthenticatedAppDocumentsNewRoute: AuthenticatedAppDocumentsNewRoute,
   AuthenticatedAppDocumentsWysiwygRoute: AuthenticatedAppDocumentsWysiwygRoute,
+  AuthenticatedAppSettingsBillingProfileRoute:
+    AuthenticatedAppSettingsBillingProfileRoute,
   AuthenticatedAppTemplatesImportRoute: AuthenticatedAppTemplatesImportRoute,
   AuthenticatedAppTemplatesNewRoute: AuthenticatedAppTemplatesNewRoute,
   AuthenticatedAdminBusinessVerticalsIndexRoute:

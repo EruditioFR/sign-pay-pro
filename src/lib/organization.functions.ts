@@ -157,3 +157,80 @@ export const removeOrgLogo = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============================================================================
+// Profil de facturation (mentions légales émetteur)
+// ============================================================================
+
+const BILLING_COLS = [
+  "id", "name", "country", "legal_form", "share_capital", "siret",
+  "rcs_city", "rm_number", "naf_code", "vat_number", "vat_regime",
+  "is_autoentrepreneur", "iban", "bic", "late_penalty_rate",
+  "recovery_indemnity", "default_payment_terms", "default_early_discount",
+].join(", ");
+
+export const getMyBillingProfile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: profile } = await supabase
+      .from("profiles").select("organization_id").eq("id", userId).maybeSingle();
+    if (!profile?.organization_id) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = (await (supabase.from("organizations") as any)
+      .select(BILLING_COLS)
+      .eq("id", profile.organization_id)
+      .maybeSingle()) as { data: Record<string, unknown> | null; error: { message: string } | null };
+    if (error) throw new Error(error.message);
+    // Cast to a JSON-serializable shape for TanStack serializer.
+    return (data ?? null) as unknown as {
+      [k: string]: string | number | boolean | null;
+    } | null;
+  });
+
+const BillingSchema = z.object({
+  name: z.string().trim().min(1).max(180).optional(),
+  legal_form: z.string().trim().max(40).nullable().optional(),
+  share_capital: z.number().nonnegative().nullable().optional(),
+  siret: z.string().trim().regex(/^\d{14}$/u, "SIRET = 14 chiffres").nullable().optional().or(z.literal("")),
+  rcs_city: z.string().trim().max(80).nullable().optional(),
+  rm_number: z.string().trim().max(80).nullable().optional(),
+  naf_code: z.string().trim().max(10).nullable().optional(),
+  vat_number: z.string().trim()
+    .regex(/^[A-Z]{2}[A-Z0-9]{2,12}$/u, "Format TVA invalide")
+    .nullable().optional().or(z.literal("")),
+  vat_regime: z.enum(["debits", "encaissements"]).nullable().optional(),
+  is_autoentrepreneur: z.boolean().optional(),
+  iban: z.string().trim().max(40).nullable().optional(),
+  bic: z.string().trim().max(15).nullable().optional(),
+  late_penalty_rate: z.number().min(0).max(100).nullable().optional(),
+  recovery_indemnity: z.number().min(0).nullable().optional(),
+  default_payment_terms: z.string().trim().max(500).nullable().optional(),
+  default_early_discount: z.string().trim().max(500).nullable().optional(),
+  country: z.string().trim().max(60).nullable().optional(),
+});
+
+export const updateBillingProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => BillingSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: profile } = await supabase
+      .from("profiles").select("organization_id").eq("id", userId).maybeSingle();
+    if (!profile?.organization_id) throw new Error("Organisation introuvable.");
+    const { data: isAdmin } = await supabase.rpc("is_org_admin", {
+      _user_id: userId, _org_id: profile.organization_id,
+    });
+    if (!isAdmin) throw new Error("Accès réservé aux administrateurs de l'organisation.");
+
+    // Normalize empty strings to null so optional fields clear correctly.
+    const payload: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data)) {
+      payload[k] = v === "" ? null : v;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("organizations") as any)
+      .update(payload).eq("id", profile.organization_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
