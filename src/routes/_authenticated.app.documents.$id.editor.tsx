@@ -820,7 +820,7 @@ function PdfEditorPage() {
   );
 }
 
-function FieldPreview({ field, onSignClick }: { field: Field; onSignClick: () => void }) {
+function FieldPreview({ field, scale, onSignClick }: { field: Field; scale: number; onSignClick: () => void }) {
   if (field.kind === "signature" || field.kind === "initials") {
     if (field.value?.startsWith("data:image/")) {
       return <img src={field.value} alt="" className="h-full w-full object-contain pointer-events-none" />;
@@ -832,15 +832,16 @@ function FieldPreview({ field, onSignClick }: { field: Field; onSignClick: () =>
     );
   }
   if (field.kind === "checkbox") {
-    return <span>{field.value === "true" ? "✓" : ""}</span>;
+    return <span style={{ fontSize: Math.max(8, field.height * scale * 0.8) }}>{field.value === "true" ? "✓" : ""}</span>;
   }
   const value = field.value || "";
+  const fontStyle: React.CSSProperties = { fontSize: field.font_size * scale, lineHeight: 1.1 };
   if (!value) {
-    return <span className="truncate px-1 italic text-muted-foreground">{`« ${KIND_META[field.kind].label} »`}</span>;
+    return <span className="truncate px-1 italic text-muted-foreground" style={fontStyle}>{`« ${KIND_META[field.kind].label} »`}</span>;
   }
   const parts = value.split(/(\{\{\s*[a-zA-Z0-9_]+\s*\}\})/g);
   return (
-    <span className="truncate px-1">
+    <span className="truncate px-1" style={fontStyle}>
       {parts.map((p, i) =>
         /^\{\{\s*[a-zA-Z0-9_]+\s*\}\}$/.test(p) ? (
           <span key={i} className="rounded bg-primary/20 px-1 text-primary">{p}</span>
