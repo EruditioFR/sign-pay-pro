@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GripVertical, Plus, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { sendQuoteToRecipients } from "@/lib/facturation.functions";
+import { sendQuoteToRecipients, sendInvoiceToRecipients } from "@/lib/facturation.functions";
 
 type Recipient = { id: string; name: string; email: string };
 
@@ -31,11 +31,14 @@ interface Props {
   defaultRecipient?: { name?: string | null; email?: string | null };
   disabled?: boolean;
   onSent?: () => void;
+  kind?: "quote" | "invoice";
 }
 
-export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent }: Props) {
+export function SendQuoteDialog({ documentId, defaultRecipient, disabled, onSent, kind = "quote" }: Props) {
   const qc = useQueryClient();
-  const sendFn = useServerFn(sendQuoteToRecipients);
+  const sendFn = useServerFn(kind === "invoice" ? sendInvoiceToRecipients : sendQuoteToRecipients);
+  const kindLabel = kind === "invoice" ? "la facture" : "le devis";
+  const sentLabel = kind === "invoice" ? "Facture envoyée" : "Devis envoyé";
   const [open, setOpen] = useState(false);
   const [sequential, setSequential] = useState(false);
   const [rows, setRows] = useState<Recipient[]>(() => [
