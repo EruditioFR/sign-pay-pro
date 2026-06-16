@@ -29,6 +29,7 @@ import {
   LogOut,
   Menu,
   PenLine,
+  Receipt,
   ScrollText,
   
   Settings,
