@@ -329,9 +329,10 @@ function PdfEditorPage() {
       return flattenFn({ data: { documentId: id } });
     },
     onSuccess: () => {
-      toast.success("PDF final généré");
+      toast.success("PDF final généré — choisissez comment l'envoyer");
       qc.invalidateQueries({ queryKey: ["document", id] });
-      navigate({ to: "/app/documents/$id", params: { id } });
+      qc.invalidateQueries({ queryKey: ["editor-pdf-url", id] });
+      setSendOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),
   });
