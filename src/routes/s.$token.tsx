@@ -438,8 +438,18 @@ function SignWithPlacement({
         signature_image_b64: canvasDataUrl,
         consent: { accepted: true, text: consentText },
       };
-      if (showFreePlacement && placement && !hasRecipientSignatureField) {
-        body.placement = placement;
+      if (showFreePlacement && !hasRecipientSignatureField) {
+        // Si l'utilisateur n'a pas tapé sur le PDF (notamment sur mobile),
+        // place automatiquement la signature en bas à droite de la page courante.
+        const finalPlacement =
+          placement ??
+          clampPlacement({
+            page_index: pageIndex,
+            x: pagePoints.w - sigWidthPt - 36,
+            y: 36,
+            width: sigWidthPt,
+          });
+        body.placement = finalPlacement;
       }
       if (builtFieldValues.length > 0) {
         body.field_values = builtFieldValues;
