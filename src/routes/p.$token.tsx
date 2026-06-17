@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { FileText, PenLine, CreditCard, CheckCircle2 } from "lucide-react";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
 
 export const Route = createFileRoute("/p/$token")({
   validateSearch: (search: Record<string, unknown>) => ({
