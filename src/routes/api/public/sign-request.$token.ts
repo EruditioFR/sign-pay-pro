@@ -282,6 +282,15 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           .maybeSingle();
         if (!doc) return json({ error: "not_found" }, { status: 404 });
 
+        // Verrouillage : un document déjà signé / payé / archivé / annulé ne peut plus être signé.
+        const { canRequestSignature } = await import("@/lib/document-state-machine");
+        if (!canRequestSignature(doc.status)) {
+          return json(
+            { error: "document_locked", message: "Ce document est verrouillé et ne peut plus être signé." },
+            { status: 409 },
+          );
+        }
+
         const { data: org } = await supabaseAdmin
           .from("organizations")
           .select("name, country")

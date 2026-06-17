@@ -99,8 +99,8 @@ export function canModify(status: string | null | undefined): boolean {
 /** Une nouvelle signature peut-elle être demandée / enregistrée ? */
 export function canRequestSignature(status: string | null | undefined): boolean {
   if (isReadOnlyStatus(status)) return false;
-  // Pas de re-signature une fois payé
-  return status !== "paid";
+  // Pas de re-signature une fois le document signé ou payé : le PDF est verrouillé.
+  return status !== "paid" && status !== "signed";
 }
 
 /** Un paiement (manuel ou Stripe) peut-il être enregistré ? */
