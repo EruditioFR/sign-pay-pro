@@ -6,8 +6,26 @@
  * PDF alongside the action link.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { buildDocumentPdf } from "@/lib/pdf.functions";
 import type { EmailAttachment } from "@/lib/email-sender";
+
+/**
+ * Vérifie qu'un PDF final (post-validation, avec les champs insérés) existe
+ * pour ce document. Utilisé pour bloquer l'envoi de mails de signature /
+ * paiement tant que le document n'a pas été figé.
+ */
+export async function assertFinalPdfReady(documentId: string): Promise<void> {
+  const { data: currentFile } = await supabaseAdmin
+    .from("document_files")
+    .select("storage_path")
+    .eq("document_id", documentId)
+    .eq("is_current", true)
+    .maybeSingle();
+  if (!currentFile?.storage_path) {
+    throw new Error(
+      "Envoi impossible : le PDF final n'a pas encore été généré. Validez d'abord le document (placement des champs / signatures) avant de l'envoyer.",
+    );
+  }
+}
 
 function bytesToBase64(bytes: Uint8Array): string {
   // Chunked to avoid call-stack limits on large PDFs.
@@ -52,20 +70,15 @@ export async function buildDocumentPdfAttachment(
     .eq("is_current", true)
     .maybeSingle();
 
-  let pdfBytes: Uint8Array | null = null;
-  if (currentFile?.storage_path) {
-    const { data: blob } = await supabaseAdmin.storage
-      .from("documents")
-      .download(currentFile.storage_path);
-    if (blob) pdfBytes = new Uint8Array(await blob.arrayBuffer());
-  }
-  if (!pdfBytes) {
-    try {
-      pdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
-    } catch {
-      return null;
-    }
-  }
+  // IMPORTANT : on n'attache QUE le PDF final déjà figé dans `document_files`
+  // (généré après insertion des champs éditables / validation). On ne génère
+  // PAS un PDF à la volée ici — sinon on enverrait une version intermédiaire.
+  if (!currentFile?.storage_path) return null;
+  const { data: blob } = await supabaseAdmin.storage
+    .from("documents")
+    .download(currentFile.storage_path);
+  if (!blob) return null;
+  const pdfBytes = new Uint8Array(await blob.arrayBuffer());
   if (!pdfBytes || pdfBytes.byteLength === 0) return null;
 
   return {

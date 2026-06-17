@@ -48,6 +48,12 @@ export const createShareLink = createServerFn({ method: "POST" })
       );
     }
 
+    // Garantit qu'un PDF final figé existe avant tout envoi avec destinataire.
+    if (data.recipient_email) {
+      const { assertFinalPdfReady } = await import("@/lib/document-pdf-attachment.server");
+      await assertFinalPdfReady(data.document_id);
+    }
+
     const expiresAt = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
 
     const { data: link, error } = await supabase
