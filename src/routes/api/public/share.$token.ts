@@ -414,7 +414,11 @@ export const Route = createFileRoute("/api/public/share/$token")({
             } else {
               const referer = request.headers.get("referer");
               if (referer) {
-                try { origin = new URL(referer).origin; } catch {}
+                try {
+                  origin = new URL(referer).origin;
+                } catch {
+                  // Keep the existing origin fallback.
+                }
               }
             }
           }
