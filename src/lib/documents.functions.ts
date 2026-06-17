@@ -423,6 +423,15 @@ export const registerDocumentFile = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    // Symétrie avec l'éditeur PDF : dès qu'un PDF final est rattaché au
+    // document (upload direct ou aplatissement éditeur), on sort du statut
+    // "draft" pour autoriser l'envoi / la signature / le paiement.
+    await supabase
+      .from("documents")
+      .update({ status: "validated" })
+      .eq("id", data.document_id)
+      .eq("status", "draft");
+
     return { file };
   });
 
