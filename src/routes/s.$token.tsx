@@ -5,6 +5,7 @@ import { ResponsiveSignatureCanvas } from "@/components/responsive-signature-can
 import type * as PdfJs from "pdfjs-dist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
@@ -293,6 +294,7 @@ function SignWithPlacement({
 
   // Valeurs saisies par le destinataire pour chaque zone "à remplir".
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const hasRecipientFields = recipientFields.length > 0;
   const hasRecipientSignatureField = recipientFields.some(
     (f) => f.kind === "signature" || f.kind === "initials",
@@ -354,14 +356,42 @@ function SignWithPlacement({
     };
   };
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!showFreePlacement) return;
-    if (dragRef.current) return;
-    const rect = (overlayRef.current ?? e.currentTarget).getBoundingClientRect();
-    const xPx = e.clientX - rect.left;
-    const yPx = e.clientY - rect.top;
-    const xPt = xPx / renderScale;
-    const yPt = yPx / renderScale;
+  const selectedField = recipientFields.find((f) => f.id === selectedFieldId) ?? null;
+
+  const getFieldLabel = (f: RecipientField) =>
+    f.label ||
+    (f.kind === "date"
+      ? "Date"
+      : f.kind === "checkbox"
+        ? "Case à cocher"
+        : f.kind === "signature"
+          ? "Signature"
+          : f.kind === "initials"
+            ? "Paraphe"
+            : "Texte");
+
+  const getFieldFilled = (f: RecipientField) => {
+    const val = fieldValues[f.id] ?? "";
+    return f.kind === "signature" || f.kind === "initials"
+      ? !!val
+      : f.kind === "checkbox"
+        ? true
+        : !!val.trim();
+  };
+
+  const selectRecipientField = (f: RecipientField) => {
+    setSelectedFieldId(f.id);
+    if (f.page_index !== pageIndex) setPageIndex(f.page_index);
+    if (f.kind === "signature" || f.kind === "initials") {
+      setFieldValues((s) => ({ ...s, [f.id]: s[f.id] || "__selected__" }));
+    }
+  };
+
+  const placeAtClientPoint = (clientX: number, clientY: number) => {
+    const rect = overlayRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const xPt = (clientX - rect.left) / renderScale;
+    const yPt = (clientY - rect.top) / renderScale;
     setPlacement(
       clampPlacement({
         page_index: pageIndex,
@@ -370,6 +400,19 @@ function SignWithPlacement({
         width: sigWidthPt,
       }),
     );
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!showFreePlacement) return;
+    if (dragRef.current) return;
+    placeAtClientPoint(e.clientX, e.clientY);
+  };
+
+  const handleOverlayPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!showFreePlacement || dragRef.current || e.pointerType === "mouse") return;
+    if ((e.target as HTMLElement).closest("[data-recipient-field]")) return;
+    e.preventDefault();
+    placeAtClientPoint(e.clientX, e.clientY);
   };
 
   const startDrag = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -538,11 +581,13 @@ function SignWithPlacement({
             <div
               ref={overlayRef}
               onClick={handleClick}
+              onPointerUp={handleOverlayPointerUp}
               className={`relative w-full overflow-hidden rounded border bg-muted/20 ${
                 showFreePlacement ? "cursor-crosshair" : ""
               }`}
+              style={{ touchAction: showFreePlacement ? "none" : "pan-y" }}
             >
-              <canvas ref={canvasRef} className="block w-full" />
+              <canvas ref={canvasRef} className="block w-full select-none" />
               {showFreePlacement && !placement && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="rounded-full bg-foreground/80 px-3 py-1 text-xs text-background flex items-center gap-1">
@@ -563,6 +608,7 @@ function SignWithPlacement({
                     top: placement.y * renderScale,
                     width: placement.width * renderScale,
                     height: sigHeightPt * renderScale,
+                    touchAction: "none",
                   }}
                 >
                   <div className="absolute -top-5 left-0 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
@@ -578,33 +624,45 @@ function SignWithPlacement({
                   const cssW = f.width * renderScale;
                   const cssH = f.height * renderScale;
                   const val = fieldValues[f.id] ?? "";
-                  const filled =
-                    f.kind === "signature" || f.kind === "initials"
-                      ? !!val
-                      : f.kind === "checkbox"
-                        ? true
-                        : !!val.trim();
+                  const filled = getFieldFilled(f);
+                  const selected = selectedFieldId === f.id;
                   return (
                     <div
                       key={f.id}
-                      onClick={(e) => e.stopPropagation()}
-                      className={`absolute flex items-center justify-center rounded border-2 ${
-                        filled
-                          ? "border-emerald-500 bg-emerald-500/10"
-                          : "border-dashed border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/20"
+                      data-recipient-field="true"
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        selectRecipientField(f);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectRecipientField(f);
+                      }}
+                      className={`absolute z-10 flex items-center justify-center rounded border-2 touch-manipulation ${
+                        selected
+                          ? "border-primary bg-primary/15 ring-2 ring-primary/40"
+                          : filled
+                            ? "border-emerald-500 bg-emerald-500/10"
+                            : "border-dashed border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/20"
                       }`}
-                      style={{ left: cssLeft, top: cssTop, width: cssW, height: cssH }}
+                      style={{
+                        left: cssLeft,
+                        top: cssTop,
+                        width: Math.max(cssW, 44),
+                        height: Math.max(cssH, f.kind === "checkbox" ? 44 : 38),
+                      }}
                       title={f.label || `Zone ${f.kind}`}
                     >
                       {(f.kind === "text" || f.kind === "date") && (
                         <input
+                          id={`recipient-field-${f.id}`}
                           type={f.kind === "date" ? "date" : "text"}
                           value={val}
                           onChange={(e) =>
                             setFieldValues((s) => ({ ...s, [f.id]: e.target.value }))
                           }
                           className="h-full w-full bg-transparent px-1 text-foreground outline-none"
-                          style={{ fontSize: Math.max(10, f.font_size * renderScale) }}
+                          style={{ fontSize: Math.max(16, f.font_size * renderScale) }}
                           placeholder={f.label || "À remplir"}
                         />
                       )}
@@ -635,9 +693,54 @@ function SignWithPlacement({
             </div>
 
             {hasRecipientFields && (
-              <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
-                {recipientFields.length} zone{recipientFields.length > 1 ? "s" : ""} à remplir au
-                total — toutes sont obligatoires. Naviguez entre les pages pour les compléter.
+              <div className="space-y-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+                <div className="text-xs text-amber-700 dark:text-amber-300">
+                  {recipientFields.length} zone{recipientFields.length > 1 ? "s" : ""} à compléter.
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {recipientFields.map((f) => (
+                    <Button
+                      key={f.id}
+                      type="button"
+                      variant={selectedFieldId === f.id ? "default" : "outline"}
+                      className="h-auto justify-start whitespace-normal px-3 py-2 text-left text-xs"
+                      onClick={() => selectRecipientField(f)}
+                    >
+                      <span className="min-w-0 flex-1">
+                        Page {f.page_index + 1} · {getFieldLabel(f)}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+                {selectedField && (selectedField.kind === "text" || selectedField.kind === "date") && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{getFieldLabel(selectedField)}</Label>
+                    <Input
+                      type={selectedField.kind === "date" ? "date" : "text"}
+                      value={fieldValues[selectedField.id] ?? ""}
+                      onChange={(e) =>
+                        setFieldValues((s) => ({ ...s, [selectedField.id]: e.target.value }))
+                      }
+                      className="text-base"
+                    />
+                  </div>
+                )}
+                {selectedField && selectedField.kind === "checkbox" && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(fieldValues[selectedField.id] ?? "") === "true"}
+                      onChange={(e) =>
+                        setFieldValues((s) => ({
+                          ...s,
+                          [selectedField.id]: e.target.checked ? "true" : "false",
+                        }))
+                      }
+                      className="h-5 w-5"
+                    />
+                    {getFieldLabel(selectedField)}
+                  </label>
+                )}
               </div>
             )}
 
