@@ -81,7 +81,8 @@ function NewDocumentPage() {
       </header>
 
       {/* 3 main actions inspired by Signova execution actions */}
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-2">
+        {/* Partir d'un modèle temporairement désactivé
         <Link to="/app/templates" className="block">
           <StartOptionCard
             icon={<LayoutTemplate className="h-5 w-5" />}
@@ -91,6 +92,7 @@ function NewDocumentPage() {
             cta="Voir les modèles"
           />
         </Link>
+        */}
         <NewPdfTemplateDialog
           trigger={
             <button type="button" className="text-left">
