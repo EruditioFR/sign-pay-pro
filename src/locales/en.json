@@ -18,10 +18,10 @@
   },
   "nav_group": {
     "overview": "Overview",
-    "documents": "Documents & signatures",
-    "facturation": "Billing",
+    "documents": "E-SIGNATURE\n",
+    "facturation": "E-BILLING",
     "workflows": "Workflows & validation",
-    "organization": "Organization",
+    "organization": "YOUR ORGANIZATION",
     "admin": "Administration",
     "profile": "Profile",
     "organizations": "Organizations",
