@@ -898,6 +898,68 @@ function PdfEditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          if (f.size > 5 * 1024 * 1024) {
+            toast.error("Image trop volumineuse (max 5 Mo)");
+            return;
+          }
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.onerror = () => reject(new Error("Lecture du fichier impossible"));
+            r.readAsDataURL(f);
+          });
+          const targetTempId = imageTargetRef.current;
+          imageTargetRef.current = null;
+          if (targetTempId) {
+            updateField(targetTempId, { value: dataUrl });
+          } else {
+            const w = 120;
+            const h = 120;
+            const cssX = (pageDims.w * renderScale) / 2 - (w * renderScale) / 2;
+            const cssY = (pageDims.h * renderScale) / 2 - (h * renderScale) / 2;
+            const xPdf = Math.max(0, cssX / renderScale);
+            const yPdfTop = cssY / renderScale;
+            const newField: Field = {
+              tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+              page_index: pageIndex,
+              kind: "signature",
+              x: xPdf,
+              y: Math.max(0, pageDims.h - yPdfTop - h),
+              width: w,
+              height: h,
+              value: dataUrl,
+              font_size: 11,
+              required: false,
+              recipient_fillable: false,
+              label: "Image",
+              position: fields.length,
+            };
+            setFields((prev) => [...prev, newField]);
+            setSelectedId(newField.tempId);
+          }
+          toast.success("Image insérée");
+        }}
+      />
+
+      <ShareLinkDialog
+        documentId={id}
+        hideTrigger
+        open={sendOpen}
+        onOpenChange={(v) => {
+          setSendOpen(v);
+          if (!v) navigate({ to: "/app/documents/$id", params: { id } });
+        }}
+      />
     </div>
   );
 }
