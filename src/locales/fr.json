@@ -237,14 +237,14 @@
     "subtitle": "Vos étapes de validation en attente."
   },
   "nav_extra": {
-    "documents": "Documents",
+    "documents": "Vos documents",
     "approvals": "À valider",
     "workflows": "Workflows",
-    "templates": "Modèles PDF",
+    "templates": "Vos Modèles PDF",
     "analytics": "Analytics",
     "facturation_dashboard": "Tableau de bord",
-    "quotes": "Devis",
-    "invoices": "Factures"
+    "quotes": "Vos devis",
+    "invoices": "Vos factures"
   },
   "analytics": {
     "title": "Analytics métier",
