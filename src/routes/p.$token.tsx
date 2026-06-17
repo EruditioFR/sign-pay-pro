@@ -108,7 +108,28 @@ function PublicSharePage() {
           </CardContent>
         </Card>
 
-        {(data.allow_sign || data.allow_pay) && (
+        {data.payment?.is_fully_paid ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3 rounded-md bg-emerald-500/10 p-4 text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+                <div>
+                  <div className="text-sm font-semibold">{t("public.already_paid_title")}</div>
+                  {data.payment.paid_at && (
+                    <div className="text-sm">
+                      {t("public.already_paid_on", {
+                        date: new Date(data.payment.paid_at).toLocaleDateString("fr-FR", {
+                          day: "2-digit", month: "long", year: "numeric",
+                        }),
+                      })}
+                    </div>
+                  )}
+                  <div className="mt-1 text-xs opacity-80">{t("public.already_paid_text")}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (data.allow_sign || data.allow_pay) && (
           <Card>
             <CardHeader><CardTitle className="text-base">{t("public.actions")}</CardTitle></CardHeader>
             <CardContent>
