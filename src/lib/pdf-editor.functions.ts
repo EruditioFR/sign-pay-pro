@@ -18,6 +18,7 @@ const FieldSchema = z.object({
   value: z.string().max(200000).nullable().optional(),
   font_size: z.number().int().min(6).max(72).default(11),
   required: z.boolean().default(false),
+  recipient_fillable: z.boolean().default(false),
   label: z.string().max(200).nullable().optional(),
   position: z.number().int().min(0).max(10000).default(0),
 });
