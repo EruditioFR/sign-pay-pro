@@ -293,6 +293,7 @@ export type Database = {
           label: string | null
           page_index: number
           position: number
+          recipient_fillable: boolean
           required: boolean
           updated_at: string
           value: string | null
@@ -310,6 +311,7 @@ export type Database = {
           label?: string | null
           page_index?: number
           position?: number
+          recipient_fillable?: boolean
           required?: boolean
           updated_at?: string
           value?: string | null
@@ -327,6 +329,7 @@ export type Database = {
           label?: string | null
           page_index?: number
           position?: number
+          recipient_fillable?: boolean
           required?: boolean
           updated_at?: string
           value?: string | null

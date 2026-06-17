@@ -54,6 +54,7 @@ type Field = {
   value: string | null;
   font_size: number;
   required: boolean;
+  recipient_fillable: boolean;
   label: string | null;
   position: number;
 };
@@ -165,6 +166,7 @@ function PdfEditorPage() {
         value: f.value,
         font_size: f.font_size,
         required: f.required,
+        recipient_fillable: (f as { recipient_fillable?: boolean }).recipient_fillable ?? false,
         label: f.label,
         position: f.position,
       })),
@@ -254,6 +256,7 @@ function PdfEditorPage() {
       value: kind === "checkbox" ? "false" : null,
       font_size: 11,
       required: false,
+      recipient_fillable: false,
       label: null,
       position: fields.length,
     };
@@ -285,6 +288,7 @@ function PdfEditorPage() {
             value: f.value,
             font_size: f.font_size,
             required: f.required,
+            recipient_fillable: f.recipient_fillable,
             label: f.label,
             position: i,
           })),
@@ -312,6 +316,7 @@ function PdfEditorPage() {
             value: f.value,
             font_size: f.font_size,
             required: f.required,
+            recipient_fillable: f.recipient_fillable,
             label: f.label,
             position: i,
           })),
@@ -338,7 +343,8 @@ function PdfEditorPage() {
             page_index: f.page_index, kind: f.kind,
             x: f.x, y: f.y, width: f.width, height: f.height,
             value: f.value, font_size: f.font_size,
-            required: f.required, label: f.label, position: i,
+            required: f.required, recipient_fillable: f.recipient_fillable,
+            label: f.label, position: i,
           })),
         },
       });
@@ -615,7 +621,13 @@ function PdfEditorPage() {
                       }}
                       onMouseDown={() => setSelectedId(f.tempId)}
                       className={`flex items-center justify-center font-medium ${
-                        isSelected ? "border-2 border-primary bg-primary/15" : "border border-primary/60 bg-primary/10"
+                        f.recipient_fillable
+                          ? isSelected
+                            ? "border-2 border-amber-500 bg-amber-500/20"
+                            : "border-2 border-dashed border-amber-500/70 bg-amber-500/10"
+                          : isSelected
+                            ? "border-2 border-primary bg-primary/15"
+                            : "border border-primary/60 bg-primary/10"
                       }`}
                     >
                       <FieldPreview field={f} scale={renderScale} onSignClick={() => setSigOpenFor(f.tempId)} />
@@ -740,6 +752,26 @@ function PdfEditorPage() {
                     {selected.value ? "Modifier" : "Dessiner"}
                   </Button>
                 )}
+
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+                  <label className="flex items-start gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5"
+                      checked={selected.recipient_fillable}
+                      onChange={(e) =>
+                        updateField(selected.tempId, { recipient_fillable: e.target.checked })
+                      }
+                    />
+                    <span>
+                      <span className="font-medium">À remplir par le destinataire</span>
+                      <span className="block text-[10px] text-muted-foreground">
+                        Cette zone ne sera pas figée dans le PDF final ; le destinataire devra la
+                        remplir lors de la signature (obligatoire).
+                      </span>
+                    </span>
+                  </label>
+                </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                   <span>x: {Math.round(selected.x)}pt</span>

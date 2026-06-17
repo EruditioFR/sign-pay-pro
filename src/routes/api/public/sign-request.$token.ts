@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { z } from "zod";
 import { buildDocumentPdf } from "@/lib/pdf.functions";
 import {
@@ -58,6 +58,11 @@ async function isNextInLine(req: {
   return !ahead || ahead.length === 0;
 }
 
+const RecipientFieldValueSchema = z.object({
+  id: z.string().uuid(),
+  value: z.string().max(500_000),
+});
+
 const SignBody = z.object({
   action: z.literal("sign"),
   signature_image_b64: z.string().min(50).max(2_000_000),
@@ -75,6 +80,7 @@ const SignBody = z.object({
     })
     .optional()
     .nullable(),
+  field_values: z.array(RecipientFieldValueSchema).max(200).optional(),
 });
 const DeclineBody = z.object({
   action: z.literal("decline"),
@@ -140,6 +146,14 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
 
         const next = await isNextInLine(req);
 
+        const { data: recipientFields } = await supabaseAdmin
+          .from("document_pdf_fields")
+          .select("id, page_index, kind, x, y, width, height, label, font_size, required")
+          .eq("document_id", doc.id)
+          .eq("recipient_fillable", true)
+          .order("page_index", { ascending: true })
+          .order("position", { ascending: true });
+
         return json({
           document: doc,
           organization: org,
@@ -162,6 +176,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             consent_version: CONSENT_TEXT_VERSION,
             module_version: CONFORMITY_MODULE_VERSION,
           },
+          recipient_fields: recipientFields ?? [],
           can_sign: next,
         });
       },
@@ -251,6 +266,100 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         }
 
         const pages = pdf.getPages();
+
+        // ===== Zones à remplir par le destinataire =====
+        const { data: recipientFields } = await supabaseAdmin
+          .from("document_pdf_fields")
+          .select("id, page_index, kind, x, y, width, height, font_size, label")
+          .eq("document_id", doc.id)
+          .eq("recipient_fillable", true);
+
+        const recipientFieldList = recipientFields ?? [];
+        const valuesMap = new Map<string, string>(
+          (body.field_values ?? []).map((v) => [v.id, v.value]),
+        );
+
+        // Toutes les zones destinataire sont obligatoires : on bloque si une valeur manque.
+        const missing = recipientFieldList.filter((f) => {
+          const v = valuesMap.get(f.id);
+          if (v == null) return true;
+          if (f.kind === "checkbox") return false; // une case non cochée reste valide
+          if (f.kind === "signature" || f.kind === "initials") {
+            return !v.startsWith("data:image/");
+          }
+          return !v.trim();
+        });
+        if (missing.length > 0) {
+          return json(
+            {
+              error: "recipient_fields_incomplete",
+              message: `Veuillez remplir toutes les zones (${missing.length} restante${missing.length > 1 ? "s" : ""}).`,
+              missing_ids: missing.map((f) => f.id),
+            },
+            { status: 400 },
+          );
+        }
+
+        let recipientFont: import("pdf-lib").PDFFont | null = null;
+        if (recipientFieldList.some((f) => f.kind === "text" || f.kind === "date")) {
+          recipientFont = await pdf.embedFont(StandardFonts.Helvetica);
+        }
+
+        for (const f of recipientFieldList) {
+          const page = pages[f.page_index];
+          if (!page) continue;
+          const x = Number(f.x);
+          const y = Number(f.y);
+          const w = Number(f.width);
+          const h = Number(f.height);
+          const value = valuesMap.get(f.id) ?? "";
+
+          if (f.kind === "text" || f.kind === "date") {
+            if (!value.trim() || !recipientFont) continue;
+            page.drawText(value, {
+              x,
+              y: y + Math.max(2, h - f.font_size - 2),
+              size: f.font_size,
+              font: recipientFont,
+              color: rgb(0.05, 0.05, 0.1),
+              maxWidth: w,
+            });
+          } else if (f.kind === "checkbox") {
+            page.drawRectangle({
+              x, y, width: h, height: h,
+              borderColor: rgb(0.1, 0.1, 0.15),
+              borderWidth: 1,
+            });
+            if (value === "true" || value === "1" || value === "on") {
+              page.drawLine({
+                start: { x: x + 2, y: y + 2 },
+                end: { x: x + h - 2, y: y + h - 2 },
+                color: rgb(0.05, 0.05, 0.1),
+                thickness: 1.5,
+              });
+              page.drawLine({
+                start: { x: x + 2, y: y + h - 2 },
+                end: { x: x + h - 2, y: y + 2 },
+                color: rgb(0.05, 0.05, 0.1),
+                thickness: 1.5,
+              });
+            }
+          } else if (f.kind === "signature" || f.kind === "initials") {
+            if (!value.startsWith("data:image/")) continue;
+            try {
+              const b64 = value.split(",")[1];
+              const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+              const img = value.includes("image/jpeg")
+                ? await pdf.embedJpg(bin)
+                : await pdf.embedPng(bin);
+              page.drawImage(img, { x, y, width: w, height: h });
+            } catch {
+              // skip on decode error
+            }
+          }
+        }
+
+
         if (body.placement) {
           const idx = Math.min(body.placement.page_index, pages.length - 1);
           const page = pages[idx];
@@ -265,7 +374,10 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             `Signé par ${req.signer_name} — ${signedAt.toISOString()}`,
             { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
           );
-        } else {
+        } else if (
+          !recipientFieldList.some((f) => f.kind === "signature" || f.kind === "initials")
+        ) {
+          // Pas de zone signature destinataire pré-placée : page récapitulative.
           const page = pdf.addPage([595.28, 320]);
           const dims = sigImg.scale(0.4);
           page.drawText("SIGNATURE", { x: 50, y: 270, size: 14 });

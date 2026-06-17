@@ -18,6 +18,7 @@ const FieldSchema = z.object({
   value: z.string().max(200000).nullable().optional(),
   font_size: z.number().int().min(6).max(72).default(11),
   required: z.boolean().default(false),
+  recipient_fillable: z.boolean().default(false),
   label: z.string().max(200).nullable().optional(),
   position: z.number().int().min(0).max(10000).default(0),
 });
@@ -79,6 +80,7 @@ export const savePdfFields = createServerFn({ method: "POST" })
         value: f.value ?? null,
         font_size: f.font_size,
         required: f.required,
+        recipient_fillable: f.recipient_fillable,
         label: f.label ?? null,
         position: f.position ?? i,
       }));
@@ -177,6 +179,9 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
         .replace(/[\u201c\u201d]/g, '"');
 
     for (const f of fields ?? []) {
+      // Les zones marquées "à remplir par le destinataire" sont conservées
+      // et seront apposées par le destinataire au moment de la signature.
+      if ((f as { recipient_fillable?: boolean }).recipient_fillable) continue;
       const page = pages[f.page_index];
       if (!page) continue;
       const x = Number(f.x);
@@ -275,14 +280,14 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       .single();
     if (fileErr) throw new Error(fileErr.message);
 
-    // Les valeurs des champs sont désormais incrustées dans le PDF :
-    // on supprime les enregistrements d'overlay pour éviter un double
-    // affichage (valeurs imprimées + surcouche éditable) lors d'une
-    // réouverture du document dans l'éditeur.
+    // Les valeurs des champs émetteur sont désormais incrustées dans le PDF :
+    // on supprime ces enregistrements pour éviter un double affichage.
+    // Les zones marquées "à remplir par le destinataire" sont conservées.
     await supabase
       .from("document_pdf_fields")
       .delete()
-      .eq("document_id", doc.id);
+      .eq("document_id", doc.id)
+      .eq("recipient_fillable", false);
 
     await supabase.from("audit_logs").insert({
       organization_id: doc.organization_id,

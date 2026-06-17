@@ -31,6 +31,19 @@ interface Placement {
   width: number;
 }
 
+interface RecipientField {
+  id: string;
+  page_index: number;
+  kind: "text" | "date" | "checkbox" | "signature" | "initials";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  font_size: number;
+  label: string | null;
+  required: boolean;
+}
+
 interface SignData {
   document: {
     id: string;
@@ -60,6 +73,7 @@ interface SignData {
     consent_version: string;
     module_version: string;
   };
+  recipient_fields?: RecipientField[];
   can_sign: boolean;
 }
 
@@ -160,6 +174,7 @@ function PublicSignRequestPage() {
             signerName={data.request.signer_name}
             consentText={data.conformity?.consent_text}
             signatureLevel={data.conformity?.signature_level ?? "ses"}
+            recipientFields={data.recipient_fields ?? []}
             onSigned={() => {
               setDone("signed");
               refresh();
@@ -210,6 +225,7 @@ function SignWithPlacement({
   signerName,
   consentText,
   signatureLevel,
+  recipientFields,
   onSigned,
   onDeclined,
 }: {
@@ -218,6 +234,7 @@ function SignWithPlacement({
   signerName: string;
   consentText?: string;
   signatureLevel: "ses" | "aes" | "qes";
+  recipientFields: RecipientField[];
   onSigned: () => void;
   onDeclined: () => void;
 }) {
@@ -238,7 +255,15 @@ function SignWithPlacement({
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [showDecline, setShowDecline] = useState(false);
-  const [showFreePlacement, setShowFreePlacement] = useState(true);
+
+  // Valeurs saisies par le destinataire pour chaque zone "à remplir".
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const hasRecipientFields = recipientFields.length > 0;
+  const hasRecipientSignatureField = recipientFields.some(
+    (f) => f.kind === "signature" || f.kind === "initials",
+  );
+  // Le placement libre est désactivé si l'émetteur a déjà placé des zones signature.
+  const [showFreePlacement, setShowFreePlacement] = useState(!hasRecipientSignatureField);
 
   // Load PDF
   useEffect(() => {
@@ -350,16 +375,39 @@ function SignWithPlacement({
   const sign = async () => {
     if (!consentAccepted) return toast.error("Vous devez accepter les conditions de signature électronique.");
     if (sigRef.current?.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
+
+    // Toutes les zones destinataire sont obligatoires.
+    const canvasDataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
+    const builtFieldValues: { id: string; value: string }[] = [];
+    for (const f of recipientFields) {
+      if (f.kind === "signature" || f.kind === "initials") {
+        // Réutilise la signature tracée dans le cadre.
+        builtFieldValues.push({ id: f.id, value: canvasDataUrl });
+      } else if (f.kind === "checkbox") {
+        builtFieldValues.push({ id: f.id, value: fieldValues[f.id] === "true" ? "true" : "false" });
+      } else {
+        const v = (fieldValues[f.id] ?? "").trim();
+        if (!v) {
+          return toast.error(
+            `Veuillez remplir la zone « ${f.label || (f.kind === "date" ? "Date" : "Texte")} » page ${f.page_index + 1}.`,
+          );
+        }
+        builtFieldValues.push({ id: f.id, value: v });
+      }
+    }
+
     setSubmitting(true);
     try {
-      const dataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
       const body: Record<string, unknown> = {
         action: "sign",
-        signature_image_b64: dataUrl,
+        signature_image_b64: canvasDataUrl,
         consent: { accepted: true, text: consentText },
       };
-      if (showFreePlacement && placement) {
+      if (showFreePlacement && placement && !hasRecipientSignatureField) {
         body.placement = placement;
+      }
+      if (builtFieldValues.length > 0) {
+        body.field_values = builtFieldValues;
       }
       const res = await fetch(`/api/public/sign-request/${token}`, {
         method: "POST",
@@ -368,7 +416,7 @@ function SignWithPlacement({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "Échec");
+        throw new Error(j.message ?? j.error ?? "Échec");
       }
       onSigned();
     } catch (e) {
@@ -429,14 +477,16 @@ function SignWithPlacement({
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={showFreePlacement}
-                  onChange={(e) => setShowFreePlacement(e.target.checked)}
-                />
-                Placer ma signature librement
-              </label>
+              {!hasRecipientSignatureField && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={showFreePlacement}
+                    onChange={(e) => setShowFreePlacement(e.target.checked)}
+                  />
+                  Placer ma signature librement
+                </label>
+              )}
             </div>
 
             <div
@@ -474,9 +524,78 @@ function SignWithPlacement({
                   </div>
                 </div>
               )}
+              {recipientFields
+                .filter((f) => f.page_index === pageIndex)
+                .map((f) => {
+                  const cssLeft = f.x * renderScale;
+                  const cssTop = (pagePoints.h - f.y - f.height) * renderScale;
+                  const cssW = f.width * renderScale;
+                  const cssH = f.height * renderScale;
+                  const val = fieldValues[f.id] ?? "";
+                  const filled =
+                    f.kind === "signature" || f.kind === "initials"
+                      ? !!val
+                      : f.kind === "checkbox"
+                        ? true
+                        : !!val.trim();
+                  return (
+                    <div
+                      key={f.id}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`absolute flex items-center justify-center rounded border-2 ${
+                        filled
+                          ? "border-emerald-500 bg-emerald-500/10"
+                          : "border-dashed border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/20"
+                      }`}
+                      style={{ left: cssLeft, top: cssTop, width: cssW, height: cssH }}
+                      title={f.label || `Zone ${f.kind}`}
+                    >
+                      {(f.kind === "text" || f.kind === "date") && (
+                        <input
+                          type={f.kind === "date" ? "date" : "text"}
+                          value={val}
+                          onChange={(e) =>
+                            setFieldValues((s) => ({ ...s, [f.id]: e.target.value }))
+                          }
+                          className="h-full w-full bg-transparent px-1 text-foreground outline-none"
+                          style={{ fontSize: Math.max(10, f.font_size * renderScale) }}
+                          placeholder={f.label || "À remplir"}
+                        />
+                      )}
+                      {f.kind === "checkbox" && (
+                        <input
+                          type="checkbox"
+                          checked={val === "true"}
+                          onChange={(e) =>
+                            setFieldValues((s) => ({
+                              ...s,
+                              [f.id]: e.target.checked ? "true" : "false",
+                            }))
+                          }
+                          className="h-4 w-4"
+                        />
+                      )}
+                      {(f.kind === "signature" || f.kind === "initials") && (
+                        <div className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-amber-700 dark:text-amber-300">
+                          <PenLine className="mr-1 h-3 w-3 shrink-0" />
+                          <span>
+                            {f.kind === "signature" ? "Signature" : "Paraphe"} — tracez ci-dessous
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
-            {showFreePlacement && (
+            {hasRecipientFields && (
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+                {recipientFields.length} zone{recipientFields.length > 1 ? "s" : ""} à remplir au
+                total — toutes sont obligatoires. Naviguez entre les pages pour les compléter.
+              </div>
+            )}
+
+            {showFreePlacement && !hasRecipientSignatureField && (
               <div>
                 <Label className="text-xs">Taille de la signature</Label>
                 <Slider
