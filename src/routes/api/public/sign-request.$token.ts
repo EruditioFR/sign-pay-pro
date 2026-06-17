@@ -58,6 +58,11 @@ async function isNextInLine(req: {
   return !ahead || ahead.length === 0;
 }
 
+const RecipientFieldValueSchema = z.object({
+  id: z.string().uuid(),
+  value: z.string().max(500_000),
+});
+
 const SignBody = z.object({
   action: z.literal("sign"),
   signature_image_b64: z.string().min(50).max(2_000_000),
@@ -75,6 +80,7 @@ const SignBody = z.object({
     })
     .optional()
     .nullable(),
+  field_values: z.array(RecipientFieldValueSchema).max(200).optional(),
 });
 const DeclineBody = z.object({
   action: z.literal("decline"),
