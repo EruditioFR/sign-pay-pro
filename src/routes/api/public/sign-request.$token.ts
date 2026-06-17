@@ -591,6 +591,15 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
               ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
               : null);
           const mod = await import("@/lib/signature-notifications.server");
+          // Per-signature notification to the document creator.
+          void mod.notifyDocumentSigned(supabaseAdmin, {
+            documentId: req.document_id,
+            signatureId: sig.id,
+            signerName: req.signer_name,
+            signerEmail: req.signer_email,
+            signedAt: signedAt.toISOString(),
+            origin,
+          });
           // If sequential, advance to next signer.
           if (req.sequential) {
             void mod.notifyNextSequentialSigner(supabaseAdmin, req.document_id, origin);
