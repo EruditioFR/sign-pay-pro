@@ -119,9 +119,11 @@ export function ShareLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" size="sm"><Send className="mr-1 h-4 w-4" />{triggerLabel ?? t("sharing.send")}</Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="default" size="sm"><Send className="mr-1 h-4 w-4" />{triggerLabel ?? t("sharing.send")}</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{t("sharing.title")}</DialogTitle></DialogHeader>
         <div className="space-y-3">
