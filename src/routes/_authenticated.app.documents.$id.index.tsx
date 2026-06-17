@@ -140,14 +140,20 @@ function DocumentDetailPage() {
               {!readOnly && ["draft", "validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
                 <>
                   <GeneratePdfButton documentId={doc.id} />
-                  <ShareLinkDialog documentId={doc.id} />
-                  <SignDocumentDialog
-                    documentId={doc.id}
-                    defaultName={me?.fullName ?? undefined}
-                    defaultEmail={me?.email ?? undefined}
-                  />
-                  <MultiSignersDialog documentId={doc.id} />
-                  <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
+                  {showSendButton && <ShareLinkDialog documentId={doc.id} triggerLabel={sendLabel} />}
+                  {showSignButtons && (
+                    <>
+                      <SignDocumentDialog
+                        documentId={doc.id}
+                        defaultName={me?.fullName ?? undefined}
+                        defaultEmail={me?.email ?? undefined}
+                      />
+                      <MultiSignersDialog documentId={doc.id} />
+                    </>
+                  )}
+                  {showPaymentButton && (
+                    <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
+                  )}
                 </>
               )}
               {readOnly && files.length > 0 && <GeneratePdfButton documentId={doc.id} />}
