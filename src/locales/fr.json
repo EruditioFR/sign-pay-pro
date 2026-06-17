@@ -18,10 +18,10 @@
   },
   "nav_group": {
     "overview": "Vue d'ensemble",
-    "documents": "Documents & signatures",
-    "facturation": "Facturation",
+    "documents": "SIGNATURE ELECTRONIQUE\n",
+    "facturation": "FACTURATION ELECTRONIQUE",
     "workflows": "Workflows & validation",
-    "organization": "Organisation",
+    "organization": "VOTRE ORGANISATION",
     "admin": "Administration",
     "profile": "Profil",
     "organizations": "Organisations",
@@ -237,14 +237,14 @@
     "subtitle": "Vos étapes de validation en attente."
   },
   "nav_extra": {
-    "documents": "Documents",
+    "documents": "Vos documents",
     "approvals": "À valider",
     "workflows": "Workflows",
-    "templates": "Modèles PDF",
+    "templates": "Vos Modèles PDF",
     "analytics": "Analytics",
     "facturation_dashboard": "Tableau de bord",
-    "quotes": "Devis",
-    "invoices": "Factures"
+    "quotes": "Vos devis",
+    "invoices": "Vos factures"
   },
   "analytics": {
     "title": "Analytics métier",

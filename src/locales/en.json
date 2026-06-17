@@ -18,10 +18,10 @@
   },
   "nav_group": {
     "overview": "Overview",
-    "documents": "Documents & signatures",
-    "facturation": "Billing",
+    "documents": "E-SIGNATURE\n",
+    "facturation": "E-BILLING",
     "workflows": "Workflows & validation",
-    "organization": "Organization",
+    "organization": "YOUR ORGANIZATION",
     "admin": "Administration",
     "profile": "Profile",
     "organizations": "Organizations",
@@ -237,14 +237,14 @@
     "subtitle": "Your pending validation steps."
   },
   "nav_extra": {
-    "documents": "Documents",
+    "documents": "Your documents",
     "approvals": "To approve",
     "workflows": "Workflows",
-    "templates": "PDF templates",
+    "templates": "Your PDF templates",
     "analytics": "Analytics",
     "facturation_dashboard": "Dashboard",
-    "quotes": "Quotes",
-    "invoices": "Invoices"
+    "quotes": "Your quotes",
+    "invoices": "Your invoices"
   },
   "analytics": {
     "title": "Business analytics",
