@@ -103,7 +103,7 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
     const { data: doc, error: docErr } = await supabase
       .from("documents")
       .select(
-        "id, organization_id, type, reference, title, document_number, invoice_number, third_party_name, third_party_email, amount_ht, amount_ttc, currency, issue_date, due_date",
+        "id, organization_id, type, reference, title, document_number, invoice_number, third_party_name, third_party_email, amount_ht, amount_ttc, currency, issue_date, due_date, status",
       )
       .eq("id", data.documentId)
       .maybeSingle();
@@ -288,6 +288,17 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       .delete()
       .eq("document_id", doc.id)
       .eq("recipient_fillable", false);
+
+    // Génération du PDF final = validation du document : on sort du statut
+    // "draft" pour permettre l'envoi au destinataire (email / WhatsApp).
+    if (doc.status === "draft") {
+      await supabase
+        .from("documents")
+        .update({ status: "validated" })
+        .eq("id", doc.id)
+        .eq("status", "draft");
+    }
+
 
     await supabase.from("audit_logs").insert({
       organization_id: doc.organization_id,
