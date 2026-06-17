@@ -65,6 +65,10 @@ export function ShareLinkDialog({
       if (channel === "email" && !email.trim()) {
         throw new Error(t("sharing.email_required"));
       }
+      const amt = payAmount.trim() ? parseFloat(payAmount.replace(",", ".")) : NaN;
+      if (allowPay && payAmount.trim() && (!isFinite(amt) || amt <= 0)) {
+        throw new Error("Montant à payer invalide");
+      }
       return createFn({
         data: {
           document_id: documentId,
@@ -73,6 +77,8 @@ export function ShareLinkDialog({
           expires_in_days: days,
           allow_sign: allowSign,
           allow_pay: allowPay,
+          payment_amount: allowPay && isFinite(amt) && amt > 0 ? amt : null,
+          payment_currency: allowPay && isFinite(amt) && amt > 0 ? payCurrency : null,
         },
       });
     },
