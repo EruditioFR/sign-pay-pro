@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import SignatureCanvas from "react-signature-canvas";
+import type SignatureCanvas from "react-signature-canvas";
+import { ResponsiveSignatureCanvas } from "@/components/responsive-signature-canvas";
 import type * as PdfJs from "pdfjs-dist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
