@@ -225,6 +225,7 @@ function SignWithPlacement({
   signerName,
   consentText,
   signatureLevel,
+  recipientFields,
   onSigned,
   onDeclined,
 }: {
@@ -233,6 +234,7 @@ function SignWithPlacement({
   signerName: string;
   consentText?: string;
   signatureLevel: "ses" | "aes" | "qes";
+  recipientFields: RecipientField[];
   onSigned: () => void;
   onDeclined: () => void;
 }) {
@@ -253,7 +255,16 @@ function SignWithPlacement({
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [showDecline, setShowDecline] = useState(false);
-  const [showFreePlacement, setShowFreePlacement] = useState(true);
+
+  // Valeurs saisies par le destinataire pour chaque zone "à remplir".
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [fieldSigOpenFor, setFieldSigOpenFor] = useState<string | null>(null);
+  const hasRecipientFields = recipientFields.length > 0;
+  const hasRecipientSignatureField = recipientFields.some(
+    (f) => f.kind === "signature" || f.kind === "initials",
+  );
+  // Le placement libre est désactivé si l'émetteur a déjà placé des zones signature.
+  const [showFreePlacement, setShowFreePlacement] = useState(!hasRecipientSignatureField);
 
   // Load PDF
   useEffect(() => {
