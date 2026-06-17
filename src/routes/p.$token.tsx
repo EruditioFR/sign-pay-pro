@@ -107,13 +107,15 @@ function PublicSharePage() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            {data.pdfUrl ? (
-              <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
-            ) : (
-              <p className="text-sm text-muted-foreground">{t("public.no_pdf")}</p>
-            )}
-          </CardContent>
+          {!payOnly && (
+            <CardContent>
+              {data.pdfUrl ? (
+                <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("public.no_pdf")}</p>
+              )}
+            </CardContent>
+          )}
         </Card>
 
         {data.payment?.is_fully_paid ? (
@@ -135,6 +137,31 @@ function PublicSharePage() {
                   <div className="mt-1 text-xs opacity-80">{t("public.already_paid_text")}</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        ) : payOnly && data.allow_pay ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                {t("public.pay")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {paid ? (
+                <SuccessBox text={t("public.paid_ok")} />
+              ) : (
+                <PayPanel
+                  token={token}
+                  amount={data.document.amount_ttc ?? 0}
+                  currency={data.document.currency}
+                  title={data.document.title}
+                  reference={data.document.reference}
+                  defaultPayerName={data.recipient_name ?? data.document.third_party_name ?? ""}
+                  defaultPayerEmail={data.recipient_email ?? ""}
+                  onDone={() => setPaid(true)}
+                />
+              )}
             </CardContent>
           </Card>
         ) : (data.allow_sign || data.allow_pay) && (
