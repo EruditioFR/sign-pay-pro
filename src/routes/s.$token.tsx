@@ -31,6 +31,19 @@ interface Placement {
   width: number;
 }
 
+interface RecipientField {
+  id: string;
+  page_index: number;
+  kind: "text" | "date" | "checkbox" | "signature" | "initials";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  font_size: number;
+  label: string | null;
+  required: boolean;
+}
+
 interface SignData {
   document: {
     id: string;
@@ -60,6 +73,7 @@ interface SignData {
     consent_version: string;
     module_version: string;
   };
+  recipient_fields?: RecipientField[];
   can_sign: boolean;
 }
 
