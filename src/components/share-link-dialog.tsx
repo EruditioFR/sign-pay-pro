@@ -16,7 +16,7 @@ import { createShareLink, listShareLinks, revokeShareLink } from "@/lib/sharing.
 
 type Channel = "email" | "whatsapp";
 
-export function ShareLinkDialog({ documentId }: { documentId: string }) {
+export function ShareLinkDialog({ documentId, triggerLabel }: { documentId: string; triggerLabel?: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [channel, setChannel] = useState<Channel>("email");
