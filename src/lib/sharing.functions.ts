@@ -91,6 +91,8 @@ export const createShareLink = createServerFn({ method: "POST" })
         const { getRequest } = await import("@tanstack/react-start/server");
         const origin = getOriginFromRequest(getRequest());
         const url = `${origin}/p/${link.token}`;
+        const { buildDocumentPdfAttachment } = await import("@/lib/document-pdf-attachment.server");
+        const attachment = await buildDocumentPdfAttachment(data.document_id).catch(() => null);
         await sendResendEmail({
           to: data.recipient_email,
           subject: `Document partagé : ${doc?.title ?? "Document"}`,
@@ -101,6 +103,7 @@ export const createShareLink = createServerFn({ method: "POST" })
             expiresAt: expiresAt,
             senderOrg: org?.name,
           }),
+          attachments: attachment ? [attachment] : undefined,
         });
         email_sent = true;
       } catch (e) {
