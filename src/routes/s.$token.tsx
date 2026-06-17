@@ -452,10 +452,11 @@ function SignWithPlacement({
 
   const sign = async () => {
     if (!consentAccepted) return toast.error("Vous devez accepter les conditions de signature électronique.");
-    if (sigRef.current?.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
+    if (!sigRef.current) return toast.error("Le pavé de signature n'est pas prêt. Réessayez dans un instant.");
+    if (sigRef.current.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
 
     // Toutes les zones destinataire sont obligatoires.
-    const canvasDataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
+    const canvasDataUrl = sigRef.current.getCanvas().toDataURL("image/png");
     const builtFieldValues: { id: string; value: string }[] = [];
     for (const f of recipientFields) {
       if (f.kind === "signature" || f.kind === "initials") {
