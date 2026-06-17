@@ -141,6 +141,8 @@ export function computePaymentSummary(input: PaymentSummaryInput): PaymentSummar
     status = isOverdue ? "overdue" : "partially_paid";
   } else if (isOverdue) {
     status = "overdue";
+  } else if (dueAmount === 0) {
+    status = "not_applicable";
   } else {
     status = "unpaid";
   }
