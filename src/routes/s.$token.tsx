@@ -525,9 +525,86 @@ function SignWithPlacement({
                   </div>
                 </div>
               )}
+              {recipientFields
+                .filter((f) => f.page_index === pageIndex)
+                .map((f) => {
+                  const cssLeft = f.x * renderScale;
+                  const cssTop = (pagePoints.h - f.y - f.height) * renderScale;
+                  const cssW = f.width * renderScale;
+                  const cssH = f.height * renderScale;
+                  const val = fieldValues[f.id] ?? "";
+                  const filled =
+                    f.kind === "signature" || f.kind === "initials"
+                      ? !!val
+                      : f.kind === "checkbox"
+                        ? true
+                        : !!val.trim();
+                  return (
+                    <div
+                      key={f.id}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`absolute flex items-center justify-center rounded border-2 ${
+                        filled
+                          ? "border-emerald-500 bg-emerald-500/10"
+                          : "border-dashed border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/20"
+                      }`}
+                      style={{ left: cssLeft, top: cssTop, width: cssW, height: cssH }}
+                      title={f.label || `Zone ${f.kind}`}
+                    >
+                      {(f.kind === "text" || f.kind === "date") && (
+                        <input
+                          type={f.kind === "date" ? "date" : "text"}
+                          value={val}
+                          onChange={(e) =>
+                            setFieldValues((s) => ({ ...s, [f.id]: e.target.value }))
+                          }
+                          className="h-full w-full bg-transparent px-1 text-foreground outline-none"
+                          style={{ fontSize: Math.max(10, f.font_size * renderScale) }}
+                          placeholder={f.label || "À remplir"}
+                        />
+                      )}
+                      {f.kind === "checkbox" && (
+                        <input
+                          type="checkbox"
+                          checked={val === "true"}
+                          onChange={(e) =>
+                            setFieldValues((s) => ({
+                              ...s,
+                              [f.id]: e.target.checked ? "true" : "false",
+                            }))
+                          }
+                          className="h-4 w-4"
+                        />
+                      )}
+                      {(f.kind === "signature" || f.kind === "initials") && (
+                        <button
+                          type="button"
+                          onClick={() => setFieldSigOpenFor(f.id)}
+                          className="flex h-full w-full items-center justify-center text-[10px] text-amber-700 underline dark:text-amber-300"
+                        >
+                          {val ? (
+                            <img src={val} alt="" className="h-full w-full object-contain" />
+                          ) : (
+                            <>
+                              <PenLine className="mr-1 h-3 w-3" />
+                              {f.kind === "signature" ? "Signer ici" : "Parapher"}
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
-            {showFreePlacement && (
+            {hasRecipientFields && (
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+                {recipientFields.length} zone{recipientFields.length > 1 ? "s" : ""} à remplir au
+                total — toutes sont obligatoires. Naviguez entre les pages pour les compléter.
+              </div>
+            )}
+
+            {showFreePlacement && !hasRecipientSignatureField && (
               <div>
                 <Label className="text-xs">Taille de la signature</Label>
                 <Slider
