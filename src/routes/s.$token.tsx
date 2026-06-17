@@ -218,7 +218,7 @@ function PublicSignRequestPage() {
         ) : data.pdfUrl ? (
           <Card>
             <CardContent className="p-3">
-              <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
+              <PdfJsViewer url={data.pdfUrl} className="h-[60vh] w-full" />
             </CardContent>
           </Card>
         ) : null}
