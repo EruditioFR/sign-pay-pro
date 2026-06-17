@@ -139,6 +139,9 @@ function PdfEditorPage() {
   const [tplDesc, setTplDesc] = useState("");
   const [tplNotes, setTplNotes] = useState("");
   const [tplTargetId, setTplTargetId] = useState<string>("");
+  const [sendOpen, setSendOpen] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const imageTargetRef = useRef<string | null>(null);
 
   const listTplFn = useServerFn(listPdfTemplates);
   const tplListQ = useQuery({
