@@ -577,10 +577,10 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         // Fire-and-forget post-signature notifications.
         try {
           const origin =
-            (request.headers.get("origin") ||
-              (request.headers.get("host")
-                ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
-                : null));
+            request.headers.get("origin") ||
+            (request.headers.get("host")
+              ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
+              : null);
           const mod = await import("@/lib/signature-notifications.server");
           // If sequential, advance to next signer.
           if (req.sequential) {
