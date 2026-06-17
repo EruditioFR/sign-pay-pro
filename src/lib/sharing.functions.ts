@@ -21,6 +21,8 @@ const CreateLinkSchema = z.object({
   allow_sign: z.boolean().default(true),
   allow_pay: z.boolean().default(true),
   max_views: z.number().int().min(1).max(1000).optional().nullable(),
+  payment_amount: z.number().positive().max(1_000_000).optional().nullable(),
+  payment_currency: z.string().length(3).optional().nullable(),
 });
 
 export const createShareLink = createServerFn({ method: "POST" })
