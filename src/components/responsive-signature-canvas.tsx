@@ -12,7 +12,7 @@ export const ResponsiveSignatureCanvas = forwardRef<SignatureCanvas, { height?: 
     const padRef = useRef<SignatureCanvas | null>(null);
     const [width, setWidth] = useState<number>(0);
 
-    useImperativeHandle(ref, () => padRef.current as SignatureCanvas, []);
+    useImperativeHandle(ref, () => padRef.current as SignatureCanvas, [width]);
 
     useEffect(() => {
       const el = wrapperRef.current;
