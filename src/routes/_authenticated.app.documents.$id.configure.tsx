@@ -13,7 +13,7 @@ import {
   emptySignersPaymentValue,
   type SignersPaymentValue,
 } from "@/components/documents/SignersPaymentFields";
-import { ShareLinkDialog } from "@/components/share-link-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id/configure")({
   component: ConfigureDocumentPage,
