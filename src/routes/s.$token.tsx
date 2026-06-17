@@ -75,6 +75,12 @@ interface SignData {
   };
   recipient_fields?: RecipientField[];
   can_sign: boolean;
+  pay?: {
+    share_link_token: string;
+    amount_ttc: number | null;
+    currency: string;
+    is_fully_paid: boolean;
+  } | null;
 }
 
 function PublicSignRequestPage() {
