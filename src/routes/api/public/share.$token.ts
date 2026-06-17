@@ -190,6 +190,15 @@ export const Route = createFileRoute("/api/public/share/$token")({
         if (body.action === "sign") {
           if (!link.allow_sign) return json({ error: "signing_disabled" }, { status: 403 });
 
+          // Verrouillage : un document déjà signé / payé / archivé / annulé ne peut plus être signé.
+          const { canRequestSignature } = await import("@/lib/document-state-machine");
+          if (!canRequestSignature(doc.status)) {
+            return json(
+              { error: "document_locked", message: "Ce document est verrouillé et ne peut plus être signé." },
+              { status: 409 },
+            );
+          }
+
           // Build / fetch current PDF and append signature page
           const { data: org } = await supabaseAdmin
             .from("organizations")
