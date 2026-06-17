@@ -154,6 +154,41 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           .order("page_index", { ascending: true })
           .order("position", { ascending: true });
 
+        // Si l'émetteur a activé le paiement sur le lien de partage associé,
+        // on expose un CTA "Payer" basé sur le token du share link.
+        let pay: {
+          share_link_token: string;
+          amount_ttc: number | null;
+          currency: string;
+          is_fully_paid: boolean;
+        } | null = null;
+        {
+          const { data: link } = await supabaseAdmin
+            .from("document_share_links")
+            .select("token, allow_pay, revoked_at, expires_at")
+            .eq("document_id", doc.id)
+            .eq("recipient_email", req.signer_email)
+            .is("revoked_at", null)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (link?.allow_pay && (!link.expires_at || new Date(link.expires_at) > new Date())) {
+            const { data: payments } = await supabaseAdmin
+              .from("document_payments")
+              .select("amount, status")
+              .eq("document_id", doc.id)
+              .eq("status", "succeeded");
+            const paid = (payments ?? []).reduce((s, p) => s + Number(p.amount ?? 0), 0);
+            const due = Number(doc.amount_ttc ?? 0);
+            pay = {
+              share_link_token: link.token,
+              amount_ttc: doc.amount_ttc,
+              currency: doc.currency,
+              is_fully_paid: due > 0 && paid >= due,
+            };
+          }
+        }
+
         return json({
           document: doc,
           organization: org,
@@ -178,6 +213,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           },
           recipient_fields: recipientFields ?? [],
           can_sign: next,
+          pay,
         });
       },
 
