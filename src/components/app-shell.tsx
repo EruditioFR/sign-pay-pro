@@ -25,7 +25,6 @@ import {
   Building2,
   CheckSquare,
   FileText,
-  GitBranch,
   Home,
   LogOut,
   Menu,
