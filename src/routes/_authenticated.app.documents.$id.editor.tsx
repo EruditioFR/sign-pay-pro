@@ -768,10 +768,24 @@ function PdfEditorPage() {
                 )}
 
                 {(selected.kind === "signature" || selected.kind === "initials") && (
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
-                    <PenLine className="mr-1 h-4 w-4" />
-                    {selected.value ? "Modifier" : "Dessiner"}
-                  </Button>
+                  <div className="grid gap-1.5">
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
+                      <PenLine className="mr-1 h-4 w-4" />
+                      {selected.value ? "Modifier le dessin" : "Dessiner"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        imageTargetRef.current = selected.tempId;
+                        imageInputRef.current?.click();
+                      }}
+                    >
+                      <Upload className="mr-1 h-4 w-4" />
+                      Téléverser une image
+                    </Button>
+                  </div>
                 )}
 
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
