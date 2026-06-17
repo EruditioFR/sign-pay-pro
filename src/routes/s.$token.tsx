@@ -173,6 +173,30 @@ function PublicSignRequestPage() {
           </StatusBox>
         )}
 
+        {data.pay && (data.pay.amount_ttc ?? 0) > 0 && (
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  {data.pay.is_fully_paid ? "Paiement reçu" : "Paiement demandé"}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Montant : <span className="font-medium text-foreground">{(data.pay.amount_ttc ?? 0).toLocaleString()} {data.pay.currency}</span>
+                </div>
+              </div>
+              {!data.pay.is_fully_paid && (
+                <Button asChild>
+                  <a href={`/p/${data.pay.share_link_token}`} target="_blank" rel="noopener noreferrer">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Payer maintenant
+                  </a>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {status === "pending" && data.can_sign ? (
           <SignWithPlacement
             token={token}
