@@ -38,11 +38,8 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
       );
     }
 
-    if (docState.status === "draft") {
-      throw new Error(
-        "Demande de signature impossible : veuillez d'abord valider le document (placement des champs / signatures) afin de générer le PDF final.",
-      );
-    }
+    // Note: on ne bloque plus sur status === "draft" ici ; `assertFinalPdfReady`
+    // ci-dessous garantit qu'un PDF final figé existe (seul critère réel).
 
     // Garantit qu'un PDF final figé existe avant d'envoyer les invitations.
     const { assertFinalPdfReady } = await import("@/lib/document-pdf-attachment.server");
