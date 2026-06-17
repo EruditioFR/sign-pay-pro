@@ -174,6 +174,7 @@ function PublicSignRequestPage() {
             signerName={data.request.signer_name}
             consentText={data.conformity?.consent_text}
             signatureLevel={data.conformity?.signature_level ?? "ses"}
+            recipientFields={data.recipient_fields ?? []}
             onSigned={() => {
               setDone("signed");
               refresh();
