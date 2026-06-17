@@ -303,14 +303,17 @@ function ManualDocumentForm() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="type">{t("documents.field.type")}</Label>
-            <Select name="type" defaultValue="quote">
+            <Select name="type" defaultValue="contract">
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(["purchase_order", "contract", "other"] as DocumentType[]).map((tp) => (
+                {(["contract", "purchase_order", "other"] as DocumentType[]).map((tp) => (
                   <SelectItem key={tp} value={tp}>{t(`documents.types.${tp}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Pour un devis ou une facture, utilisez plutôt la section Facturation.
+            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="reference">{t("documents.field.reference")}</Label>
