@@ -21,11 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
-  
   Building2,
-  CheckSquare,
   FileText,
-  GitBranch,
   Home,
   LogOut,
   Menu,
@@ -112,18 +109,6 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
           ],
         },
         {
-          title: t("nav_group.workflows"),
-          items: [
-            {
-              to: "/app/approvals",
-              label: t("nav_extra.approvals"),
-              icon: CheckSquare,
-              badgeKey: "approvals",
-            },
-            { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
-          ],
-        },
-        {
           title: t("nav_group.organization"),
           items: [
             { to: "/admin/users", label: t("nav.users"), icon: Users },
@@ -165,17 +150,6 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
             { to: "/app/facturation/devis", label: t("nav_extra.quotes"), icon: FileText, accent: "facturation" },
             { to: "/app/facturation/factures", label: t("nav_extra.invoices"), icon: Receipt, accent: "facturation", badgeKey: "pendingInvoices" },
             { to: "/app/settings/billing-profile", label: "Profil de facturation", icon: Settings, accent: "facturation" },
-          ],
-        },
-        {
-          title: t("nav_group.workflows"),
-          items: [
-            {
-              to: "/app/approvals",
-              label: t("nav_extra.approvals"),
-              icon: CheckSquare,
-              badgeKey: "approvals",
-            },
           ],
         },
         {
