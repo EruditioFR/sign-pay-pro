@@ -111,7 +111,7 @@ function PublicSharePage() {
           {!payOnly && (
             <CardContent>
               {data.pdfUrl ? (
-                <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
+                <PdfJsViewer url={data.pdfUrl} className="h-[60vh] w-full" />
               ) : (
                 <p className="text-sm text-muted-foreground">{t("public.no_pdf")}</p>
               )}
