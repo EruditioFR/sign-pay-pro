@@ -376,16 +376,39 @@ function SignWithPlacement({
   const sign = async () => {
     if (!consentAccepted) return toast.error("Vous devez accepter les conditions de signature électronique.");
     if (sigRef.current?.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
+
+    // Toutes les zones destinataire sont obligatoires.
+    const canvasDataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
+    const builtFieldValues: { id: string; value: string }[] = [];
+    for (const f of recipientFields) {
+      if (f.kind === "signature" || f.kind === "initials") {
+        // Réutilise la signature tracée dans le cadre.
+        builtFieldValues.push({ id: f.id, value: canvasDataUrl });
+      } else if (f.kind === "checkbox") {
+        builtFieldValues.push({ id: f.id, value: fieldValues[f.id] === "true" ? "true" : "false" });
+      } else {
+        const v = (fieldValues[f.id] ?? "").trim();
+        if (!v) {
+          return toast.error(
+            `Veuillez remplir la zone « ${f.label || (f.kind === "date" ? "Date" : "Texte")} » page ${f.page_index + 1}.`,
+          );
+        }
+        builtFieldValues.push({ id: f.id, value: v });
+      }
+    }
+
     setSubmitting(true);
     try {
-      const dataUrl = sigRef.current!.getCanvas().toDataURL("image/png");
       const body: Record<string, unknown> = {
         action: "sign",
-        signature_image_b64: dataUrl,
+        signature_image_b64: canvasDataUrl,
         consent: { accepted: true, text: consentText },
       };
-      if (showFreePlacement && placement) {
+      if (showFreePlacement && placement && !hasRecipientSignatureField) {
         body.placement = placement;
+      }
+      if (builtFieldValues.length > 0) {
+        body.field_values = builtFieldValues;
       }
       const res = await fetch(`/api/public/sign-request/${token}`, {
         method: "POST",
@@ -394,7 +417,7 @@ function SignWithPlacement({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "Échec");
+        throw new Error(j.message ?? j.error ?? "Échec");
       }
       onSigned();
     } catch (e) {
