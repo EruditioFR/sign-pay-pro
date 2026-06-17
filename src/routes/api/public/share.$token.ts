@@ -322,6 +322,28 @@ export const Route = createFileRoute("/api/public/share/$token")({
             .single();
           if (sigErr) return json({ error: sigErr.message }, { status: 500 });
 
+          // Fire-and-forget: notify document creator that a signature was collected.
+          try {
+            const origin =
+              request.headers.get("origin") ||
+              (request.headers.get("host")
+                ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
+                : null);
+            const { notifyDocumentSigned } = await import(
+              "@/lib/signature-notifications.server"
+            );
+            void notifyDocumentSigned(supabaseAdmin, {
+              documentId: doc.id,
+              signatureId: sig.id,
+              signerName: body.signer_name,
+              signerEmail: body.signer_email || null,
+              signedAt: signedAt.toISOString(),
+              origin,
+            });
+          } catch (e) {
+            console.error("share.sign notify failed", e);
+          }
+
           const { data: previewUrl } = await supabaseAdmin.storage
             .from("signed-documents")
             .createSignedUrl(path, 120);
