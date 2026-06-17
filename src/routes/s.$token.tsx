@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick } from "lucide-react";
+import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick, CreditCard } from "lucide-react";
 
 let _pdfjs: typeof PdfJs | null = null;
 async function loadPdfjs() {
