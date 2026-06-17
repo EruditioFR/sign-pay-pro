@@ -343,7 +343,8 @@ function PdfEditorPage() {
             page_index: f.page_index, kind: f.kind,
             x: f.x, y: f.y, width: f.width, height: f.height,
             value: f.value, font_size: f.font_size,
-            required: f.required, label: f.label, position: i,
+            required: f.required, recipient_fillable: f.recipient_fillable,
+            label: f.label, position: i,
           })),
         },
       });
