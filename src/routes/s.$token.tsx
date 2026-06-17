@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick, CreditCard } from "lucide-react";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
 
 let _pdfjs: typeof PdfJs | null = null;
 async function loadPdfjs() {
