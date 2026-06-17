@@ -44,12 +44,14 @@ interface ShareData {
 
 function PublicSharePage() {
   const { token } = Route.useParams();
+  const { pay: payOnly } = Route.useSearch();
   const { t } = useTranslation();
   const [data, setData] = useState<ShareData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
+
 
   const fetchShare = () => {
     setLoading(true);
