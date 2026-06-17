@@ -332,7 +332,26 @@ export const Route = createFileRoute("/api/public/share/$token")({
           if (payErr) return json({ error: payErr.message }, { status: 500 });
 
           // 2) Create Stripe Checkout Session through the connector gateway.
-          const origin = new URL(request.url).origin;
+          // Resolve public-facing origin. In sandbox/dev the request.url
+          // host is the internal `localhost:8080`, which would break the
+          // Stripe success/cancel redirects. Prefer forwarded headers /
+          // Origin / Referer so the redirect lands on the real public URL.
+          const fwdHost = request.headers.get("x-forwarded-host");
+          const fwdProto = request.headers.get("x-forwarded-proto") ?? "https";
+          let origin = new URL(request.url).origin;
+          if (fwdHost) {
+            origin = `${fwdProto}://${fwdHost}`;
+          } else {
+            const headerOrigin = request.headers.get("origin");
+            if (headerOrigin && !headerOrigin.includes("localhost")) {
+              origin = headerOrigin;
+            } else {
+              const referer = request.headers.get("referer");
+              if (referer) {
+                try { origin = new URL(referer).origin; } catch {}
+              }
+            }
+          }
           const { stripeRequest, toStripeAmount } = await import("@/lib/stripe-client.server");
           const currency = (doc.currency || "EUR").toLowerCase();
           const productName = doc.title ?? (doc.reference ? `Document ${doc.reference}` : "Document");
