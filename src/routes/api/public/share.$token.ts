@@ -138,9 +138,14 @@ export const Route = createFileRoute("/api/public/share/$token")({
           organization: org,
           pdfUrl,
           allow_sign: link.allow_sign,
-          allow_pay: link.allow_pay,
+          allow_pay: link.allow_pay && !isFullyPaid,
           recipient_name: link.recipient_name,
           recipient_email: link.recipient_email,
+          payment: {
+            is_fully_paid: isFullyPaid,
+            paid_at: isFullyPaid ? lastSucceededPaidAt : null,
+            status: paySummary.status,
+          },
         });
       },
 
