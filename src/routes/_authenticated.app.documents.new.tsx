@@ -34,9 +34,28 @@ function NewDocumentPage() {
   const [showManual, setShowManual] = useState(false);
 
   const listFn = useServerFn(listPdfTemplates);
+  const createFromTplFn = useServerFn(createDocumentFromPdfTemplate);
   const tplQ = useQuery({
     queryKey: ["pdf-templates"],
     queryFn: () => listFn(),
+  });
+
+  const createFromTpl = useMutation({
+    mutationFn: (tpl: { id: string; name: string }) =>
+      createFromTplFn({
+        data: {
+          templateId: tpl.id,
+          title: tpl.name,
+          reference: null,
+          third_party_name: null,
+          third_party_email: null,
+        },
+      }),
+    onSuccess: ({ document }) => {
+      toast.success("Document créé depuis le modèle");
+      navigate({ to: "/app/documents/$id", params: { id: document.id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const templates = tplQ.data?.templates ?? [];
