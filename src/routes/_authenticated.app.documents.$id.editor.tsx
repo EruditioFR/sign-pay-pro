@@ -502,11 +502,27 @@ function PdfEditorPage() {
               );
             })}
 
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  imageTargetRef.current = null;
+                  imageInputRef.current?.click();
+                }}
+                title="Téléverser un logo, tampon ou image à incruster"
+              >
+                <ImageIcon className="mr-2 h-4 w-4" /> Image (logo, tampon…)
+              </Button>
+            </div>
+
             {activeTool !== "select" && (
               <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
                 Cliquez-glissez sur le PDF pour tracer la zone «&nbsp;{KIND_META[activeTool as PdfFieldKind].label}&nbsp;».
               </p>
             )}
+
 
             <div className="pt-3">
               <Label className="text-xs">Page</Label>
