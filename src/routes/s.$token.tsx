@@ -650,7 +650,7 @@ function SignWithPlacement({
         <div>
           <Label>Tracez votre signature</Label>
           <div className="mt-1 rounded-md border bg-background">
-            <SignatureCanvas ref={sigRef} canvasProps={{ className: "w-full h-40" }} />
+            <ResponsiveSignatureCanvas ref={sigRef} height={160} className="block w-full" />
           </div>
           <Button type="button" variant="ghost" size="sm" className="mt-1" onClick={() => sigRef.current?.clear()}>
             Effacer
