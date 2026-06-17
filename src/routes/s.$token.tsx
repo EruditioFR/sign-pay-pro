@@ -577,20 +577,12 @@ function SignWithPlacement({
                         />
                       )}
                       {(f.kind === "signature" || f.kind === "initials") && (
-                        <button
-                          type="button"
-                          onClick={() => setFieldSigOpenFor(f.id)}
-                          className="flex h-full w-full items-center justify-center text-[10px] text-amber-700 underline dark:text-amber-300"
-                        >
-                          {val ? (
-                            <img src={val} alt="" className="h-full w-full object-contain" />
-                          ) : (
-                            <>
-                              <PenLine className="mr-1 h-3 w-3" />
-                              {f.kind === "signature" ? "Signer ici" : "Parapher"}
-                            </>
-                          )}
-                        </button>
+                        <div className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-amber-700 dark:text-amber-300">
+                          <PenLine className="mr-1 h-3 w-3 shrink-0" />
+                          <span>
+                            {f.kind === "signature" ? "Signature" : "Paraphe"} — tracez ci-dessous
+                          </span>
+                        </div>
                       )}
                     </div>
                   );
