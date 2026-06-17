@@ -478,14 +478,16 @@ function SignWithPlacement({
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={showFreePlacement}
-                  onChange={(e) => setShowFreePlacement(e.target.checked)}
-                />
-                Placer ma signature librement
-              </label>
+              {!hasRecipientSignatureField && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={showFreePlacement}
+                    onChange={(e) => setShowFreePlacement(e.target.checked)}
+                  />
+                  Placer ma signature librement
+                </label>
+              )}
             </div>
 
             <div
