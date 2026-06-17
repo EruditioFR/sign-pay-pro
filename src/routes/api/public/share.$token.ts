@@ -197,22 +197,39 @@ export const Route = createFileRoute("/api/public/share/$token")({
             .eq("id", doc.organization_id)
             .maybeSingle();
 
-          const { data: currentFile } = await supabaseAdmin
-            .from("document_files")
-            .select("storage_path")
+          const { data: latestSignedPdf } = await supabaseAdmin
+            .from("document_signatures")
+            .select("pdf_storage_path, signed_at")
             .eq("document_id", doc.id)
-            .eq("is_current", true)
+            .not("pdf_storage_path", "is", null)
+            .order("signed_at", { ascending: false })
+            .limit(1)
             .maybeSingle();
 
-          let basePdfBytes: Uint8Array;
-          if (currentFile) {
-            const { data: blob } = await supabaseAdmin.storage
-              .from("documents")
-              .download(currentFile.storage_path);
-            basePdfBytes = blob ? new Uint8Array(await blob.arrayBuffer()) : await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
-          } else {
-            basePdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+          let basePdfBytes: Uint8Array | null = null;
+          if (latestSignedPdf?.pdf_storage_path) {
+            const { data: signedBlob } = await supabaseAdmin.storage
+              .from("signed-documents")
+              .download(latestSignedPdf.pdf_storage_path);
+            if (signedBlob) basePdfBytes = new Uint8Array(await signedBlob.arrayBuffer());
           }
+
+          if (!basePdfBytes) {
+            const { data: currentFile } = await supabaseAdmin
+              .from("document_files")
+              .select("storage_path")
+              .eq("document_id", doc.id)
+              .eq("is_current", true)
+              .maybeSingle();
+            if (currentFile) {
+              const { data: blob } = await supabaseAdmin.storage
+                .from("documents")
+                .download(currentFile.storage_path);
+              basePdfBytes = blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+            }
+          }
+
+          basePdfBytes ??= await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
 
           const pdf = await PDFDocument.load(basePdfBytes);
           const signaturePage = pdf.addPage([595.28, 400]);
@@ -296,7 +313,11 @@ export const Route = createFileRoute("/api/public/share/$token")({
             .single();
           if (sigErr) return json({ error: sigErr.message }, { status: 500 });
 
-          return json({ ok: true, signature_id: sig.id, hash: hashHex });
+          const { data: previewUrl } = await supabaseAdmin.storage
+            .from("signed-documents")
+            .createSignedUrl(path, 120);
+
+          return json({ ok: true, signature_id: sig.id, hash: hashHex, pdfUrl: previewUrl?.signedUrl ?? null });
         }
 
         if (body.action === "pay") {
@@ -393,7 +414,11 @@ export const Route = createFileRoute("/api/public/share/$token")({
             } else {
               const referer = request.headers.get("referer");
               if (referer) {
-                try { origin = new URL(referer).origin; } catch {}
+                try {
+                  origin = new URL(referer).origin;
+                } catch {
+                  // Keep the existing origin fallback.
+                }
               }
             }
           }

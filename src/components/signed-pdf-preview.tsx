@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Eye, Loader2 } from "lucide-react";
 import { getSignedPdfUrl } from "@/lib/sharing.functions";
 import { toast } from "sonner";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
 
-export function SignedPdfPreview({
-  path,
-  fileName,
-}: {
-  path: string;
-  fileName?: string;
-}) {
+export function SignedPdfPreview({ path, fileName }: { path: string; fileName?: string }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,11 +71,7 @@ export function SignedPdfPreview({
                 Chargement…
               </div>
             ) : (
-              <iframe
-                title="PDF signé"
-                src={`${url}#toolbar=1`}
-                className="h-full w-full rounded-md"
-              />
+              <PdfJsViewer url={url} className="h-full w-full rounded-md border-0" />
             )}
           </div>
           <div className="flex justify-end">

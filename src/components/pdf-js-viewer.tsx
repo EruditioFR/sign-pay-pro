@@ -25,30 +25,47 @@ export function PdfJsViewer({
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [pageCount, setPageCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const updateWidth = () => setContainerWidth(Math.floor(container.clientWidth || 360));
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!url) return;
     let cancelled = false;
+    const renderTasks: Array<{ cancel: () => void }> = [];
     setLoading(true);
     setError(null);
+    setPageCount(0);
+
+    const container = containerRef.current;
+    if (container) container.innerHTML = "";
 
     (async () => {
       try {
         const pdfjs = await loadPdfjs();
-        const doc = await pdfjs.getDocument({ url }).promise;
+        const doc = await pdfjs.getDocument({ url, withCredentials: false }).promise;
         if (cancelled) return;
         setPageCount(doc.numPages);
 
         const container = containerRef.current;
         if (!container) return;
         container.innerHTML = "";
-        const containerW = container.clientWidth || 360;
+        const containerW = containerWidth || container.clientWidth || 360;
 
         for (let i = 1; i <= doc.numPages; i++) {
           const page = await doc.getPage(i);
+          if (cancelled) return;
           const base = page.getViewport({ scale: 1 });
           const scale = Math.min(containerW / base.width, 2);
           const viewport = page.getViewport({ scale });
@@ -58,7 +75,9 @@ export function PdfJsViewer({
           canvas.className = "block mx-auto mb-2 shadow-sm rounded bg-white max-w-full h-auto";
           container.appendChild(canvas);
           const ctx = canvas.getContext("2d")!;
-          await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+          const task = page.render({ canvas, canvasContext: ctx, viewport });
+          renderTasks.push(task);
+          await task.promise;
           if (cancelled) return;
         }
         setLoading(false);
@@ -72,8 +91,15 @@ export function PdfJsViewer({
 
     return () => {
       cancelled = true;
+      renderTasks.forEach((task) => {
+        try {
+          task.cancel();
+        } catch {
+          // Rendering may already be complete.
+        }
+      });
     };
-  }, [url]);
+  }, [url, containerWidth]);
 
   return (
     <div className={`relative overflow-auto rounded border bg-muted/30 ${className}`}>

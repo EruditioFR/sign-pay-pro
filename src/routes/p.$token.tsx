@@ -55,8 +55,8 @@ function PublicSharePage() {
   const [paid, setPaid] = useState(false);
 
 
-  const fetchShare = () => {
-    setLoading(true);
+  const fetchShare = (showLoader = true) => {
+    if (showLoader) setLoading(true);
     fetch(`/api/public/share/${token}`)
       .then(async (r) => {
         if (!r.ok) throw new Error("invalid");
@@ -64,7 +64,9 @@ function PublicSharePage() {
       })
       .then(setData)
       .catch(() => setError("invalid"))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (showLoader) setLoading(false);
+      });
   };
 
   useEffect(fetchShare, [token]);
@@ -184,9 +186,10 @@ function PublicSharePage() {
                         token={token}
                         defaultName={data.recipient_name ?? ""}
                         defaultEmail={data.recipient_email ?? ""}
-                        onDone={() => {
+                        onDone={(pdfUrl) => {
                           setSigned(true);
-                          fetchShare();
+                          if (pdfUrl) setData((current) => (current ? { ...current, pdfUrl } : current));
+                          fetchShare(false);
                         }}
                       />
                     )}
@@ -230,7 +233,7 @@ function SuccessBox({ text }: { text: string }) {
 
 function SignPanel({
   token, defaultName, defaultEmail, onDone,
-}: { token: string; defaultName: string; defaultEmail: string; onDone: () => void }) {
+}: { token: string; defaultName: string; defaultEmail: string; onDone: (pdfUrl?: string | null) => void }) {
   const { t } = useTranslation();
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [name, setName] = useState(defaultName);
@@ -257,7 +260,8 @@ function SignPanel({
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "fail");
       }
-      onDone();
+      const result = await res.json().catch(() => ({}));
+      onDone(typeof result.pdfUrl === "string" ? result.pdfUrl : null);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {

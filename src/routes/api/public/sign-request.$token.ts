@@ -124,6 +124,23 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         }
 
         if (!pdfUrl) {
+          const { data: latestSig } = await supabaseAdmin
+            .from("document_signatures")
+            .select("pdf_storage_path, signed_at")
+            .eq("document_id", req.document_id)
+            .not("pdf_storage_path", "is", null)
+            .order("signed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (latestSig?.pdf_storage_path) {
+            const { data: signed } = await supabaseAdmin.storage
+              .from("signed-documents")
+              .createSignedUrl(latestSig.pdf_storage_path, 120);
+            pdfUrl = signed?.signedUrl ?? null;
+          }
+        }
+
+        if (!pdfUrl) {
           const { data: file } = await supabaseAdmin
             .from("document_files")
             .select("storage_path")
@@ -236,7 +253,9 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             .update({ status: "declined", decline_reason: body.reason ?? null })
             .eq("id", req.id);
           try {
-            const { notifySignatureDeclined } = await import("@/lib/signature-notifications.server");
+            const { notifySignatureDeclined } = await import(
+              "@/lib/signature-notifications.server"
+            );
             void notifySignatureDeclined(
               supabaseAdmin,
               req.document_id,
@@ -269,24 +288,39 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           .eq("id", doc.organization_id)
           .maybeSingle();
 
-        const { data: currentFile } = await supabaseAdmin
-          .from("document_files")
-          .select("storage_path")
+        const { data: latestSignedPdf } = await supabaseAdmin
+          .from("document_signatures")
+          .select("pdf_storage_path, signed_at")
           .eq("document_id", doc.id)
-          .eq("is_current", true)
+          .not("pdf_storage_path", "is", null)
+          .order("signed_at", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
-        let basePdfBytes: Uint8Array;
-        if (currentFile) {
-          const { data: blob } = await supabaseAdmin.storage
-            .from("documents")
-            .download(currentFile.storage_path);
-          basePdfBytes = blob
-            ? new Uint8Array(await blob.arrayBuffer())
-            : await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
-        } else {
-          basePdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+        let basePdfBytes: Uint8Array | null = null;
+        if (latestSignedPdf?.pdf_storage_path) {
+          const { data: signedBlob } = await supabaseAdmin.storage
+            .from("signed-documents")
+            .download(latestSignedPdf.pdf_storage_path);
+          if (signedBlob) basePdfBytes = new Uint8Array(await signedBlob.arrayBuffer());
         }
+
+        if (!basePdfBytes) {
+          const { data: currentFile } = await supabaseAdmin
+            .from("document_files")
+            .select("storage_path")
+            .eq("document_id", doc.id)
+            .eq("is_current", true)
+            .maybeSingle();
+          if (currentFile) {
+            const { data: blob } = await supabaseAdmin.storage
+              .from("documents")
+              .download(currentFile.storage_path);
+            basePdfBytes = blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+          }
+        }
+
+        basePdfBytes ??= await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
 
         // Empreinte du PDF AVANT apposition — preuve d'intégrité du contrat soumis.
         const originalHashHex = await sha256Hex(basePdfBytes);
@@ -362,7 +396,10 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             });
           } else if (f.kind === "checkbox") {
             page.drawRectangle({
-              x, y, width: h, height: h,
+              x,
+              y,
+              width: h,
+              height: h,
               borderColor: rgb(0.1, 0.1, 0.15),
               borderWidth: 1,
             });
@@ -395,7 +432,6 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           }
         }
 
-
         if (body.placement) {
           const idx = Math.min(body.placement.page_index, pages.length - 1);
           const page = pages[idx];
@@ -406,10 +442,11 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           const xPdf = body.placement.x;
           const yPdf = pageH - body.placement.y - h;
           page.drawImage(sigImg, { x: xPdf, y: yPdf, width: w, height: h });
-          page.drawText(
-            `Signé par ${req.signer_name} — ${signedAt.toISOString()}`,
-            { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
-          );
+          page.drawText(`Signé par ${req.signer_name} — ${signedAt.toISOString()}`, {
+            x: xPdf,
+            y: Math.max(yPdf - 10, 4),
+            size: 7,
+          });
         } else if (
           !recipientFieldList.some((f) => f.kind === "signature" || f.kind === "initials")
         ) {
@@ -540,10 +577,10 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         // Fire-and-forget post-signature notifications.
         try {
           const origin =
-            (request.headers.get("origin") ||
-              (request.headers.get("host")
-                ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
-                : null));
+            request.headers.get("origin") ||
+            (request.headers.get("host")
+              ? `${request.headers.get("x-forwarded-proto") ?? "https"}://${request.headers.get("host")}`
+              : null);
           const mod = await import("@/lib/signature-notifications.server");
           // If sequential, advance to next signer.
           if (req.sequential) {
@@ -563,12 +600,17 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           console.error("post-sign notifications failed", e);
         }
 
+        const { data: previewUrl } = await supabaseAdmin.storage
+          .from("signed-documents")
+          .createSignedUrl(path, 120);
+
         return json({
           ok: true,
           signature_id: sig.id,
           hash: signedHashHex,
           original_hash: originalHashHex,
           signature_level: signatureLevel,
+          pdfUrl: previewUrl?.signedUrl ?? null,
         });
       },
     },
