@@ -1,11 +1,19 @@
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
+export interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded file content (no data: prefix). */
+  content: string;
+  content_type?: string;
+}
+
 export interface SendEmailParams {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
   reply_to?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendResendEmail(params: SendEmailParams) {
@@ -27,6 +35,15 @@ export async function sendResendEmail(params: SendEmailParams) {
       subject: params.subject,
       html: params.html,
       ...(params.reply_to ? { reply_to: params.reply_to } : {}),
+      ...(params.attachments?.length
+        ? {
+            attachments: params.attachments.map((a) => ({
+              filename: a.filename,
+              content: a.content,
+              ...(a.content_type ? { content_type: a.content_type } : {}),
+            })),
+          }
+        : {}),
     }),
   });
 
