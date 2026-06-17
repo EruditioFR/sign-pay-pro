@@ -179,6 +179,9 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
         .replace(/[\u201c\u201d]/g, '"');
 
     for (const f of fields ?? []) {
+      // Les zones marquées "à remplir par le destinataire" sont conservées
+      // et seront apposées par le destinataire au moment de la signature.
+      if ((f as { recipient_fillable?: boolean }).recipient_fillable) continue;
       const page = pages[f.page_index];
       if (!page) continue;
       const x = Number(f.x);
