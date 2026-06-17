@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick } from "lucide-react";
+import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick, CreditCard } from "lucide-react";
 
 let _pdfjs: typeof PdfJs | null = null;
 async function loadPdfjs() {
@@ -75,6 +75,12 @@ interface SignData {
   };
   recipient_fields?: RecipientField[];
   can_sign: boolean;
+  pay?: {
+    share_link_token: string;
+    amount_ttc: number | null;
+    currency: string;
+    is_fully_paid: boolean;
+  } | null;
 }
 
 function PublicSignRequestPage() {
@@ -165,6 +171,30 @@ function PublicSignRequestPage() {
           <StatusBox tone="info" icon={<Clock className="h-5 w-5" />}>
             En attente de la signature des signataires précédents avant que vous puissiez signer.
           </StatusBox>
+        )}
+
+        {data.pay && (data.pay.amount_ttc ?? 0) > 0 && (
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  {data.pay.is_fully_paid ? "Paiement reçu" : "Paiement demandé"}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Montant : <span className="font-medium text-foreground">{(data.pay.amount_ttc ?? 0).toLocaleString()} {data.pay.currency}</span>
+                </div>
+              </div>
+              {!data.pay.is_fully_paid && (
+                <Button asChild>
+                  <a href={`/p/${data.pay.share_link_token}`} target="_blank" rel="noopener noreferrer">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Payer maintenant
+                  </a>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {status === "pending" && data.can_sign ? (
