@@ -228,18 +228,38 @@ function SignPanel({
 }
 
 function PayPanel({
-  token, defaultAmount, currency, onDone,
-}: { token: string; defaultAmount: number; currency: string; onDone: () => void }) {
+  token, amount, currency, title, reference, defaultPayerName, defaultPayerEmail, onDone,
+}: {
+  token: string;
+  amount: number;
+  currency: string;
+  title: string;
+  reference: string | null;
+  defaultPayerName: string;
+  defaultPayerEmail: string;
+  onDone: () => void;
+}) {
   const { t } = useTranslation();
-  const [amount, setAmount] = useState(defaultAmount);
-  const [payerName, setPayerName] = useState("");
-  const [payerEmail, setPayerEmail] = useState("");
+  const [payerName, setPayerName] = useState(defaultPayerName);
+  const [payerEmail, setPayerEmail] = useState(defaultPayerEmail);
   const [ref, setRef] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
+  const formattedAmount = (() => {
+    try {
+      return new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount);
+    } catch {
+      return `${amount.toLocaleString()} ${currency}`;
+    }
+  })();
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail);
+
   const payOnline = async () => {
     if (!amount || amount <= 0) return toast.error(t("public.need_amount"));
+    if (!validEmail) return toast.error(t("public.need_email"));
     setRedirecting(true);
     try {
       const res = await fetch(`/api/public/share/${token}`, {
@@ -291,24 +311,37 @@ function PayPanel({
 
   return (
     <div className="space-y-4 pt-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Label>{t("public.amount")} ({currency})</Label>
-          <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(parseFloat(e.target.value))} />
+      {/* Récapitulatif non modifiable */}
+      <div className="rounded-md border bg-muted/30 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">{t("public.invoice_label")}</div>
+            <div className="truncate text-sm font-medium">{title}</div>
+            {reference && <div className="text-xs text-muted-foreground">N° {reference}</div>}
+            <div className="mt-1 text-xs text-muted-foreground">{t("public.payment_date")} : {today}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">{t("public.amount_ttc")}</div>
+            <div className="text-2xl font-semibold tabular-nums">{formattedAmount}</div>
+          </div>
         </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>{t("public.payer_name")}</Label>
           <Input value={payerName} onChange={(e) => setPayerName(e.target.value)} />
         </div>
-        <div className="space-y-1 sm:col-span-2">
-          <Label>{t("public.payer_email")}</Label>
-          <Input type="email" value={payerEmail} onChange={(e) => setPayerEmail(e.target.value)} />
+        <div className="space-y-1">
+          <Label>{t("public.payer_email")} *</Label>
+          <Input type="email" required value={payerEmail} onChange={(e) => setPayerEmail(e.target.value)} />
         </div>
       </div>
+      <p className="text-xs text-muted-foreground">{t("public.receipt_hint")}</p>
 
-      <Button onClick={payOnline} disabled={redirecting || submitting} className="w-full">
+      <Button onClick={payOnline} disabled={redirecting || submitting || !validEmail} className="w-full">
         <CreditCard className="mr-2 h-4 w-4" />
-        {redirecting ? t("common.loading") : t("public.pay_online")}
+        {redirecting ? t("common.loading") : `${t("public.pay_now")} ${formattedAmount}`}
       </Button>
 
       <div className="relative py-2">
