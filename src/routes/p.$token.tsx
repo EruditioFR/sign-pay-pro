@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { FileText, PenLine, CreditCard, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/p/$token")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    pay: search.pay === "1" || search.pay === 1 || search.pay === true ? true : false,
+  }),
   component: PublicSharePage,
 });
 
@@ -41,12 +44,14 @@ interface ShareData {
 
 function PublicSharePage() {
   const { token } = Route.useParams();
+  const { pay: payOnly } = Route.useSearch();
   const { t } = useTranslation();
   const [data, setData] = useState<ShareData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
+
 
   const fetchShare = () => {
     setLoading(true);
@@ -102,13 +107,15 @@ function PublicSharePage() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            {data.pdfUrl ? (
-              <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
-            ) : (
-              <p className="text-sm text-muted-foreground">{t("public.no_pdf")}</p>
-            )}
-          </CardContent>
+          {!payOnly && (
+            <CardContent>
+              {data.pdfUrl ? (
+                <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("public.no_pdf")}</p>
+              )}
+            </CardContent>
+          )}
         </Card>
 
         {data.payment?.is_fully_paid ? (
@@ -130,6 +137,31 @@ function PublicSharePage() {
                   <div className="mt-1 text-xs opacity-80">{t("public.already_paid_text")}</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        ) : payOnly && data.allow_pay ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                {t("public.pay")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {paid ? (
+                <SuccessBox text={t("public.paid_ok")} />
+              ) : (
+                <PayPanel
+                  token={token}
+                  amount={data.document.amount_ttc ?? 0}
+                  currency={data.document.currency}
+                  title={data.document.title}
+                  reference={data.document.reference}
+                  defaultPayerName={data.recipient_name ?? data.document.third_party_name ?? ""}
+                  defaultPayerEmail={data.recipient_email ?? ""}
+                  onDone={() => setPaid(true)}
+                />
+              )}
             </CardContent>
           </Card>
         ) : (data.allow_sign || data.allow_pay) && (

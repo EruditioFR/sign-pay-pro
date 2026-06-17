@@ -187,7 +187,7 @@ function PublicSignRequestPage() {
               </div>
               {!data.pay.is_fully_paid && (
                 <Button asChild>
-                  <a href={`/p/${data.pay.share_link_token}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`/p/${data.pay.share_link_token}?pay=1`} target="_blank" rel="noopener noreferrer">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Payer maintenant
                   </a>
