@@ -167,7 +167,6 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           .from("document_pdf_fields")
           .select("id, page_index, kind, x, y, width, height, label, font_size, required")
           .eq("document_id", doc.id)
-          .eq("recipient_fillable", true)
           .order("page_index", { ascending: true })
           .order("position", { ascending: true });
 
@@ -350,8 +349,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         const { data: recipientFields } = await supabaseAdmin
           .from("document_pdf_fields")
           .select("id, page_index, kind, x, y, width, height, font_size, label")
-          .eq("document_id", doc.id)
-          .eq("recipient_fillable", true);
+          .eq("document_id", doc.id);
 
         const recipientFieldList = recipientFields ?? [];
         const valuesMap = new Map<string, string>(
