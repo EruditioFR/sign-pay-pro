@@ -621,7 +621,13 @@ function PdfEditorPage() {
                       }}
                       onMouseDown={() => setSelectedId(f.tempId)}
                       className={`flex items-center justify-center font-medium ${
-                        isSelected ? "border-2 border-primary bg-primary/15" : "border border-primary/60 bg-primary/10"
+                        f.recipient_fillable
+                          ? isSelected
+                            ? "border-2 border-amber-500 bg-amber-500/20"
+                            : "border-2 border-dashed border-amber-500/70 bg-amber-500/10"
+                          : isSelected
+                            ? "border-2 border-primary bg-primary/15"
+                            : "border border-primary/60 bg-primary/10"
                       }`}
                     >
                       <FieldPreview field={f} scale={renderScale} onSignClick={() => setSigOpenFor(f.tempId)} />
