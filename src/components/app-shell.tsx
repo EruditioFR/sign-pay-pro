@@ -109,18 +109,6 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
           ],
         },
         {
-          title: t("nav_group.workflows"),
-          items: [
-            {
-              to: "/app/approvals",
-              label: t("nav_extra.approvals"),
-              icon: CheckSquare,
-              badgeKey: "approvals",
-            },
-            { to: "/admin/workflows", label: t("nav_extra.workflows"), icon: GitBranch },
-          ],
-        },
-        {
           title: t("nav_group.organization"),
           items: [
             { to: "/admin/users", label: t("nav.users"), icon: Users },
