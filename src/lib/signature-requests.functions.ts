@@ -91,6 +91,8 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
       const targets = data.sequential
         ? (inserted ?? []).filter((r) => r.order_index === Math.min(...(inserted ?? []).map((x) => x.order_index)))
         : inserted ?? [];
+      const { buildDocumentPdfAttachment } = await import("@/lib/document-pdf-attachment.server");
+      const attachment = await buildDocumentPdfAttachment(data.document_id).catch(() => null);
       await Promise.all(
         targets.map((r) =>
           sendResendEmail({
@@ -105,6 +107,7 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
               paymentUrl,
               paymentAmountLabel,
             }),
+            attachments: attachment ? [attachment] : undefined,
           }).catch((e) => console.error("signature email failed:", e)),
         ),
       );
