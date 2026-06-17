@@ -253,7 +253,9 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             .update({ status: "declined", decline_reason: body.reason ?? null })
             .eq("id", req.id);
           try {
-            const { notifySignatureDeclined } = await import("@/lib/signature-notifications.server");
+            const { notifySignatureDeclined } = await import(
+              "@/lib/signature-notifications.server"
+            );
             void notifySignatureDeclined(
               supabaseAdmin,
               req.document_id,
@@ -394,7 +396,10 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             });
           } else if (f.kind === "checkbox") {
             page.drawRectangle({
-              x, y, width: h, height: h,
+              x,
+              y,
+              width: h,
+              height: h,
               borderColor: rgb(0.1, 0.1, 0.15),
               borderWidth: 1,
             });
@@ -427,7 +432,6 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           }
         }
 
-
         if (body.placement) {
           const idx = Math.min(body.placement.page_index, pages.length - 1);
           const page = pages[idx];
@@ -438,10 +442,11 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           const xPdf = body.placement.x;
           const yPdf = pageH - body.placement.y - h;
           page.drawImage(sigImg, { x: xPdf, y: yPdf, width: w, height: h });
-          page.drawText(
-            `Signé par ${req.signer_name} — ${signedAt.toISOString()}`,
-            { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
-          );
+          page.drawText(`Signé par ${req.signer_name} — ${signedAt.toISOString()}`, {
+            x: xPdf,
+            y: Math.max(yPdf - 10, 4),
+            size: 7,
+          });
         } else if (
           !recipientFieldList.some((f) => f.kind === "signature" || f.kind === "initials")
         ) {
