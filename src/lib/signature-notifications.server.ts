@@ -134,6 +134,67 @@ export async function notifySignatureCompleted(
   }
 }
 
+/**
+ * Notify the document creator that a single signature was just collected.
+ * Used by:
+ *  - share-link signing (no signature_request row)
+ *  - sign-request flow (per-signature event, before the full "completed" mail)
+ *
+ * Idempotent via audit_logs: action="signature.notified_signed", resource="signature:{id}".
+ */
+export async function notifyDocumentSigned(
+  admin: AdminClient,
+  opts: {
+    documentId: string;
+    signatureId: string;
+    signerName: string;
+    signerEmail?: string | null;
+    signedAt?: string | null;
+    origin: string | null;
+  },
+): Promise<{ sent: boolean; reason?: string }> {
+  try {
+    const resource = `signature:${opts.signatureId}`;
+    if (await alreadyAudited(admin, "signature.notified_signed", resource)) {
+      return { sent: false, reason: "already_notified" };
+    }
+    const loaded = await loadDoc(admin, opts.documentId);
+    if (!loaded?.creator?.email) return { sent: false, reason: "no_creator_email" };
+    const { doc, org, creator } = loaded;
+    const url = opts.origin ? `${opts.origin}/app/documents/${doc.id}` : null;
+    const html = renderSignatureCompletedEmail({
+      recipientName: creator.full_name,
+      recipientRole: "creator",
+      documentTitle: doc.title,
+      documentReference: doc.reference,
+      signers: [
+        {
+          name: opts.signerName,
+          email: opts.signerEmail || "—",
+          signed_at: opts.signedAt ?? new Date().toISOString(),
+        },
+      ],
+      senderOrg: org?.name ?? null,
+      url,
+    });
+    await sendResendEmail({
+      to: creator.email,
+      subject: `Document signé — ${doc.reference ?? doc.title}`,
+      html,
+    });
+    await admin.from("audit_logs").insert({
+      organization_id: doc.organization_id,
+      action: "signature.notified_signed",
+      resource,
+      metadata: { signer_email: opts.signerEmail ?? null, signer_name: opts.signerName },
+    });
+    return { sent: true };
+  } catch (e) {
+    await safeReport("signature.notify_signed", e, { documentId: opts.documentId });
+    return { sent: false, reason: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function notifySignatureDeclined(
   admin: AdminClient,
   documentId: string,
