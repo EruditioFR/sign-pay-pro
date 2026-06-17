@@ -179,7 +179,7 @@ export async function notifyDocumentSigned(
       url,
     });
     await sendResendEmail({
-      to: creator.email,
+      to: creatorEmail,
       subject: `Document signé — ${doc.reference ?? doc.title}`,
       html,
     });
