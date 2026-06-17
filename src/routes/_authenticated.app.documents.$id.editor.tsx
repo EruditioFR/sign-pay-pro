@@ -166,6 +166,7 @@ function PdfEditorPage() {
         value: f.value,
         font_size: f.font_size,
         required: f.required,
+        recipient_fillable: (f as { recipient_fillable?: boolean }).recipient_fillable ?? false,
         label: f.label,
         position: f.position,
       })),
