@@ -21,6 +21,8 @@ const CreateLinkSchema = z.object({
   allow_sign: z.boolean().default(true),
   allow_pay: z.boolean().default(true),
   max_views: z.number().int().min(1).max(1000).optional().nullable(),
+  payment_amount: z.number().positive().max(1_000_000).optional().nullable(),
+  payment_currency: z.string().length(3).optional().nullable(),
 });
 
 export const createShareLink = createServerFn({ method: "POST" })
@@ -46,6 +48,18 @@ export const createShareLink = createServerFn({ method: "POST" })
       throw new Error(
         "Partage impossible : veuillez d'abord valider le document (après avoir placé les zones de texte/signature).",
       );
+    }
+
+    // Si l'expéditeur a défini un montant à payer au moment de l'envoi,
+    // on met à jour le document avant de figer le PDF / d'envoyer le mail.
+    if (data.allow_pay && data.payment_amount && data.payment_amount > 0) {
+      const updates: { amount_ttc: number; currency?: string } = { amount_ttc: data.payment_amount };
+      if (data.payment_currency) updates.currency = data.payment_currency.toUpperCase();
+      const { error: updErr } = await supabase
+        .from("documents")
+        .update(updates)
+        .eq("id", data.document_id);
+      if (updErr) throw new Error(`Mise à jour du montant impossible : ${updErr.message}`);
     }
 
     // Garantit qu'un PDF final figé existe avant tout envoi avec destinataire.
