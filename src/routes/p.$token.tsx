@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import SignatureCanvas from "react-signature-canvas";
+import type SignatureCanvas from "react-signature-canvas";
+import { ResponsiveSignatureCanvas } from "@/components/responsive-signature-canvas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { FileText, PenLine, CreditCard, CheckCircle2 } from "lucide-react";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
 
 export const Route = createFileRoute("/p/$token")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -110,7 +112,7 @@ function PublicSharePage() {
           {!payOnly && (
             <CardContent>
               {data.pdfUrl ? (
-                <iframe src={data.pdfUrl} className="h-[60vh] w-full rounded border" title="PDF" />
+                <PdfJsViewer url={data.pdfUrl} className="h-[60vh] w-full" />
               ) : (
                 <p className="text-sm text-muted-foreground">{t("public.no_pdf")}</p>
               )}
@@ -278,7 +280,7 @@ function SignPanel({
       <div>
         <Label>{t("public.draw_signature")}</Label>
         <div className="mt-1 rounded-md border bg-background">
-          <SignatureCanvas ref={sigRef} canvasProps={{ className: "w-full h-40" }} />
+          <ResponsiveSignatureCanvas ref={sigRef} height={160} className="block w-full" />
         </div>
         <Button type="button" variant="ghost" size="sm" className="mt-1" onClick={() => sigRef.current?.clear()}>
           {t("public.clear")}
