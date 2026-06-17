@@ -280,14 +280,14 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       .single();
     if (fileErr) throw new Error(fileErr.message);
 
-    // Les valeurs des champs sont désormais incrustées dans le PDF :
-    // on supprime les enregistrements d'overlay pour éviter un double
-    // affichage (valeurs imprimées + surcouche éditable) lors d'une
-    // réouverture du document dans l'éditeur.
+    // Les valeurs des champs émetteur sont désormais incrustées dans le PDF :
+    // on supprime ces enregistrements pour éviter un double affichage.
+    // Les zones marquées "à remplir par le destinataire" sont conservées.
     await supabase
       .from("document_pdf_fields")
       .delete()
-      .eq("document_id", doc.id);
+      .eq("document_id", doc.id)
+      .eq("recipient_fillable", false);
 
     await supabase.from("audit_logs").insert({
       organization_id: doc.organization_id,
