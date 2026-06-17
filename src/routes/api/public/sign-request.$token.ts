@@ -255,7 +255,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             const { notifySignatureDeclined } = await import(
               "@/lib/signature-notifications.server"
             );
-            void notifySignatureDeclined(
+            await notifySignatureDeclined(
               supabaseAdmin,
               req.document_id,
               req.signer_name,
