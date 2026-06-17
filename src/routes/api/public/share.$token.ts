@@ -332,7 +332,7 @@ export const Route = createFileRoute("/api/public/share/$token")({
             const { notifyDocumentSigned } = await import(
               "@/lib/signature-notifications.server"
             );
-            void notifyDocumentSigned(supabaseAdmin, {
+            await notifyDocumentSigned(supabaseAdmin, {
               documentId: doc.id,
               signatureId: sig.id,
               signerName: body.signer_name,
