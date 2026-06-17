@@ -374,7 +374,10 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             `Signé par ${req.signer_name} — ${signedAt.toISOString()}`,
             { x: xPdf, y: Math.max(yPdf - 10, 4), size: 7 },
           );
-        } else {
+        } else if (
+          !recipientFieldList.some((f) => f.kind === "signature" || f.kind === "initials")
+        ) {
+          // Pas de zone signature destinataire pré-placée : page récapitulative.
           const page = pdf.addPage([595.28, 320]);
           const dims = sigImg.scale(0.4);
           page.drawText("SIGNATURE", { x: 50, y: 270, size: 14 });
