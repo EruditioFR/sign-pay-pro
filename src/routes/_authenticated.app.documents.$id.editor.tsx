@@ -288,6 +288,7 @@ function PdfEditorPage() {
             value: f.value,
             font_size: f.font_size,
             required: f.required,
+            recipient_fillable: f.recipient_fillable,
             label: f.label,
             position: i,
           })),
