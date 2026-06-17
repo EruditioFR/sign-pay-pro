@@ -389,7 +389,13 @@
     "pay_online": "Payer en ligne par carte",
     "or": "ou",
     "paid_ok": "Paiement enregistré. Merci !",
-    "need_amount": "Montant invalide."
+    "need_amount": "Montant invalide.",
+    "need_email": "Renseignez un email valide pour recevoir le reçu.",
+    "invoice_label": "Facture",
+    "payment_date": "Date",
+    "amount_ttc": "Montant TTC",
+    "pay_now": "Payer",
+    "receipt_hint": "Un reçu de paiement sera envoyé à cette adresse."
   },
   "pay": {
     "success_title": "Paiement confirmé",
