@@ -255,7 +255,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             const { notifySignatureDeclined } = await import(
               "@/lib/signature-notifications.server"
             );
-            void notifySignatureDeclined(
+            await notifySignatureDeclined(
               supabaseAdmin,
               req.document_id,
               req.signer_name,
@@ -590,7 +590,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
               : null);
           const mod = await import("@/lib/signature-notifications.server");
           // Per-signature notification to the document creator.
-          void mod.notifyDocumentSigned(supabaseAdmin, {
+          await mod.notifyDocumentSigned(supabaseAdmin, {
             documentId: req.document_id,
             signatureId: sig.id,
             signerName: req.signer_name,
@@ -600,7 +600,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           });
           // If sequential, advance to next signer.
           if (req.sequential) {
-            void mod.notifyNextSequentialSigner(supabaseAdmin, req.document_id, origin);
+            await mod.notifyNextSequentialSigner(supabaseAdmin, req.document_id, origin);
           }
           // If all signers are done → notify everyone.
           const { data: pendingLeft } = await supabaseAdmin
@@ -610,7 +610,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             .eq("status", "pending")
             .limit(1);
           if (!pendingLeft || pendingLeft.length === 0) {
-            void mod.notifySignatureCompleted(supabaseAdmin, req.document_id, origin);
+            await mod.notifySignatureCompleted(supabaseAdmin, req.document_id, origin);
           }
         } catch (e) {
           console.error("post-sign notifications failed", e);
