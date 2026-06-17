@@ -48,7 +48,8 @@ function PublicSharePage() {
   const [signed, setSigned] = useState(false);
   const [paid, setPaid] = useState(false);
 
-  useEffect(() => {
+  const fetchShare = () => {
+    setLoading(true);
     fetch(`/api/public/share/${token}`)
       .then(async (r) => {
         if (!r.ok) throw new Error("invalid");
@@ -57,7 +58,9 @@ function PublicSharePage() {
       .then(setData)
       .catch(() => setError("invalid"))
       .finally(() => setLoading(false));
-  }, [token]);
+  };
+
+  useEffect(fetchShare, [token]);
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">{t("common.loading")}</div>;
@@ -147,7 +150,10 @@ function PublicSharePage() {
                         token={token}
                         defaultName={data.recipient_name ?? ""}
                         defaultEmail={data.recipient_email ?? ""}
-                        onDone={() => setSigned(true)}
+                        onDone={() => {
+                          setSigned(true);
+                          fetchShare();
+                        }}
                       />
                     )}
                   </TabsContent>

@@ -90,19 +90,38 @@ export const Route = createFileRoute("/api/public/share/$token")({
           .pop() ?? null;
         const isFullyPaid = paySummary.status === "paid";
 
-        const { data: file } = await supabaseAdmin
-          .from("document_files")
-          .select("storage_path, file_name")
-          .eq("document_id", link.document_id)
-          .eq("is_current", true)
-          .maybeSingle();
-
         let pdfUrl: string | null = null;
-        if (file) {
-          const { data: signed } = await supabaseAdmin.storage
-            .from("documents")
-            .createSignedUrl(file.storage_path, 120);
-          pdfUrl = signed?.signedUrl ?? null;
+
+        // Si une signature existe déjà pour ce document (via ce lien ou un
+        // autre), on affiche le PDF signé le plus récent plutôt que l'original.
+        const { data: latestSig } = await supabaseAdmin
+          .from("document_signatures")
+          .select("pdf_storage_path, signed_at")
+          .eq("document_id", link.document_id)
+          .not("pdf_storage_path", "is", null)
+          .order("signed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (latestSig?.pdf_storage_path) {
+          const { data: signedFile } = await supabaseAdmin.storage
+            .from("signed-documents")
+            .createSignedUrl(latestSig.pdf_storage_path, 120);
+          pdfUrl = signedFile?.signedUrl ?? null;
+        }
+
+        if (!pdfUrl) {
+          const { data: file } = await supabaseAdmin
+            .from("document_files")
+            .select("storage_path, file_name")
+            .eq("document_id", link.document_id)
+            .eq("is_current", true)
+            .maybeSingle();
+          if (file) {
+            const { data: signed } = await supabaseAdmin.storage
+              .from("documents")
+              .createSignedUrl(file.storage_path, 120);
+            pdfUrl = signed?.signedUrl ?? null;
+          }
         }
 
         const { data: org } = await supabaseAdmin
