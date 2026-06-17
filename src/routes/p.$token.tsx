@@ -133,8 +133,12 @@ function PublicSharePage() {
                     ) : (
                       <PayPanel
                         token={token}
-                        defaultAmount={data.document.amount_ttc ?? 0}
+                        amount={data.document.amount_ttc ?? 0}
                         currency={data.document.currency}
+                        title={data.document.title}
+                        reference={data.document.reference}
+                        defaultPayerName={data.recipient_name ?? data.document.third_party_name ?? ""}
+                        defaultPayerEmail={data.recipient_email ?? ""}
                         onDone={() => setPaid(true)}
                       />
                     )}
