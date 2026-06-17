@@ -140,7 +140,7 @@ function DocumentDetailPage() {
               {!readOnly && ["draft", "validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
                 <>
                   <GeneratePdfButton documentId={doc.id} />
-                  {showSendButton && <ShareLinkDialog documentId={doc.id} triggerLabel={sendLabel} />}
+                  {showSendButton && doc.status !== "draft" && <ShareLinkDialog documentId={doc.id} triggerLabel={sendLabel} />}
                   {showSignButtons && (
                     <>
                       <SignDocumentDialog
