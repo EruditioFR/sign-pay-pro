@@ -395,7 +395,10 @@
     "payment_date": "Date",
     "amount_ttc": "Montant TTC",
     "pay_now": "Payer",
-    "receipt_hint": "Un reçu de paiement sera envoyé à cette adresse."
+    "receipt_hint": "Un reçu de paiement sera envoyé à cette adresse.",
+    "already_paid_title": "Cette facture a été payée",
+    "already_paid_on": "Payée le {{date}}",
+    "already_paid_text": "Aucun paiement supplémentaire n'est requis."
   },
   "pay": {
     "success_title": "Paiement confirmé",
