@@ -96,10 +96,10 @@ export const Route = createFileRoute("/api/public/share/$token")({
         // autre), on affiche le PDF signé le plus récent plutôt que l'original.
         const { data: latestSig } = await supabaseAdmin
           .from("document_signatures")
-          .select("pdf_storage_path, created_at")
+          .select("pdf_storage_path, signed_at")
           .eq("document_id", link.document_id)
           .not("pdf_storage_path", "is", null)
-          .order("created_at", { ascending: false })
+          .order("signed_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         if (latestSig?.pdf_storage_path) {
