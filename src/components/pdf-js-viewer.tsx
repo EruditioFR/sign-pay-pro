@@ -33,7 +33,10 @@ export function PdfJsViewer({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const updateWidth = () => setContainerWidth(Math.floor(container.clientWidth || 360));
+    const updateWidth = () => {
+      const next = Math.floor(container.clientWidth || 360);
+      setContainerWidth((prev) => (Math.abs(next - prev) >= 16 ? next : prev));
+    };
     updateWidth();
     const observer = new ResizeObserver(updateWidth);
     observer.observe(container);
