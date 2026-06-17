@@ -112,7 +112,7 @@ export async function notifyPaymentSucceeded(
     // 1. Load payment + document + org + creator
     const { data: payment, error: pErr } = await supabaseAdmin
       .from("document_payments")
-      .select("id, document_id, amount, currency, method, status, provider_ref, paid_at, created_at, metadata")
+      .select("id, document_id, share_link_id, amount, currency, method, status, provider_ref, paid_at, created_at, metadata")
       .eq("id", paymentId)
       .maybeSingle();
     if (pErr || !payment) return { sent: false, recipients: [], reason: pErr?.message ?? "payment_not_found" };
@@ -153,7 +153,20 @@ export async function notifyPaymentSucceeded(
       }
     }
 
-    // Third-party contact (issuer side notification if no explicit payer email)
+    // Fallback payer side: share link recipient, then document third-party.
+    // Ensures the person who received the email gets a receipt even if they
+    // didn't re-type their email on the payment form.
+    if (!payerEmail && payment.share_link_id) {
+      const { data: link } = await supabaseAdmin
+        .from("document_share_links")
+        .select("recipient_email")
+        .eq("id", payment.share_link_id)
+        .maybeSingle();
+      if (link?.recipient_email) {
+        const k = link.recipient_email.toLowerCase();
+        if (!recipients.has(k)) recipients.set(k, "payer");
+      }
+    }
     if (!payerEmail && doc.third_party_email) {
       const k = doc.third_party_email.toLowerCase();
       if (!recipients.has(k)) recipients.set(k, "payer");
