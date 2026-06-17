@@ -101,7 +101,36 @@ export const createShareLink = createServerFn({ method: "POST" })
           : { data: null };
         const { getRequest } = await import("@tanstack/react-start/server");
         const origin = getOriginFromRequest(getRequest());
-        const url = `${origin}/p/${link.token}`;
+
+        // S'il reste des zones « à remplir par le destinataire » (signatures
+        // multiples, champs texte, etc.), on bascule sur le flux /s/ qui
+        // présente TOUTES les zones à compléter avant signature finale.
+        const { count: fillableCount } = await supabaseAdmin
+          .from("document_pdf_fields")
+          .select("id", { count: "exact", head: true })
+          .eq("document_id", data.document_id)
+          .eq("recipient_fillable", true);
+
+        let url = `${origin}/p/${link.token}`;
+        if ((fillableCount ?? 0) > 0 && data.allow_sign) {
+          const { data: sigReq, error: sigErr } = await supabaseAdmin
+            .from("document_signature_requests")
+            .insert({
+              document_id: data.document_id,
+              signer_name: data.recipient_name || data.recipient_email,
+              signer_email: data.recipient_email,
+              order_index: 1,
+              sequential: false,
+              invited_by: userId,
+              expires_at: expiresAt,
+            })
+            .select("token")
+            .single();
+          if (!sigErr && sigReq?.token) {
+            url = `${origin}/s/${sigReq.token}`;
+          }
+        }
+
         const { buildDocumentPdfAttachment } = await import("@/lib/document-pdf-attachment.server");
         const attachment = await buildDocumentPdfAttachment(data.document_id).catch(() => null);
         await sendResendEmail({
@@ -122,6 +151,7 @@ export const createShareLink = createServerFn({ method: "POST" })
         console.error("share email failed:", email_error);
       }
     }
+
 
     return { link, email_sent, email_error };
   });
