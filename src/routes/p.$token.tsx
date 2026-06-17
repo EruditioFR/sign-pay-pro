@@ -150,7 +150,10 @@ function PublicSharePage() {
                         token={token}
                         defaultName={data.recipient_name ?? ""}
                         defaultEmail={data.recipient_email ?? ""}
-                        onDone={() => setSigned(true)}
+                        onDone={() => {
+                          setSigned(true);
+                          fetchShare();
+                        }}
                       />
                     )}
                   </TabsContent>
