@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { createDocument, type DocumentType } from "@/lib/documents.functions";
-import { listPdfTemplates } from "@/lib/pdf-templates.functions";
+import { listPdfTemplates, createDocumentFromPdfTemplate } from "@/lib/pdf-templates.functions";
 import {
   SignersPaymentFields,
   emptySignersPaymentValue,
