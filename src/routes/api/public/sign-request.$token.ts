@@ -146,6 +146,14 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
 
         const next = await isNextInLine(req);
 
+        const { data: recipientFields } = await supabaseAdmin
+          .from("document_pdf_fields")
+          .select("id, page_index, kind, x, y, width, height, label, font_size, required")
+          .eq("document_id", doc.id)
+          .eq("recipient_fillable", true)
+          .order("page_index", { ascending: true })
+          .order("position", { ascending: true });
+
         return json({
           document: doc,
           organization: org,
@@ -168,6 +176,7 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             consent_version: CONSENT_TEXT_VERSION,
             module_version: CONFORMITY_MODULE_VERSION,
           },
+          recipient_fields: recipientFields ?? [],
           can_sign: next,
         });
       },
