@@ -98,19 +98,38 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           .maybeSingle();
         if (!doc) return json({ error: "not_found" }, { status: 404 });
 
-        const { data: file } = await supabaseAdmin
-          .from("document_files")
-          .select("storage_path")
-          .eq("document_id", doc.id)
-          .eq("is_current", true)
-          .maybeSingle();
-
         let pdfUrl: string | null = null;
-        if (file) {
-          const { data: signed } = await supabaseAdmin.storage
-            .from("documents")
-            .createSignedUrl(file.storage_path, 120);
-          pdfUrl = signed?.signedUrl ?? null;
+
+        // Si la demande a déjà été signée, on renvoie le PDF signé (avec la
+        // signature apposée) plutôt que le document original, afin que le
+        // destinataire voit sa signature dans l'aperçu.
+        if (req.status === "signed" && req.signature_id) {
+          const { data: sigRow } = await supabaseAdmin
+            .from("document_signatures")
+            .select("pdf_storage_path")
+            .eq("id", req.signature_id)
+            .maybeSingle();
+          if (sigRow?.pdf_storage_path) {
+            const { data: signed } = await supabaseAdmin.storage
+              .from("signed-documents")
+              .createSignedUrl(sigRow.pdf_storage_path, 120);
+            pdfUrl = signed?.signedUrl ?? null;
+          }
+        }
+
+        if (!pdfUrl) {
+          const { data: file } = await supabaseAdmin
+            .from("document_files")
+            .select("storage_path")
+            .eq("document_id", doc.id)
+            .eq("is_current", true)
+            .maybeSingle();
+          if (file) {
+            const { data: signed } = await supabaseAdmin.storage
+              .from("documents")
+              .createSignedUrl(file.storage_path, 120);
+            pdfUrl = signed?.signedUrl ?? null;
+          }
         }
 
         const { data: org } = await supabaseAdmin
