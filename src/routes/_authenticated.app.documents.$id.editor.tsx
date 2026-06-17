@@ -18,8 +18,9 @@ import {
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
   CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
-  RefreshCw, CheckCircle2,
+  RefreshCw, CheckCircle2, Upload, Image as ImageIcon,
 } from "lucide-react";
+import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl, listDocumentSignatures } from "@/lib/sharing.functions";
 import {
