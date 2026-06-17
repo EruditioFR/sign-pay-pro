@@ -696,16 +696,14 @@ function SignWithPlacement({
 
         <Button
           onClick={sign}
-          disabled={submitting || !consentAccepted || (showFreePlacement && !placement)}
+          disabled={submitting || !consentAccepted}
           className="w-full"
         >
           {submitting
             ? "Envoi…"
             : !consentAccepted
               ? "Acceptez le consentement pour signer"
-              : showFreePlacement && !placement
-                ? "Placez votre signature sur le document"
-                : "Signer maintenant"}
+              : "Signer maintenant"}
         </Button>
 
         {!showDecline ? (
