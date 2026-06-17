@@ -80,6 +80,7 @@ export const savePdfFields = createServerFn({ method: "POST" })
         value: f.value ?? null,
         font_size: f.font_size,
         required: f.required,
+        recipient_fillable: f.recipient_fillable,
         label: f.label ?? null,
         position: f.position ?? i,
       }));
