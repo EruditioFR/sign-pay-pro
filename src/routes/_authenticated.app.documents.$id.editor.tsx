@@ -18,8 +18,9 @@ import {
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
   CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
-  RefreshCw, CheckCircle2,
+  RefreshCw, CheckCircle2, Upload, Image as ImageIcon,
 } from "lucide-react";
+import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl, listDocumentSignatures } from "@/lib/sharing.functions";
 import {
@@ -138,6 +139,9 @@ function PdfEditorPage() {
   const [tplDesc, setTplDesc] = useState("");
   const [tplNotes, setTplNotes] = useState("");
   const [tplTargetId, setTplTargetId] = useState<string>("");
+  const [sendOpen, setSendOpen] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const imageTargetRef = useRef<string | null>(null);
 
   const listTplFn = useServerFn(listPdfTemplates);
   const tplListQ = useQuery({
@@ -325,9 +329,10 @@ function PdfEditorPage() {
       return flattenFn({ data: { documentId: id } });
     },
     onSuccess: () => {
-      toast.success("PDF final généré");
+      toast.success("PDF final généré — choisissez comment l'envoyer");
       qc.invalidateQueries({ queryKey: ["document", id] });
-      navigate({ to: "/app/documents/$id", params: { id } });
+      qc.invalidateQueries({ queryKey: ["editor-pdf-url", id] });
+      setSendOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -497,11 +502,27 @@ function PdfEditorPage() {
               );
             })}
 
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  imageTargetRef.current = null;
+                  imageInputRef.current?.click();
+                }}
+                title="Téléverser un logo, tampon ou image à incruster"
+              >
+                <ImageIcon className="mr-2 h-4 w-4" /> Image (logo, tampon…)
+              </Button>
+            </div>
+
             {activeTool !== "select" && (
               <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
                 Cliquez-glissez sur le PDF pour tracer la zone «&nbsp;{KIND_META[activeTool as PdfFieldKind].label}&nbsp;».
               </p>
             )}
+
 
             <div className="pt-3">
               <Label className="text-xs">Page</Label>
@@ -747,10 +768,24 @@ function PdfEditorPage() {
                 )}
 
                 {(selected.kind === "signature" || selected.kind === "initials") && (
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
-                    <PenLine className="mr-1 h-4 w-4" />
-                    {selected.value ? "Modifier" : "Dessiner"}
-                  </Button>
+                  <div className="grid gap-1.5">
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
+                      <PenLine className="mr-1 h-4 w-4" />
+                      {selected.value ? "Modifier le dessin" : "Dessiner"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        imageTargetRef.current = selected.tempId;
+                        imageInputRef.current?.click();
+                      }}
+                    >
+                      <Upload className="mr-1 h-4 w-4" />
+                      Téléverser une image
+                    </Button>
+                  </div>
                 )}
 
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
@@ -863,6 +898,68 @@ function PdfEditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          if (f.size > 5 * 1024 * 1024) {
+            toast.error("Image trop volumineuse (max 5 Mo)");
+            return;
+          }
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.onerror = () => reject(new Error("Lecture du fichier impossible"));
+            r.readAsDataURL(f);
+          });
+          const targetTempId = imageTargetRef.current;
+          imageTargetRef.current = null;
+          if (targetTempId) {
+            updateField(targetTempId, { value: dataUrl });
+          } else {
+            const w = 120;
+            const h = 120;
+            const cssX = (pageDims.w * renderScale) / 2 - (w * renderScale) / 2;
+            const cssY = (pageDims.h * renderScale) / 2 - (h * renderScale) / 2;
+            const xPdf = Math.max(0, cssX / renderScale);
+            const yPdfTop = cssY / renderScale;
+            const newField: Field = {
+              tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+              page_index: pageIndex,
+              kind: "signature",
+              x: xPdf,
+              y: Math.max(0, pageDims.h - yPdfTop - h),
+              width: w,
+              height: h,
+              value: dataUrl,
+              font_size: 11,
+              required: false,
+              recipient_fillable: false,
+              label: "Image",
+              position: fields.length,
+            };
+            setFields((prev) => [...prev, newField]);
+            setSelectedId(newField.tempId);
+          }
+          toast.success("Image insérée");
+        }}
+      />
+
+      <ShareLinkDialog
+        documentId={id}
+        hideTrigger
+        open={sendOpen}
+        onOpenChange={(v) => {
+          setSendOpen(v);
+          if (!v) navigate({ to: "/app/documents/$id", params: { id } });
+        }}
+      />
     </div>
   );
 }

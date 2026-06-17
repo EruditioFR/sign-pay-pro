@@ -16,9 +16,26 @@ import { createShareLink, listShareLinks, revokeShareLink } from "@/lib/sharing.
 
 type Channel = "email" | "whatsapp";
 
-export function ShareLinkDialog({ documentId, triggerLabel }: { documentId: string; triggerLabel?: string }) {
+export function ShareLinkDialog({
+  documentId,
+  triggerLabel,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger,
+}: {
+  documentId: string;
+  triggerLabel?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
   const [channel, setChannel] = useState<Channel>("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -102,9 +119,11 @@ export function ShareLinkDialog({ documentId, triggerLabel }: { documentId: stri
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" size="sm"><Send className="mr-1 h-4 w-4" />{triggerLabel ?? t("sharing.send")}</Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="default" size="sm"><Send className="mr-1 h-4 w-4" />{triggerLabel ?? t("sharing.send")}</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{t("sharing.title")}</DialogTitle></DialogHeader>
         <div className="space-y-3">

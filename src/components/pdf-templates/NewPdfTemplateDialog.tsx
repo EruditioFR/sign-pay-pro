@@ -19,12 +19,6 @@ import {
   createPdfTemplateFromUpload,
   createDocumentFromPdfTemplate,
 } from "@/lib/pdf-templates.functions";
-import {
-  SignersPaymentFields,
-  emptySignersPaymentValue,
-  applySignersAndPayment,
-  type SignersPaymentValue,
-} from "@/components/documents/SignersPaymentFields";
 
 interface Props {
   trigger?: ReactNode;
@@ -49,8 +43,6 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
   const [documentType, setDocumentType] = useState("other");
   const [file, setFile] = useState<File | null>(null);
 
-  const [sp, setSp] = useState<SignersPaymentValue>(emptySignersPaymentValue());
-
   const mut = useMutation({
     mutationFn: async () => {
       if (!file) throw new Error("Sélectionnez un PDF");
@@ -69,11 +61,6 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
           },
         });
         const documentId = inst.document.id as string;
-        await applySignersAndPayment(sp, {
-          documentId,
-          title: name.trim() || file.name.replace(/\.pdf$/i, ""),
-          currency: "EUR",
-        });
         return { templateId, documentId };
       }
       return { templateId, documentId: null as string | null };
@@ -86,7 +73,6 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       setDescription("");
       setDocumentType("other");
       setFile(null);
-      setSp(emptySignersPaymentValue());
       if (documentId) {
         toast.success("PDF importé — placez vos zones à saisir / signer");
         navigate({ to: "/app/documents/$id/editor", params: { id: documentId } });
@@ -114,28 +100,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
-          {openEditorAfterImport && (
-            <section className="rounded-md border border-primary/30 bg-primary/5 p-3">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                  1
-                </span>
-                <h3 className="text-sm font-semibold">Signataires</h3>
-                <span className="text-xs text-muted-foreground">
-                  — qui doit signer&nbsp;? (recommandé)
-                </span>
-              </div>
-              <SignersPaymentFields value={sp} onChange={setSp} compact />
-            </section>
-          )}
-
           <section className="rounded-md border border-border p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[11px] font-semibold">
-                {openEditorAfterImport ? 2 : 1}
-              </span>
-              <h3 className="text-sm font-semibold">Document PDF</h3>
-            </div>
             <div className="grid gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="pdf-template-file">PDF source</Label>
@@ -182,7 +147,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="pdf-template-description">Description</Label>
+                <Label htmlFor="pdf-template-description">Description (optionnel)</Label>
                 <Textarea
                   id="pdf-template-description"
                   value={description}
@@ -191,6 +156,12 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
                   disabled={mut.isPending}
                 />
               </div>
+              {openEditorAfterImport && (
+                <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                  Après l'import, vous pourrez placer vos zones (texte, signature, image…) puis
+                  choisir comment envoyer le document au destinataire (email ou WhatsApp).
+                </p>
+              )}
             </div>
           </section>
         </div>
