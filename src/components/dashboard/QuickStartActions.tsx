@@ -18,7 +18,8 @@ export function QuickStartActions() {
           Toutes les options →
         </Link>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2">
+        {/* Modèles temporairement désactivés
         <Link to="/app/templates" className="block">
           <ActionCard
             accent
@@ -28,6 +29,7 @@ export function QuickStartActions() {
             cta="Voir les modèles"
           />
         </Link>
+        */}
         <NewPdfTemplateDialog
           trigger={
             <button type="button" className="block w-full text-left">
