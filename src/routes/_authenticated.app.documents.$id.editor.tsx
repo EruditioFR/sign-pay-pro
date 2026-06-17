@@ -256,6 +256,7 @@ function PdfEditorPage() {
       value: kind === "checkbox" ? "false" : null,
       font_size: 11,
       required: false,
+      recipient_fillable: false,
       label: null,
       position: fields.length,
     };
