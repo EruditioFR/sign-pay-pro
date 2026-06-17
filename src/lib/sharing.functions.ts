@@ -53,7 +53,7 @@ export const createShareLink = createServerFn({ method: "POST" })
     // Si l'expéditeur a défini un montant à payer au moment de l'envoi,
     // on met à jour le document avant de figer le PDF / d'envoyer le mail.
     if (data.allow_pay && data.payment_amount && data.payment_amount > 0) {
-      const updates: Record<string, unknown> = { amount_ttc: data.payment_amount };
+      const updates: { amount_ttc: number; currency?: string } = { amount_ttc: data.payment_amount };
       if (data.payment_currency) updates.currency = data.payment_currency.toUpperCase();
       const { error: updErr } = await supabase
         .from("documents")
