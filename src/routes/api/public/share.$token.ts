@@ -64,10 +64,31 @@ export const Route = createFileRoute("/api/public/share/$token")({
 
         const { data: doc } = await supabaseAdmin
           .from("documents")
-          .select("id, organization_id, type, title, reference, amount_ttc, currency, third_party_name, issue_date, due_date")
+          .select("id, organization_id, type, title, reference, amount_ttc, currency, third_party_name, issue_date, due_date, status")
           .eq("id", link.document_id)
           .maybeSingle();
         if (!doc) return json({ error: "not_found" }, { status: 404 });
+
+        // Compute payment situation (for invoices) so the public page can
+        // hide payment UI once the invoice is fully paid.
+        const { data: paymentRows } = await supabaseAdmin
+          .from("document_payments")
+          .select("amount, status, paid_at, metadata")
+          .eq("document_id", doc.id);
+        const { computePaymentSummary } = await import("@/lib/payment-status");
+        const paySummary = computePaymentSummary({
+          documentStatus: doc.status,
+          amountTtc: doc.amount_ttc,
+          dueDate: doc.due_date,
+          payments: paymentRows ?? [],
+        });
+        const lastSucceededPaidAt = (paymentRows ?? [])
+          .filter((p) => p.status === "succeeded" || p.status === "partially_refunded")
+          .map((p) => p.paid_at)
+          .filter((d): d is string => !!d)
+          .sort()
+          .pop() ?? null;
+        const isFullyPaid = paySummary.status === "paid";
 
         const { data: file } = await supabaseAdmin
           .from("document_files")
