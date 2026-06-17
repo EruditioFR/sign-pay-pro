@@ -389,7 +389,10 @@
     "pay_online": "Pay online by card",
     "or": "or",
     "paid_ok": "Payment recorded. Thank you!",
-    "need_amount": "Invalid amount."
+    "need_amount": "Invalid amount.",
+    "already_paid_title": "This invoice has been paid",
+    "already_paid_on": "Paid on {{date}}",
+    "already_paid_text": "No additional payment is required."
   },
   "pay": {
     "success_title": "Payment confirmed",
