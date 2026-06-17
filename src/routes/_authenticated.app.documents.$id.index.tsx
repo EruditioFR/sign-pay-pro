@@ -64,6 +64,25 @@ function DocumentDetailPage() {
   const lastWorkflow = workflows[0];
   const readOnly = isReadOnlyStatus(doc.status);
 
+  const isInvoice = doc.type === "invoice";
+  const isQuote = doc.type === "quote";
+  const isSigned = (sigs?.signatures ?? []).length > 0 || doc.status === "signed";
+  const paymentSummary = computePaymentSummary({
+    documentStatus: doc.status,
+    amountTtc: doc.amount_ttc,
+    dueDate: doc.due_date,
+    payments: pays?.payments ?? [],
+  });
+  const isFullyPaid = paymentSummary.status === "paid";
+
+  // Quote: signature required, no payment. Hide sign/send once signed.
+  // Invoice: payment only, no signature. Hide send once fully paid.
+  // Other types: keep prior behavior.
+  const showSignButtons = !isInvoice && !isSigned;
+  const showSendButton = isInvoice ? !isFullyPaid : !isSigned;
+  const showPaymentButton = !isQuote && !isFullyPaid;
+  const sendLabel = isInvoice ? t("sharing.send_payment_request", { defaultValue: "Envoyer demande de paiement" }) : undefined;
+
   return (
     <div className="space-y-4">
       <Button asChild variant="ghost" size="sm">
@@ -121,14 +140,20 @@ function DocumentDetailPage() {
               {!readOnly && ["draft", "validated", "sent", "signed", "partially_paid"].includes(doc.status) && (
                 <>
                   <GeneratePdfButton documentId={doc.id} />
-                  <ShareLinkDialog documentId={doc.id} />
-                  <SignDocumentDialog
-                    documentId={doc.id}
-                    defaultName={me?.fullName ?? undefined}
-                    defaultEmail={me?.email ?? undefined}
-                  />
-                  <MultiSignersDialog documentId={doc.id} />
-                  <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
+                  {showSendButton && <ShareLinkDialog documentId={doc.id} triggerLabel={sendLabel} />}
+                  {showSignButtons && (
+                    <>
+                      <SignDocumentDialog
+                        documentId={doc.id}
+                        defaultName={me?.fullName ?? undefined}
+                        defaultEmail={me?.email ?? undefined}
+                      />
+                      <MultiSignersDialog documentId={doc.id} />
+                    </>
+                  )}
+                  {showPaymentButton && (
+                    <PaymentDialog documentId={doc.id} suggestedAmount={doc.amount_ttc ?? undefined} currency={doc.currency} />
+                  )}
                 </>
               )}
               {readOnly && files.length > 0 && <GeneratePdfButton documentId={doc.id} />}
