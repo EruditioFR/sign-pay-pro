@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { FileText, PenLine, CreditCard, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/p/$token")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    pay: search.pay === "1" || search.pay === 1 || search.pay === true ? true : false,
+  }),
   component: PublicSharePage,
 });
 
