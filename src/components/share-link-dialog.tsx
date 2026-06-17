@@ -43,6 +43,8 @@ export function ShareLinkDialog({
   const [days, setDays] = useState(30);
   const [allowSign, setAllowSign] = useState(true);
   const [allowPay, setAllowPay] = useState(true);
+  const [payAmount, setPayAmount] = useState<string>("");
+  const [payCurrency, setPayCurrency] = useState<string>("EUR");
   const qc = useQueryClient();
 
   const createFn = useServerFn(createShareLink);
