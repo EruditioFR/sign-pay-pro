@@ -124,6 +124,23 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
         }
 
         if (!pdfUrl) {
+          const { data: latestSig } = await supabaseAdmin
+            .from("document_signatures")
+            .select("pdf_storage_path, signed_at")
+            .eq("document_id", req.document_id)
+            .not("pdf_storage_path", "is", null)
+            .order("signed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (latestSig?.pdf_storage_path) {
+            const { data: signed } = await supabaseAdmin.storage
+              .from("signed-documents")
+              .createSignedUrl(latestSig.pdf_storage_path, 120);
+            pdfUrl = signed?.signedUrl ?? null;
+          }
+        }
+
+        if (!pdfUrl) {
           const { data: file } = await supabaseAdmin
             .from("document_files")
             .select("storage_path")
@@ -269,24 +286,39 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           .eq("id", doc.organization_id)
           .maybeSingle();
 
-        const { data: currentFile } = await supabaseAdmin
-          .from("document_files")
-          .select("storage_path")
+        const { data: latestSignedPdf } = await supabaseAdmin
+          .from("document_signatures")
+          .select("pdf_storage_path, signed_at")
           .eq("document_id", doc.id)
-          .eq("is_current", true)
+          .not("pdf_storage_path", "is", null)
+          .order("signed_at", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
-        let basePdfBytes: Uint8Array;
-        if (currentFile) {
-          const { data: blob } = await supabaseAdmin.storage
-            .from("documents")
-            .download(currentFile.storage_path);
-          basePdfBytes = blob
-            ? new Uint8Array(await blob.arrayBuffer())
-            : await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
-        } else {
-          basePdfBytes = await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
+        let basePdfBytes: Uint8Array | null = null;
+        if (latestSignedPdf?.pdf_storage_path) {
+          const { data: signedBlob } = await supabaseAdmin.storage
+            .from("signed-documents")
+            .download(latestSignedPdf.pdf_storage_path);
+          if (signedBlob) basePdfBytes = new Uint8Array(await signedBlob.arrayBuffer());
         }
+
+        if (!basePdfBytes) {
+          const { data: currentFile } = await supabaseAdmin
+            .from("document_files")
+            .select("storage_path")
+            .eq("document_id", doc.id)
+            .eq("is_current", true)
+            .maybeSingle();
+          if (currentFile) {
+            const { data: blob } = await supabaseAdmin.storage
+              .from("documents")
+              .download(currentFile.storage_path);
+            basePdfBytes = blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+          }
+        }
+
+        basePdfBytes ??= await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
 
         // Empreinte du PDF AVANT apposition — preuve d'intégrité du contrat soumis.
         const originalHashHex = await sha256Hex(basePdfBytes);
@@ -563,12 +595,17 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
           console.error("post-sign notifications failed", e);
         }
 
+        const { data: previewUrl } = await supabaseAdmin.storage
+          .from("signed-documents")
+          .createSignedUrl(path, 120);
+
         return json({
           ok: true,
           signature_id: sig.id,
           hash: signedHashHex,
           original_hash: originalHashHex,
           signature_level: signatureLevel,
+          pdfUrl: previewUrl?.signedUrl ?? null,
         });
       },
     },

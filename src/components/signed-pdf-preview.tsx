@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Eye, Loader2 } from "lucide-react";
 import { getSignedPdfUrl } from "@/lib/sharing.functions";
 import { toast } from "sonner";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
 
 export function SignedPdfPreview({
   path,
@@ -72,11 +73,7 @@ export function SignedPdfPreview({
                 Chargement…
               </div>
             ) : (
-              <iframe
-                title="PDF signé"
-                src={`${url}#toolbar=1`}
-                className="h-full w-full rounded-md"
-              />
+              <PdfJsViewer url={url} className="h-full w-full rounded-md border-0" />
             )}
           </div>
           <div className="flex justify-end">

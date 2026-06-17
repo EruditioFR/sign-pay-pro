@@ -92,8 +92,8 @@ function PublicSignRequestPage() {
   const [loading, setLoading] = useState(true);
   const [done, setDone] = useState<"signed" | "declined" | null>(null);
 
-  const refresh = () => {
-    setLoading(true);
+  const refresh = (showLoader = true) => {
+    if (showLoader) setLoading(true);
     fetch(`/api/public/sign-request/${token}`)
       .then(async (r) => {
         if (!r.ok) throw new Error("invalid");
@@ -101,7 +101,9 @@ function PublicSignRequestPage() {
       })
       .then(setData)
       .catch(() => setError("invalid"))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (showLoader) setLoading(false);
+      });
   };
 
   useEffect(refresh, [token]);
@@ -207,9 +209,10 @@ function PublicSignRequestPage() {
             consentText={data.conformity?.consent_text}
             signatureLevel={data.conformity?.signature_level ?? "ses"}
             recipientFields={data.recipient_fields ?? []}
-            onSigned={() => {
+            onSigned={(pdfUrl) => {
               setDone("signed");
-              refresh();
+              if (pdfUrl) setData((current) => (current ? { ...current, pdfUrl } : current));
+              refresh(false);
             }}
             onDeclined={() => {
               setDone("declined");
@@ -267,7 +270,7 @@ function SignWithPlacement({
   consentText?: string;
   signatureLevel: "ses" | "aes" | "qes";
   recipientFields: RecipientField[];
-  onSigned: () => void;
+  onSigned: (pdfUrl?: string | null) => void;
   onDeclined: () => void;
 }) {
   const [consentAccepted, setConsentAccepted] = useState(false);
@@ -450,7 +453,8 @@ function SignWithPlacement({
         const j = await res.json().catch(() => ({}));
         throw new Error(j.message ?? j.error ?? "Échec");
       }
-      onSigned();
+      const result = await res.json().catch(() => ({}));
+      onSigned(typeof result.pdfUrl === "string" ? result.pdfUrl : null);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
