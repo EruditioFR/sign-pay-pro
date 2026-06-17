@@ -103,7 +103,7 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
     const { data: doc, error: docErr } = await supabase
       .from("documents")
       .select(
-        "id, organization_id, type, reference, title, document_number, invoice_number, third_party_name, third_party_email, amount_ht, amount_ttc, currency, issue_date, due_date",
+        "id, organization_id, type, reference, title, document_number, invoice_number, third_party_name, third_party_email, amount_ht, amount_ttc, currency, issue_date, due_date, status",
       )
       .eq("id", data.documentId)
       .maybeSingle();
