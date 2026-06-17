@@ -54,6 +54,7 @@ type Field = {
   value: string | null;
   font_size: number;
   required: boolean;
+  recipient_fillable: boolean;
   label: string | null;
   position: number;
 };
