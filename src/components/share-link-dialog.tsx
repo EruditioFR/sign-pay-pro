@@ -192,6 +192,30 @@ export function ShareLinkDialog({
             <Label>{t("sharing.allow_pay")}</Label>
             <Switch checked={allowPay} onCheckedChange={setAllowPay} />
           </div>
+          {allowPay && (
+            <div className="grid grid-cols-3 gap-2 rounded border p-2">
+              <div className="col-span-2 space-y-1">
+                <Label>Montant à payer</Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  placeholder="ex. 150.00"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Devise</Label>
+                <Input
+                  maxLength={3}
+                  value={payCurrency}
+                  onChange={(e) => setPayCurrency(e.target.value.toUpperCase())}
+                />
+              </div>
+            </div>
+          )}
           <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full">
             {create.isPending ? t("common.loading") : t("sharing.create_link")}
           </Button>
