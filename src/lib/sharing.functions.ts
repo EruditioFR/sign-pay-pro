@@ -50,6 +50,18 @@ export const createShareLink = createServerFn({ method: "POST" })
       );
     }
 
+    // Si l'expéditeur a défini un montant à payer au moment de l'envoi,
+    // on met à jour le document avant de figer le PDF / d'envoyer le mail.
+    if (data.allow_pay && data.payment_amount && data.payment_amount > 0) {
+      const updates: Record<string, unknown> = { amount_ttc: data.payment_amount };
+      if (data.payment_currency) updates.currency = data.payment_currency.toUpperCase();
+      const { error: updErr } = await supabase
+        .from("documents")
+        .update(updates)
+        .eq("id", data.document_id);
+      if (updErr) throw new Error(`Mise à jour du montant impossible : ${updErr.message}`);
+    }
+
     // Garantit qu'un PDF final figé existe avant tout envoi avec destinataire.
     if (data.recipient_email) {
       const { assertFinalPdfReady } = await import("@/lib/document-pdf-attachment.server");
