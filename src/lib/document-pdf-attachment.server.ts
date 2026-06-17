@@ -6,8 +6,26 @@
  * PDF alongside the action link.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { buildDocumentPdf } from "@/lib/pdf.functions";
 import type { EmailAttachment } from "@/lib/email-sender";
+
+/**
+ * Vérifie qu'un PDF final (post-validation, avec les champs insérés) existe
+ * pour ce document. Utilisé pour bloquer l'envoi de mails de signature /
+ * paiement tant que le document n'a pas été figé.
+ */
+export async function assertFinalPdfReady(documentId: string): Promise<void> {
+  const { data: currentFile } = await supabaseAdmin
+    .from("document_files")
+    .select("storage_path")
+    .eq("document_id", documentId)
+    .eq("is_current", true)
+    .maybeSingle();
+  if (!currentFile?.storage_path) {
+    throw new Error(
+      "Envoi impossible : le PDF final n'a pas encore été généré. Validez d'abord le document (placement des champs / signatures) avant de l'envoyer.",
+    );
+  }
+}
 
 function bytesToBase64(bytes: Uint8Array): string {
   // Chunked to avoid call-stack limits on large PDFs.
