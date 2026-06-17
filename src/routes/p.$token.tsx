@@ -32,6 +32,11 @@ interface ShareData {
   allow_pay: boolean;
   recipient_name: string | null;
   recipient_email: string | null;
+  payment?: {
+    is_fully_paid: boolean;
+    paid_at: string | null;
+    status: string;
+  };
 }
 
 function PublicSharePage() {
