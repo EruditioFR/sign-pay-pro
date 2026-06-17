@@ -747,6 +747,26 @@ function PdfEditorPage() {
                   </Button>
                 )}
 
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+                  <label className="flex items-start gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5"
+                      checked={selected.recipient_fillable}
+                      onChange={(e) =>
+                        updateField(selected.tempId, { recipient_fillable: e.target.checked })
+                      }
+                    />
+                    <span>
+                      <span className="font-medium">À remplir par le destinataire</span>
+                      <span className="block text-[10px] text-muted-foreground">
+                        Cette zone ne sera pas figée dans le PDF final ; le destinataire devra la
+                        remplir lors de la signature (obligatoire).
+                      </span>
+                    </span>
+                  </label>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                   <span>x: {Math.round(selected.x)}pt</span>
                   <span>y: {Math.round(selected.y)}pt</span>
