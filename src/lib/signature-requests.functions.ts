@@ -38,6 +38,16 @@ export const createSignatureRequests = createServerFn({ method: "POST" })
       );
     }
 
+    if (docState.status === "draft") {
+      throw new Error(
+        "Demande de signature impossible : veuillez d'abord valider le document (placement des champs / signatures) afin de générer le PDF final.",
+      );
+    }
+
+    // Garantit qu'un PDF final figé existe avant d'envoyer les invitations.
+    const { assertFinalPdfReady } = await import("@/lib/document-pdf-attachment.server");
+    await assertFinalPdfReady(data.document_id);
+
     const expiresAt = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
     const rows = data.signers.map((s) => ({
       document_id: data.document_id,
