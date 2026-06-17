@@ -330,6 +330,10 @@ export const signDocumentInternal = createServerFn({ method: "POST" })
       .maybeSingle();
     if (docErr) throw new Error(docErr.message);
     if (!doc) throw new Error("Document introuvable");
+    // Les factures ne peuvent pas être signées — elles se règlent uniquement.
+    if (doc.type === "invoice") {
+      throw new Error("Une facture ne se signe pas : utilisez la demande de paiement.");
+    }
 
     const { data: org } = await supabaseAdmin
       .from("organizations")
