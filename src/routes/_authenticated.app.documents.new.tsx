@@ -150,10 +150,13 @@ function NewDocumentPage() {
                   </div>
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {items.map((tpl) => (
-                      <Link
+                      <button
                         key={tpl.id}
-                        to="/app/pdf-templates"
-                        className="group block rounded-lg border border-border bg-card p-3 transition hover:border-primary hover:shadow-sm"
+                        type="button"
+                        onClick={() => createFromTpl.mutate({ id: tpl.id, name: tpl.name })}
+                        disabled={createFromTpl.isPending}
+                        className="group block w-full text-left rounded-lg border border-border bg-card p-3 transition hover:border-primary hover:shadow-sm disabled:opacity-60"
+                        title="Créer un nouveau document à partir de ce modèle"
                       >
                         <div className="flex items-start gap-2">
                           <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
@@ -168,7 +171,7 @@ function NewDocumentPage() {
                             </div>
                           </div>
                         </div>
-                      </Link>
+                      </button>
                     ))}
                   </div>
                 </div>
