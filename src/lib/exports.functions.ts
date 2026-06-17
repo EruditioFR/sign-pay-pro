@@ -169,11 +169,27 @@ export const getDocumentActivity = createServerFn({ method: "POST" })
     const resource = `document:${data.documentId}`;
     const { data: logs, error: lErr } = await supabase
       .from("audit_logs")
-      .select("id,created_at,action,user_id,metadata,profiles:user_id(email,full_name)")
+      .select("id,created_at,action,user_id,metadata")
       .eq("resource", resource)
       .order("created_at", { ascending: true })
       .limit(2000);
     if (lErr) throw new Error(lErr.message);
+
+    // No FK between audit_logs.user_id and profiles.id, so resolve profiles
+    // separately and join in memory.
+    const userIds = Array.from(
+      new Set((logs ?? []).map((l) => l.user_id).filter((id): id is string => !!id)),
+    );
+    const profileMap = new Map<string, { email: string | null; full_name: string | null }>();
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id,email,full_name")
+        .in("id", userIds);
+      for (const p of profs ?? []) {
+        profileMap.set(p.id, { email: p.email ?? null, full_name: p.full_name ?? null });
+      }
+    }
 
     return {
       document: {
@@ -192,7 +208,7 @@ export const getDocumentActivity = createServerFn({ method: "POST" })
         organization_name: (doc as { organizations?: { name?: string } }).organizations?.name ?? null,
       },
       events: (logs ?? []).map((l) => {
-        const p = (l as { profiles?: { email?: string; full_name?: string } }).profiles;
+        const p = l.user_id ? profileMap.get(l.user_id) : undefined;
         return {
           id: l.id,
           created_at: l.created_at,
