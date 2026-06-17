@@ -160,6 +160,7 @@ export async function notifyDocumentSigned(
     }
     const loaded = await loadDoc(admin, opts.documentId);
     if (!loaded?.creator?.email) return { sent: false, reason: "no_creator_email" };
+    const creatorEmail = loaded.creator.email;
     const { doc, org, creator } = loaded;
     const url = opts.origin ? `${opts.origin}/app/documents/${doc.id}` : null;
     const html = renderSignatureCompletedEmail({
