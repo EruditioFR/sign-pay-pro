@@ -70,10 +70,15 @@ export function ShareLinkDialog({ documentId, triggerLabel }: { documentId: stri
         window.open(waUrl, "_blank", "noopener");
         toast.success(t("sharing.whatsapp_opened"));
       } else {
-        const subject = encodeURIComponent(t("sharing.email_subject"));
-        const body = encodeURIComponent(message);
-        window.open(`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`, "_self");
-        toast.success(t("sharing.link_created_copied"));
+        // Email : Resend a déjà envoyé le mail avec le PDF en pièce jointe côté serveur.
+        // On évite d'ouvrir mailto: pour ne pas envoyer un second email depuis la boîte de l'utilisateur.
+        if (res.email_sent) {
+          toast.success(t("sharing.email_sent", { defaultValue: "Email envoyé au destinataire." }));
+        } else if (res.email_error) {
+          toast.error(`Email non envoyé : ${res.email_error}`);
+        } else {
+          toast.success(t("sharing.link_created_copied"));
+        }
       }
       qc.invalidateQueries({ queryKey: ["share_links", documentId] });
       qc.invalidateQueries({ queryKey: ["document", documentId] });

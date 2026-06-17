@@ -13,6 +13,7 @@ import {
   emptySignersPaymentValue,
   type SignersPaymentValue,
 } from "@/components/documents/SignersPaymentFields";
+import { ShareLinkDialog } from "@/components/share-link-dialog";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id/configure")({
   component: ConfigureDocumentPage,
@@ -102,6 +103,7 @@ function ConfigureDocumentPage() {
                 >
                   <SkipForward className="mr-1 h-4 w-4" /> Ignorer
                 </Button>
+                <ShareLinkDialog documentId={doc.id} triggerLabel="Envoyer par email maintenant" />
                 <Button
                   onClick={() => sendMut.mutate()}
                   disabled={sendMut.isPending}

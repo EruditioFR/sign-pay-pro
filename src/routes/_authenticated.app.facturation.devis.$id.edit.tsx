@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Save, ArrowRightLeft, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { updateDocument } from "@/lib/documents.functions";
 import {
@@ -180,10 +180,17 @@ function EditQuotePage() {
         onChange={setDoc}
         readOnly={!isDraft}
         footer={
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             {isDraft && (
               <Button variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>
                 <Save className="mr-1 h-4 w-4" /> Enregistrer
+              </Button>
+            )}
+            {(status === "draft" || status === "issued" || status === "sent" || status === "viewed") && (
+              <Button asChild variant="outline">
+                <Link to="/app/documents/$id" params={{ id }}>
+                  <PenLine className="mr-1 h-4 w-4" /> Signer ce devis
+                </Link>
               </Button>
             )}
             {(status === "draft" || status === "issued") && (

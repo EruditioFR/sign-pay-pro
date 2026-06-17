@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { createDocument, type DocumentType } from "@/lib/documents.functions";
-import { listPdfTemplates } from "@/lib/pdf-templates.functions";
+import { listPdfTemplates, createDocumentFromPdfTemplate } from "@/lib/pdf-templates.functions";
 import {
   SignersPaymentFields,
   emptySignersPaymentValue,
@@ -34,9 +34,28 @@ function NewDocumentPage() {
   const [showManual, setShowManual] = useState(false);
 
   const listFn = useServerFn(listPdfTemplates);
+  const createFromTplFn = useServerFn(createDocumentFromPdfTemplate);
   const tplQ = useQuery({
     queryKey: ["pdf-templates"],
     queryFn: () => listFn(),
+  });
+
+  const createFromTpl = useMutation({
+    mutationFn: (tpl: { id: string; name: string }) =>
+      createFromTplFn({
+        data: {
+          templateId: tpl.id,
+          title: tpl.name,
+          reference: null,
+          third_party_name: null,
+          third_party_email: null,
+        },
+      }),
+    onSuccess: ({ document }) => {
+      toast.success("Document créé depuis le modèle");
+      navigate({ to: "/app/documents/$id", params: { id: document.id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const templates = tplQ.data?.templates ?? [];
@@ -131,10 +150,13 @@ function NewDocumentPage() {
                   </div>
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {items.map((tpl) => (
-                      <Link
+                      <button
                         key={tpl.id}
-                        to="/app/pdf-templates"
-                        className="group block rounded-lg border border-border bg-card p-3 transition hover:border-primary hover:shadow-sm"
+                        type="button"
+                        onClick={() => createFromTpl.mutate({ id: tpl.id, name: tpl.name })}
+                        disabled={createFromTpl.isPending}
+                        className="group block w-full text-left rounded-lg border border-border bg-card p-3 transition hover:border-primary hover:shadow-sm disabled:opacity-60"
+                        title="Créer un nouveau document à partir de ce modèle"
                       >
                         <div className="flex items-start gap-2">
                           <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
@@ -149,7 +171,7 @@ function NewDocumentPage() {
                             </div>
                           </div>
                         </div>
-                      </Link>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -281,14 +303,17 @@ function ManualDocumentForm() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="type">{t("documents.field.type")}</Label>
-            <Select name="type" defaultValue="quote">
+            <Select name="type" defaultValue="contract">
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(["purchase_order", "contract", "other"] as DocumentType[]).map((tp) => (
+                {(["contract", "purchase_order", "other"] as DocumentType[]).map((tp) => (
                   <SelectItem key={tp} value={tp}>{t(`documents.types.${tp}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Pour un devis ou une facture, utilisez plutôt la section Facturation.
+            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="reference">{t("documents.field.reference")}</Label>
