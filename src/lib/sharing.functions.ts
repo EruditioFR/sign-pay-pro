@@ -42,6 +42,11 @@ export const createShareLink = createServerFn({ method: "POST" })
         `Partage impossible : document au statut « ${docState.status} » (lecture seule).`,
       );
     }
+    if (docState.status === "draft") {
+      throw new Error(
+        "Partage impossible : veuillez d'abord valider le document (après avoir placé les zones de texte/signature).",
+      );
+    }
 
     const expiresAt = new Date(Date.now() + data.expires_in_days * 86_400_000).toISOString();
 
