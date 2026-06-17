@@ -289,6 +289,17 @@ export const flattenPdfWithFields = createServerFn({ method: "POST" })
       .eq("document_id", doc.id)
       .eq("recipient_fillable", false);
 
+    // Génération du PDF final = validation du document : on sort du statut
+    // "draft" pour permettre l'envoi au destinataire (email / WhatsApp).
+    if (doc.status === "draft") {
+      await supabase
+        .from("documents")
+        .update({ status: "validated" })
+        .eq("id", doc.id)
+        .eq("status", "draft");
+    }
+
+
     await supabase.from("audit_logs").insert({
       organization_id: doc.organization_id,
       user_id: userId,
