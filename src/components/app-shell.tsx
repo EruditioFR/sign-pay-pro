@@ -137,7 +137,7 @@ function navGroupsForRole(role: AppRole, email: string | null | undefined, t: (k
           title: t("nav_group.overview"),
           items: [
             { to: "/app", label: t("nav.dashboard"), icon: Home },
-            { toonMounted: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
+            { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
           ],
         },
         {
@@ -283,7 +283,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const approvalsCount = approvals?.steps.length ?? 0;
   const pendingInvoicesCount = pendingInvoices?.count ?? 0;
 
-  const groups = me ? navGroupsForRole(me.primaryRole, t) : [];
+  const groups = me ? navGroupsForRole(me.primaryRole, me.email, t) : [];
 
 
   const onLogout = async () => {
