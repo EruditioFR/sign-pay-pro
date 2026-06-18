@@ -382,7 +382,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
         document_type: data.document_type as DocumentType,
         theme: themeTrim ? themeTrim : null,
         storage_path: storagePath,
-        file_name: data.file.name,
+        file_name: storedFileName,
         page_count: pageCount,
         size_bytes: bytes.byteLength,
         created_by: userId,
@@ -398,7 +398,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
         template_id: template.id,
         version: 1,
         storage_path: storagePath,
-        file_name: data.file.name,
+        file_name: storedFileName,
         page_count: pageCount,
         size_bytes: bytes.byteLength,
         is_current: true,
@@ -418,7 +418,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       user_id: userId,
       action: "pdf_template.uploaded",
       resource: `pdf_template:${template.id}`,
-      metadata: { version_id: version.id, file_name: data.file.name, pages: pageCount },
+      metadata: { version_id: version.id, file_name: storedFileName, pages: pageCount },
     });
 
     return { template: { ...template, current_version_id: version.id }, version };
