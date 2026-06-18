@@ -18,7 +18,9 @@ import { toast } from "sonner";
 import {
   createPdfTemplateFromUpload,
   createDocumentFromPdfTemplate,
+  listPdfTemplates,
 } from "@/lib/pdf-templates.functions";
+import { useQuery } from "@tanstack/react-query";
 
 interface Props {
   trigger?: ReactNode;
@@ -41,7 +43,22 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [documentType, setDocumentType] = useState("other");
+  const [theme, setTheme] = useState("");
   const [file, setFile] = useState<File | null>(null);
+
+  const listFn = useServerFn(listPdfTemplates);
+  const existingQ = useQuery({
+    queryKey: ["pdf-templates"],
+    queryFn: () => listFn(),
+    enabled: open,
+  });
+  const existingThemes = Array.from(
+    new Set(
+      (existingQ.data?.templates ?? [])
+        .map((t) => (t as { theme?: string | null }).theme?.trim())
+        .filter((v): v is string => Boolean(v && v.length > 0)),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -51,6 +68,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       fd.append("name", name.trim());
       fd.append("description", description.trim());
       fd.append("document_type", documentType);
+      fd.append("theme", theme.trim());
       const res = await createFn({ data: fd });
       const templateId = (res as { template?: { id?: string } })?.template?.id ?? null;
       if (openEditorAfterImport && templateId) {
@@ -72,6 +90,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       setName("");
       setDescription("");
       setDocumentType("other");
+      setTheme("");
       setFile(null);
       if (documentId) {
         toast.success("PDF importé — placez vos zones à saisir / signer");
@@ -145,6 +164,27 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="pdf-template-theme">Thématique (optionnel)</Label>
+                <Input
+                  id="pdf-template-theme"
+                  list="pdf-template-theme-list"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  placeholder="Ex : RH, Ventes, Juridique…"
+                  disabled={mut.isPending}
+                />
+                {existingThemes.length > 0 && (
+                  <datalist id="pdf-template-theme-list">
+                    {existingThemes.map((th) => (
+                      <option key={th} value={th} />
+                    ))}
+                  </datalist>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Permet de regrouper vos modèles par thème sur la page de liste.
+                </p>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="pdf-template-description">Description (optionnel)</Label>

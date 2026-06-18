@@ -29,6 +29,7 @@ const CreateFromUploadSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
   document_type: z.enum(DOC_TYPES).default("other"),
+  theme: z.string().max(100).optional().nullable(),
 });
 
 async function uploadPdfCopy(
@@ -221,6 +222,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       name: input.get("name"),
       description: input.get("description") || null,
       document_type: input.get("document_type") || "other",
+      theme: input.get("theme") || null,
     });
     return parsed;
   })
@@ -252,6 +254,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       .upload(storagePath, bytes, { contentType: "application/pdf", upsert: false });
     if (upErr) throw new Error(upErr.message);
 
+    const themeTrim = (data.theme ?? "").trim();
     const { data: template, error: tplErr } = await supabase
       .from("pdf_templates")
       .insert({
@@ -259,6 +262,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
         name: data.name,
         description: data.description ?? null,
         document_type: data.document_type as DocumentType,
+        theme: themeTrim ? themeTrim : null,
         storage_path: storagePath,
         file_name: data.file.name,
         page_count: pageCount,
@@ -268,6 +272,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       .select()
       .single();
     if (tplErr) throw new Error(tplErr.message);
+
 
     const { data: version, error: vErr } = await supabase
       .from("pdf_template_versions")
@@ -308,7 +313,7 @@ export const listPdfTemplates = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("pdf_templates")
       .select(
-        "id, name, description, document_type, page_count, created_at, created_by, current_version_id",
+        "id, name, description, document_type, theme, page_count, created_at, created_by, current_version_id",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
