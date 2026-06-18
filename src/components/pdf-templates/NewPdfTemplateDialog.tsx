@@ -62,7 +62,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
 
   const mut = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error("Sélectionnez un PDF");
+      if (!file) throw new Error("Sélectionnez un document");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("name", name.trim());
@@ -75,7 +75,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
         const inst = await instantiateFn({
           data: {
             templateId,
-            title: name.trim() || file.name.replace(/\.pdf$/i, ""),
+            title: name.trim() || file.name.replace(/\.(pdf|docx)$/i, ""),
           },
         });
         const documentId = inst.document.id as string;
@@ -83,6 +83,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       }
       return { templateId, documentId: null as string | null };
     },
+
     onSuccess: ({ templateId, documentId }) => {
       qc.invalidateQueries({ queryKey: ["pdf-templates"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
