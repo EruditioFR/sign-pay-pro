@@ -158,11 +158,6 @@ function UseTemplateDialog({
   templateId: string;
   templateName: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [reference, setReference] = useState("");
-  const [thirdPartyName, setThirdPartyName] = useState("");
-  const [thirdPartyEmail, setThirdPartyEmail] = useState("");
   const navigate = useNavigate();
   const createFn = useServerFn(createDocumentFromPdfTemplate);
 
@@ -171,65 +166,31 @@ function UseTemplateDialog({
       createFn({
         data: {
           templateId,
-          title: title || templateName,
-          reference: reference || null,
-          third_party_name: thirdPartyName || null,
-          third_party_email: thirdPartyEmail || null,
+          title: templateName,
+          reference: null,
+          third_party_name: null,
+          third_party_email: null,
         },
       }),
     onSuccess: ({ document }) => {
       toast.success("Document créé depuis le modèle");
-      setOpen(false);
       navigate({ to: "/app/documents/$id/editor", params: { id: document.id } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Wand2 className="mr-1 h-4 w-4" /> Utiliser
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nouveau document depuis « {templateName} »</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="t-title">Titre</Label>
-            <Input
-              id="t-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={templateName}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="t-ref">Référence</Label>
-            <Input id="t-ref" value={reference} onChange={(e) => setReference(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="t-tpn">Destinataire</Label>
-            <Input id="t-tpn" value={thirdPartyName} onChange={(e) => setThirdPartyName(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="t-tpe">Email destinataire</Label>
-            <Input id="t-tpe" type="email" value={thirdPartyEmail} onChange={(e) => setThirdPartyEmail(e.target.value)} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-          <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
-            {mut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Créer le document
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Button size="sm" onClick={() => mut.mutate()} disabled={mut.isPending}>
+      {mut.isPending ? (
+        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+      ) : (
+        <Wand2 className="mr-1 h-4 w-4" />
+      )}
+      Utiliser
+    </Button>
   );
 }
+
 
 function VersionHistoryDialog({
   templateId,
