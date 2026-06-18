@@ -180,7 +180,7 @@ function UseTemplateDialog({
     onSuccess: ({ document }) => {
       toast.success("Document créé depuis le modèle");
       setOpen(false);
-      navigate({ to: "/app/documents/$id", params: { id: document.id } });
+      navigate({ to: "/app/documents/$id/editor", params: { id: document.id } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
