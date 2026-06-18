@@ -166,6 +166,27 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
                 </Select>
               </div>
               <div className="grid gap-1.5">
+                <Label htmlFor="pdf-template-theme">Thématique (optionnel)</Label>
+                <Input
+                  id="pdf-template-theme"
+                  list="pdf-template-theme-list"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  placeholder="Ex : RH, Ventes, Juridique…"
+                  disabled={mut.isPending}
+                />
+                {existingThemes.length > 0 && (
+                  <datalist id="pdf-template-theme-list">
+                    {existingThemes.map((th) => (
+                      <option key={th} value={th} />
+                    ))}
+                  </datalist>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Permet de regrouper vos modèles par thème sur la page de liste.
+                </p>
+              </div>
+              <div className="grid gap-1.5">
                 <Label htmlFor="pdf-template-description">Description (optionnel)</Label>
                 <Textarea
                   id="pdf-template-description"
