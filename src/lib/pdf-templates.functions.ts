@@ -222,6 +222,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       name: input.get("name"),
       description: input.get("description") || null,
       document_type: input.get("document_type") || "other",
+      theme: input.get("theme") || null,
     });
     return parsed;
   })
@@ -253,6 +254,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       .upload(storagePath, bytes, { contentType: "application/pdf", upsert: false });
     if (upErr) throw new Error(upErr.message);
 
+    const themeTrim = (data.theme ?? "").trim();
     const { data: template, error: tplErr } = await supabase
       .from("pdf_templates")
       .insert({
@@ -260,6 +262,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
         name: data.name,
         description: data.description ?? null,
         document_type: data.document_type as DocumentType,
+        theme: themeTrim ? themeTrim : null,
         storage_path: storagePath,
         file_name: data.file.name,
         page_count: pageCount,
@@ -269,6 +272,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       .select()
       .single();
     if (tplErr) throw new Error(tplErr.message);
+
 
     const { data: version, error: vErr } = await supabase
       .from("pdf_template_versions")
