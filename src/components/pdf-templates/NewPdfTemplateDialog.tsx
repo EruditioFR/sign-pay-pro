@@ -90,6 +90,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       setName("");
       setDescription("");
       setDocumentType("other");
+      setTheme("");
       setFile(null);
       if (documentId) {
         toast.success("PDF importé — placez vos zones à saisir / signer");
