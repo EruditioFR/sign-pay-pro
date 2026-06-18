@@ -29,6 +29,7 @@ const CreateFromUploadSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
   document_type: z.enum(DOC_TYPES).default("other"),
+  theme: z.string().max(100).optional().nullable(),
 });
 
 async function uploadPdfCopy(
