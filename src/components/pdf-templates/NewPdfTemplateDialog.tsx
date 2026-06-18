@@ -43,7 +43,22 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [documentType, setDocumentType] = useState("other");
+  const [theme, setTheme] = useState("");
   const [file, setFile] = useState<File | null>(null);
+
+  const listFn = useServerFn(listPdfTemplates);
+  const existingQ = useQuery({
+    queryKey: ["pdf-templates"],
+    queryFn: () => listFn(),
+    enabled: open,
+  });
+  const existingThemes = Array.from(
+    new Set(
+      (existingQ.data?.templates ?? [])
+        .map((t) => (t as { theme?: string | null }).theme?.trim())
+        .filter((v): v is string => Boolean(v && v.length > 0)),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -53,6 +68,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       fd.append("name", name.trim());
       fd.append("description", description.trim());
       fd.append("document_type", documentType);
+      fd.append("theme", theme.trim());
       const res = await createFn({ data: fd });
       const templateId = (res as { template?: { id?: string } })?.template?.id ?? null;
       if (openEditorAfterImport && templateId) {
