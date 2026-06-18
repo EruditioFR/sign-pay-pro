@@ -30,7 +30,7 @@ export async function sendResendEmail(params: SendEmailParams) {
       "X-Connection-Api-Key": RESEND_API_KEY,
     },
     body: JSON.stringify({
-      from: params.from ?? "Notifications <onboarding@resend.dev>",
+      from: params.from ?? "Les Formations Digitales <noreply@lesformationsdigitales.fr>",
       to: Array.isArray(params.to) ? params.to : [params.to],
       subject: params.subject,
       html: params.html,
