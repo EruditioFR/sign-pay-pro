@@ -98,7 +98,7 @@ function NewDocumentPage() {
             <button type="button" className="text-left">
               <StartOptionCard
                 icon={<FileUp className="h-5 w-5" />}
-                title="Importer un PDF / CERFA"
+                title="Importer un document"
                 description="Uploadez votre formulaire puis placez les zones à saisir & signer."
                 cta="Importer un fichier"
               />
