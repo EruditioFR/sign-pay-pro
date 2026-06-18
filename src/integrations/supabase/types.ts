@@ -1496,6 +1496,7 @@ export type Database = {
           page_count: number
           size_bytes: number | null
           storage_path: string
+          theme: string | null
           updated_at: string
         }
         Insert: {
@@ -1511,6 +1512,7 @@ export type Database = {
           page_count?: number
           size_bytes?: number | null
           storage_path: string
+          theme?: string | null
           updated_at?: string
         }
         Update: {
@@ -1526,6 +1528,7 @@ export type Database = {
           page_count?: number
           size_bytes?: number | null
           storage_path?: string
+          theme?: string | null
           updated_at?: string
         }
         Relationships: [
