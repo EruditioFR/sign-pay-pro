@@ -35,7 +35,7 @@ export function QuickStartActions() {
             <button type="button" className="block w-full text-left">
               <ActionCard
                 icon={<FileUp className="h-5 w-5" />}
-                title="Importer un PDF / CERFA"
+                title="Importer un document"
                 description="Uploadez votre formulaire puis placez les zones à saisir & signer."
                 cta="Importer un fichier"
               />
