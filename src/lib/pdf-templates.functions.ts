@@ -324,7 +324,14 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    if (data.file.type !== "application/pdf") throw new Error("Fichier PDF attendu");
+    const isPdf = data.file.type === "application/pdf" || /\.pdf$/i.test(data.file.name);
+    const isDocx =
+      data.file.type === DOCX_MIME || /\.docx$/i.test(data.file.name);
+    if (!isPdf && !isDocx) {
+      throw new Error(
+        "Format non supporté. Importez un PDF ou un document Word (.docx). Pour .doc ou .pages, convertissez-le d'abord en PDF.",
+      );
+    }
     if (data.file.size > 25 * 1024 * 1024) throw new Error("Fichier trop volumineux (25 Mo max)");
 
     const { data: me } = await supabase
@@ -334,7 +341,22 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!me?.organization_id) throw new Error("Organisation introuvable");
 
-    const bytes = new Uint8Array(await data.file.arrayBuffer());
+    const sourceBytes = new Uint8Array(await data.file.arrayBuffer());
+    let bytes: Uint8Array;
+    let storedFileName = data.file.name;
+    if (isPdf) {
+      bytes = sourceBytes;
+    } else {
+      try {
+        bytes = await docxBufferToPdf(sourceBytes);
+      } catch (err) {
+        throw new Error(
+          "Conversion .docx échouée : " + (err instanceof Error ? err.message : "erreur inconnue"),
+        );
+      }
+      storedFileName = data.file.name.replace(/\.docx$/i, "") + ".pdf";
+    }
+
     let pageCount = 1;
     try {
       const pdf = await PDFDocument.load(bytes);
@@ -342,6 +364,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
     } catch {
       throw new Error("PDF illisible");
     }
+
 
     const storagePath = `${me.organization_id}/templates/${Date.now()}-${crypto.randomUUID()}.pdf`;
     const { error: upErr } = await supabase.storage
