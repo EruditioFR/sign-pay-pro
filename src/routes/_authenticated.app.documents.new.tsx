@@ -74,7 +74,7 @@ function NewDocumentPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">{t("documents.new")}</h1>
+        <h1 className="text-2xl font-semibold">{t("documents.new")} - Signature électronique</h1>
         <p className="text-sm text-muted-foreground">
           Choisissez comment démarrer votre document.
         </p>
@@ -99,7 +99,7 @@ function NewDocumentPage() {
               <StartOptionCard
                 icon={<FileUp className="h-5 w-5" />}
                 title="Importer un document"
-                description="Uploadez votre formulaire puis placez les zones à saisir & signer."
+                description="Uploadez votre document, puis placez les zones à saisir & signer."
                 cta="Importer un fichier"
               />
             </button>
