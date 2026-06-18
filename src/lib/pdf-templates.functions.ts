@@ -1,8 +1,103 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Database } from "@/integrations/supabase/types";
+
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+/**
+ * Convert a .docx buffer to a basic PDF using mammoth (text extraction)
+ * and pdf-lib (rendering). Layout is simplified — paragraphs only.
+ */
+async function docxBufferToPdf(bytes: Uint8Array): Promise<Uint8Array> {
+  const mammoth = await import("mammoth");
+  // mammoth expects a Node-style Buffer-like { arrayBuffer } object
+  const { value: rawText } = await mammoth.extractRawText({
+    arrayBuffer: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+  });
+
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const fontSize = 11;
+  const lineHeight = fontSize * 1.4;
+  const pageWidth = 595.28; // A4
+  const pageHeight = 841.89;
+  const margin = 56; // ~2cm
+  const maxWidth = pageWidth - margin * 2;
+
+  // Sanitize text: strip chars unsupported by WinAnsi (Helvetica) — replace smart quotes etc.
+  const normalize = (s: string) =>
+    s
+      .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+      .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+      .replace(/[\u2013\u2014]/g, "-")
+      .replace(/\u2026/g, "...")
+      .replace(/\u00A0/g, " ")
+      // Drop anything outside basic Latin-1 the font can render safely
+      .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+
+  const wrapLine = (line: string): string[] => {
+    const words = line.split(/\s+/);
+    const out: string[] = [];
+    let current = "";
+    for (const w of words) {
+      const tentative = current ? current + " " + w : w;
+      const width = font.widthOfTextAtSize(tentative, fontSize);
+      if (width <= maxWidth) {
+        current = tentative;
+      } else {
+        if (current) out.push(current);
+        // Word longer than line: hard-break by character
+        if (font.widthOfTextAtSize(w, fontSize) > maxWidth) {
+          let chunk = "";
+          for (const ch of w) {
+            const next = chunk + ch;
+            if (font.widthOfTextAtSize(next, fontSize) > maxWidth) {
+              out.push(chunk);
+              chunk = ch;
+            } else {
+              chunk = next;
+            }
+          }
+          current = chunk;
+        } else {
+          current = w;
+        }
+      }
+    }
+    if (current) out.push(current);
+    return out.length === 0 ? [""] : out;
+  };
+
+  const paragraphs = normalize(rawText).split(/\r?\n/);
+  const lines: string[] = [];
+  for (const p of paragraphs) {
+    if (p.trim() === "") {
+      lines.push("");
+    } else {
+      lines.push(...wrapLine(p));
+    }
+  }
+
+  let page = pdf.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+  for (const line of lines) {
+    if (y < margin) {
+      page = pdf.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin;
+    }
+    if (line) {
+      page.drawText(line, { x: margin, y: y - fontSize, size: fontSize, font, color: rgb(0, 0, 0) });
+    }
+    y -= lineHeight;
+  }
+
+  if (pdf.getPageCount() === 0) pdf.addPage([pageWidth, pageHeight]);
+
+  return await pdf.save();
+}
+
 
 type DocumentType = Database["public"]["Enums"]["document_type"];
 
@@ -229,7 +324,14 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    if (data.file.type !== "application/pdf") throw new Error("Fichier PDF attendu");
+    const isPdf = data.file.type === "application/pdf" || /\.pdf$/i.test(data.file.name);
+    const isDocx =
+      data.file.type === DOCX_MIME || /\.docx$/i.test(data.file.name);
+    if (!isPdf && !isDocx) {
+      throw new Error(
+        "Format non supporté. Importez un PDF ou un document Word (.docx). Pour .doc ou .pages, convertissez-le d'abord en PDF.",
+      );
+    }
     if (data.file.size > 25 * 1024 * 1024) throw new Error("Fichier trop volumineux (25 Mo max)");
 
     const { data: me } = await supabase
@@ -239,7 +341,22 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!me?.organization_id) throw new Error("Organisation introuvable");
 
-    const bytes = new Uint8Array(await data.file.arrayBuffer());
+    const sourceBytes = new Uint8Array(await data.file.arrayBuffer());
+    let bytes: Uint8Array;
+    let storedFileName = data.file.name;
+    if (isPdf) {
+      bytes = sourceBytes;
+    } else {
+      try {
+        bytes = await docxBufferToPdf(sourceBytes);
+      } catch (err) {
+        throw new Error(
+          "Conversion .docx échouée : " + (err instanceof Error ? err.message : "erreur inconnue"),
+        );
+      }
+      storedFileName = data.file.name.replace(/\.docx$/i, "") + ".pdf";
+    }
+
     let pageCount = 1;
     try {
       const pdf = await PDFDocument.load(bytes);
@@ -247,6 +364,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
     } catch {
       throw new Error("PDF illisible");
     }
+
 
     const storagePath = `${me.organization_id}/templates/${Date.now()}-${crypto.randomUUID()}.pdf`;
     const { error: upErr } = await supabase.storage
@@ -264,7 +382,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
         document_type: data.document_type as DocumentType,
         theme: themeTrim ? themeTrim : null,
         storage_path: storagePath,
-        file_name: data.file.name,
+        file_name: storedFileName,
         page_count: pageCount,
         size_bytes: bytes.byteLength,
         created_by: userId,
@@ -280,7 +398,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
         template_id: template.id,
         version: 1,
         storage_path: storagePath,
-        file_name: data.file.name,
+        file_name: storedFileName,
         page_count: pageCount,
         size_bytes: bytes.byteLength,
         is_current: true,
@@ -300,7 +418,7 @@ export const createPdfTemplateFromUpload = createServerFn({ method: "POST" })
       user_id: userId,
       action: "pdf_template.uploaded",
       resource: `pdf_template:${template.id}`,
-      metadata: { version_id: version.id, file_name: data.file.name, pages: pageCount },
+      metadata: { version_id: version.id, file_name: storedFileName, pages: pageCount },
     });
 
     return { template: { ...template, current_version_id: version.id }, version };

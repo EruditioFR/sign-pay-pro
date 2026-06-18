@@ -62,7 +62,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
 
   const mut = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error("Sélectionnez un PDF");
+      if (!file) throw new Error("Sélectionnez un document");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("name", name.trim());
@@ -75,7 +75,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
         const inst = await instantiateFn({
           data: {
             templateId,
-            title: name.trim() || file.name.replace(/\.pdf$/i, ""),
+            title: name.trim() || file.name.replace(/\.(pdf|docx)$/i, ""),
           },
         });
         const documentId = inst.document.id as string;
@@ -83,6 +83,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       }
       return { templateId, documentId: null as string | null };
     },
+
     onSuccess: ({ templateId, documentId }) => {
       qc.invalidateQueries({ queryKey: ["pdf-templates"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
@@ -115,33 +116,42 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {openEditorAfterImport ? "Importer un PDF à compléter & signer" : "Importer un modèle PDF"}
+            {openEditorAfterImport ? "Importer un document à compléter & signer" : "Importer un modèle de document"}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
           <section className="rounded-md border border-border p-3">
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="pdf-template-file">PDF source</Label>
+                <Label htmlFor="pdf-template-file">Document source</Label>
                 <Input
                   id="pdf-template-file"
                   type="file"
-                  accept="application/pdf"
+                  accept="application/pdf,.pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={(e) => {
                     const selected = e.target.files?.[0] ?? null;
-                    if (selected && selected.type !== "application/pdf") {
-                      toast.error("Sélectionnez un fichier PDF");
-                      e.target.value = "";
-                      setFile(null);
-                      return;
+                    if (selected) {
+                      const okType =
+                        selected.type === "application/pdf" ||
+                        selected.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+                        /\.(pdf|docx)$/i.test(selected.name);
+                      if (!okType) {
+                        toast.error("Format non supporté. Importez un PDF ou un fichier .docx.");
+                        e.target.value = "";
+                        setFile(null);
+                        return;
+                      }
                     }
                     setFile(selected);
-                    if (selected && !name.trim()) setName(selected.name.replace(/\.pdf$/i, ""));
+                    if (selected && !name.trim()) setName(selected.name.replace(/\.(pdf|docx)$/i, ""));
                   }}
                   disabled={mut.isPending}
                 />
-                <p className="text-xs text-muted-foreground">PDF uniquement, 25 Mo maximum.</p>
+                <p className="text-xs text-muted-foreground">
+                  PDF ou Word (.docx), 25 Mo maximum. Pour un fichier .doc ou .pages, convertissez-le d'abord en PDF.
+                </p>
               </div>
+
               <div className="grid gap-1.5">
                 <Label htmlFor="pdf-template-name">Nom</Label>
                 <Input
@@ -210,7 +220,7 @@ export function NewPdfTemplateDialog({ trigger, onCreated, openEditorAfterImport
           <Button variant="outline" onClick={() => setOpen(false)} disabled={mut.isPending}>Annuler</Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending || !file || !name.trim()}>
             {mut.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            {openEditorAfterImport ? "Importer & placer les zones" : "Importer le PDF"}
+            {openEditorAfterImport ? "Importer & placer les zones" : "Importer le document"}
           </Button>
         </DialogFooter>
       </DialogContent>
