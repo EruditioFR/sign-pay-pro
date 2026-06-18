@@ -74,28 +74,28 @@ function PdfTemplatesPage() {
         </Card>
       ) : (
         (() => {
-          const TYPE_ORDER = ["quote", "invoice", "purchase_order", "contract", "other"] as const;
+          const NO_THEME = "__none__";
           const groups = new Map<string, NonNullable<typeof data>["templates"]>();
           for (const t of data!.templates) {
-            const key = t.document_type || "other";
+            const raw = (t as { theme?: string | null }).theme;
+            const key = raw && raw.trim().length > 0 ? raw.trim() : NO_THEME;
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key)!.push(t);
           }
           const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
-            const ia = TYPE_ORDER.indexOf(a as never);
-            const ib = TYPE_ORDER.indexOf(b as never);
-            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+            if (a === NO_THEME) return 1;
+            if (b === NO_THEME) return -1;
+            return a.localeCompare(b);
           });
           return (
             <div className="space-y-6">
               {sortedKeys.map((key) => {
                 const items = groups.get(key)!;
+                const label = key === NO_THEME ? "Sans thématique" : key;
                 return (
                   <section key={key} className="space-y-3">
                     <div className="flex items-baseline gap-2 border-b border-border pb-1">
-                      <h2 className="text-lg font-semibold">
-                        {tr(`documents.types.${key}`, { defaultValue: key })}
-                      </h2>
+                      <h2 className="text-lg font-semibold">{label}</h2>
                       <span className="text-xs text-muted-foreground">{items.length} modèle(s)</span>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -112,6 +112,9 @@ function PdfTemplatesPage() {
                               <p className="line-clamp-2 text-muted-foreground">{t.description}</p>
                             )}
                             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              <span className="rounded bg-muted px-2 py-0.5">
+                                {tr(`documents.types.${t.document_type}`, { defaultValue: t.document_type })}
+                              </span>
                               <span className="rounded bg-muted px-2 py-0.5">{t.page_count} page(s)</span>
                               <span className="rounded bg-muted px-2 py-0.5">{t.field_count} zone(s)</span>
                               <span className="rounded bg-muted px-2 py-0.5">v{t.version_count}</span>
