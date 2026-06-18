@@ -168,7 +168,17 @@ function navGroupsForRole(role: AppRole, email: string | null | undefined, t: (k
   if (!isPrivileged) {
     const overviewTitle = t("nav_group.overview");
     const documentsTitle = t("nav_group.documents");
-    groups = groups.filter((g) => g.title === overviewTitle || g.title === documentsTitle);
+    groups = groups
+      .filter((g) => g.title === overviewTitle || g.title === documentsTitle)
+      .map((g) => {
+        if (g.title === documentsTitle) {
+          return {
+            ...g,
+            items: g.items.filter((item) => item.label !== "Signatures en attente"),
+          };
+        }
+        return g;
+      });
   }
 
   return groups;
