@@ -54,10 +54,12 @@ interface NavGroup {
   accent?: "facturation";
 }
 
-function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
+function navGroupsForRole(role: AppRole, email: string | null | undefined, t: (k: string) => string): NavGroup[] {
+  const isPrivileged = email === "jbbejot@gmail.com" || email === "jbbejot+client@gmail.com";
+  let groups: NavGroup[];
   switch (role) {
     case "super_admin":
-      return [
+      groups = [
         {
           title: t("nav_group.overview"),
           items: [{ to: "/super-admin", label: t("nav.dashboard"), icon: Home }],
@@ -74,15 +76,17 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
           items: [{ to: "/app/audit", label: "Journal d'audit", icon: ScrollText }],
         },
       ];
+      break;
     case "reseller":
-      return [
+      groups = [
         {
           title: t("nav_group.overview"),
           items: [{ to: "/reseller", label: t("nav.clients"), icon: Store }],
         },
       ];
+      break;
     case "admin_client":
-      return [
+      groups = [
         {
           title: t("nav_group.overview"),
           items: [
@@ -124,15 +128,16 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
           ],
         },
       ];
+      break;
     case "manager":
     case "user":
     default:
-      return [
+      groups = [
         {
           title: t("nav_group.overview"),
           items: [
             { to: "/app", label: t("nav.dashboard"), icon: Home },
-            { to: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
+            { toonMounted: "/app/analytics", label: t("nav_extra.analytics"), icon: TrendingUp },
           ],
         },
         {
@@ -157,7 +162,16 @@ function navGroupsForRole(role: AppRole, t: (k: string) => string): NavGroup[] {
           items: [{ to: "/app/profile", label: t("nav.profile"), icon: UserIcon }],
         },
       ];
+      break;
   }
+
+  if (!isPrivileged) {
+    const overviewTitle = t("nav_group.overview");
+    const documentsTitle = t("nav_group.documents");
+    groups = groups.filter((g) => g.title === overviewTitle || g.title === documentsTitle);
+  }
+
+  return groups;
 }
 
 function NavList({
