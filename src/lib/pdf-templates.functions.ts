@@ -313,7 +313,7 @@ export const listPdfTemplates = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("pdf_templates")
       .select(
-        "id, name, description, document_type, page_count, created_at, created_by, current_version_id",
+        "id, name, description, document_type, theme, page_count, created_at, created_by, current_version_id",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
