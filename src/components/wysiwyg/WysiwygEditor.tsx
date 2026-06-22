@@ -438,14 +438,28 @@ function Inspector({
           </div>
         </>
       ) : (
-        <div className="space-y-1">
-          <Label className="text-xs">Libellé du champ</Label>
-          <Input
-            value={block.content}
-            onChange={(e) => onChange({ content: e.target.value })}
-            autoFocus
-          />
-        </div>
+        <>
+          <div className="space-y-1">
+            <Label className="text-xs">Libellé du champ</Label>
+            <Input
+              value={block.content}
+              onChange={(e) => onChange({ content: e.target.value })}
+              autoFocus
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-2 py-2">
+            <div className="space-y-0.5 pr-2">
+              <Label className="text-xs">Modifiable par l'utilisateur</Label>
+              <p className="text-[10px] leading-tight text-muted-foreground">
+                Le destinataire pourra remplir / signer cette zone.
+              </p>
+            </div>
+            <Switch
+              checked={block.required ?? false}
+              onCheckedChange={(v) => onChange({ required: v })}
+            />
+          </div>
+        </>
       )}
 
       <div className="grid grid-cols-4 gap-1.5 text-[10px]">
