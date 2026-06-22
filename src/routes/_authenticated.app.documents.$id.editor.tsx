@@ -474,7 +474,7 @@ function PdfEditorPage() {
               <MousePointer2 className="mr-2 h-4 w-4" /> Sélection
             </Button>
 
-            <p className="pt-2 text-xs font-semibold text-muted-foreground">Tracer une zone</p>
+            <p className="pt-2 text-xs font-semibold text-muted-foreground">Glisser sur le document</p>
             {(Object.keys(KIND_META) as PdfFieldKind[]).map((k) => {
               const m = KIND_META[k];
               const Icon = m.icon;
@@ -484,9 +484,14 @@ function PdfEditorPage() {
                   <Button
                     variant={isActive ? "default" : "outline"}
                     size="sm"
-                    className="flex-1 justify-start"
+                    className="flex-1 justify-start cursor-grab active:cursor-grabbing"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("application/x-pdf-field-kind", k);
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
                     onClick={() => setActiveTool(isActive ? "select" : k)}
-                    title="Cliquer-glisser sur le PDF pour tracer la zone"
+                    title="Glissez-déposez sur le PDF, ou cliquez puis tracez la zone"
                   >
                     <Icon className="mr-2 h-4 w-4" /> {m.label}
                   </Button>
@@ -518,11 +523,10 @@ function PdfEditorPage() {
               </Button>
             </div>
 
-            {activeTool !== "select" && (
-              <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
-                Cliquez-glissez sur le PDF pour tracer la zone «&nbsp;{KIND_META[activeTool as PdfFieldKind].label}&nbsp;».
-              </p>
-            )}
+            <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
+              Glissez un type de champ depuis cette palette vers le document, ou cliquez puis tracez la zone.
+            </p>
+
 
 
             <div className="pt-3">
