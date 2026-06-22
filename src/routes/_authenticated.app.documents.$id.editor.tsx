@@ -673,7 +673,14 @@ function PdfEditorPage() {
                             : "border border-primary/60 bg-primary/10"
                       }`}
                     >
-                      <FieldPreview field={f} scale={renderScale} onSignClick={() => setSigOpenFor(f.tempId)} />
+                      <FieldPreview
+                        field={f}
+                        scale={renderScale}
+                        onSignClick={() => setSigOpenFor(f.tempId)}
+                        onValueChange={(v) => updateField(f.tempId, { value: v })}
+                        onFocus={() => setSelectedId(f.tempId)}
+                      />
+
                     </Rnd>
                   );
                 })}
