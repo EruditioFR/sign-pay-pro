@@ -21,6 +21,7 @@ import {
   RefreshCw, CheckCircle2, Upload, Image as ImageIcon,
 } from "lucide-react";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl, listDocumentSignatures } from "@/lib/sharing.functions";
 import {
@@ -459,7 +460,7 @@ function PdfEditorPage() {
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[200px_1fr_260px]">
+      <div className="grid gap-3 lg:grid-cols-[200px_1fr]">
         {/* Palette */}
         <Card>
           <CardContent className="space-y-2 p-3">
@@ -473,7 +474,7 @@ function PdfEditorPage() {
               <MousePointer2 className="mr-2 h-4 w-4" /> Sélection
             </Button>
 
-            <p className="pt-2 text-xs font-semibold text-muted-foreground">Tracer une zone</p>
+            <p className="pt-2 text-xs font-semibold text-muted-foreground">Glisser sur le document</p>
             {(Object.keys(KIND_META) as PdfFieldKind[]).map((k) => {
               const m = KIND_META[k];
               const Icon = m.icon;
@@ -483,9 +484,14 @@ function PdfEditorPage() {
                   <Button
                     variant={isActive ? "default" : "outline"}
                     size="sm"
-                    className="flex-1 justify-start"
+                    className="flex-1 justify-start cursor-grab active:cursor-grabbing"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("application/x-pdf-field-kind", k);
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
                     onClick={() => setActiveTool(isActive ? "select" : k)}
-                    title="Cliquer-glisser sur le PDF pour tracer la zone"
+                    title="Glissez-déposez sur le PDF, ou cliquez puis tracez la zone"
                   >
                     <Icon className="mr-2 h-4 w-4" /> {m.label}
                   </Button>
@@ -517,11 +523,10 @@ function PdfEditorPage() {
               </Button>
             </div>
 
-            {activeTool !== "select" && (
-              <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
-                Cliquez-glissez sur le PDF pour tracer la zone «&nbsp;{KIND_META[activeTool as PdfFieldKind].label}&nbsp;».
-              </p>
-            )}
+            <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2 text-[11px] text-primary">
+              Glissez un type de champ depuis cette palette vers le document, ou cliquez puis tracez la zone.
+            </p>
+
 
 
             <div className="pt-3">
@@ -548,6 +553,23 @@ function PdfEditorPage() {
               <div
                 className="absolute inset-0"
                 style={{ cursor: activeTool !== "select" ? "crosshair" : "default" }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes("application/x-pdf-field-kind")) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                  }
+                }}
+                onDrop={(e) => {
+                  const kind = e.dataTransfer.getData("application/x-pdf-field-kind") as PdfFieldKind;
+                  if (!kind || !KIND_META[kind]) return;
+                  e.preventDefault();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const meta = KIND_META[kind];
+                  const x = e.clientX - rect.left - (meta.w * renderScale) / 2;
+                  const y = e.clientY - rect.top - (meta.h * renderScale) / 2;
+                  createField(kind, { x: Math.max(0, x), y: Math.max(0, y), w: meta.w, h: meta.h });
+                  setActiveTool("select");
+                }}
                 onMouseDown={(e) => {
                   if (activeTool === "select") {
                     if (e.target === e.currentTarget) setSelectedId(null);
@@ -662,163 +684,169 @@ function PdfEditorPage() {
                     style={{ left: draft.x, top: draft.y, width: draft.w, height: draft.h }}
                   />
                 )}
+
+                {selected && selected.page_index === pageIndex && (() => {
+                  const cssLeft = selected.x * renderScale;
+                  const cssTop = (pageDims.h - selected.y - selected.height) * renderScale;
+                  const cssW = selected.width * renderScale;
+                  const cssH = selected.height * renderScale;
+                  return (
+                    <Popover open>
+                      <PopoverAnchor asChild>
+                        <div
+                          className="pointer-events-none absolute"
+                          style={{ left: cssLeft + cssW, top: cssTop, width: 0, height: cssH }}
+                        />
+                      </PopoverAnchor>
+                      <PopoverContent
+                        side="right"
+                        align="start"
+                        sideOffset={8}
+                        collisionPadding={12}
+                        className="w-80 max-h-[80vh] overflow-y-auto"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onInteractOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={() => setSelectedId(null)}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold">{KIND_META[selected.kind].label}</p>
+                            <Button variant="ghost" size="icon" onClick={() => removeField(selected.tempId)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Libellé interne</Label>
+                            <Input
+                              value={selected.label ?? ""}
+                              onChange={(e) => updateField(selected.tempId, { label: e.target.value })}
+                            />
+                          </div>
+
+                          {(selected.kind === "text" || selected.kind === "date") && (
+                            <>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Valeur</Label>
+                                <Input
+                                  ref={valueInputRef}
+                                  type={selected.kind === "date" && !(selected.value ?? "").includes("{{") ? "date" : "text"}
+                                  value={selected.value ?? ""}
+                                  onChange={(e) => updateField(selected.tempId, { value: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs flex items-center gap-1">
+                                  <Variable className="h-3 w-3" /> Insérer un champ dynamique
+                                </Label>
+                                <Select
+                                  value=""
+                                  onValueChange={(key) => {
+                                    if (!key) return;
+                                    const token = `{{${key}}}`;
+                                    const input = valueInputRef.current;
+                                    const current = selected.value ?? "";
+                                    if (input && document.activeElement === input) {
+                                      const start = input.selectionStart ?? current.length;
+                                      const end = input.selectionEnd ?? current.length;
+                                      const next = current.slice(0, start) + token + current.slice(end);
+                                      updateField(selected.tempId, { value: next });
+                                      requestAnimationFrame(() => {
+                                        input.focus();
+                                        const pos = start + token.length;
+                                        input.setSelectionRange(pos, pos);
+                                      });
+                                    } else {
+                                      updateField(selected.tempId, { value: (current ? current + " " : "") + token });
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Choisir une variable…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {DYNAMIC_VARIABLES.map((v) => (
+                                      <SelectItem key={v.key} value={v.key}>
+                                        <span className="font-medium">{v.label}</span>
+                                        <span className="ml-2 text-[10px] text-muted-foreground">{`{{${v.key}}}`}</span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Taille de police ({selected.font_size}pt)</Label>
+                                <Input
+                                  type="number" min={6} max={48}
+                                  value={selected.font_size}
+                                  onChange={(e) => updateField(selected.tempId, { font_size: Number(e.target.value) })}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {selected.kind === "checkbox" && (
+                            <label className="flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={selected.value === "true"}
+                                onChange={(e) => updateField(selected.tempId, { value: e.target.checked ? "true" : "false" })}
+                              />
+                              Cochée
+                            </label>
+                          )}
+
+                          {(selected.kind === "signature" || selected.kind === "initials") && (
+                            <div className="grid gap-1.5">
+                              <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
+                                <PenLine className="mr-1 h-4 w-4" />
+                                {selected.value ? "Modifier le dessin" : "Dessiner"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  imageTargetRef.current = selected.tempId;
+                                  imageInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="mr-1 h-4 w-4" />
+                                Téléverser une image
+                              </Button>
+                            </div>
+                          )}
+
+                          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+                            <label className="flex items-start gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={selected.recipient_fillable}
+                                onChange={(e) =>
+                                  updateField(selected.tempId, { recipient_fillable: e.target.checked })
+                                }
+                              />
+                              <span>
+                                <span className="font-medium">À remplir par le destinataire</span>
+                                <span className="block text-[10px] text-muted-foreground">
+                                  Cette zone ne sera pas figée dans le PDF final ; le destinataire devra la remplir lors de la signature.
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })()}
               </div>
             )}
           </div>
         </div>
 
 
-
-        {/* Inspector */}
-        <Card>
-          <CardContent className="space-y-3 p-3">
-            {!selected ? (
-              <p className="text-xs text-muted-foreground">
-                Sélectionnez une zone pour la modifier, ou ajoutez un champ.
-              </p>
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">{KIND_META[selected.kind].label}</p>
-                  <Button variant="ghost" size="icon" onClick={() => removeField(selected.tempId)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Libellé interne</Label>
-                  <Input
-                    value={selected.label ?? ""}
-                    onChange={(e) => updateField(selected.tempId, { label: e.target.value })}
-                  />
-                </div>
-
-                {(selected.kind === "text" || selected.kind === "date") && (
-                  <>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Valeur</Label>
-                      <Input
-                        ref={valueInputRef}
-                        type={selected.kind === "date" && !(selected.value ?? "").includes("{{") ? "date" : "text"}
-                        value={selected.value ?? ""}
-                        onChange={(e) => updateField(selected.tempId, { value: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs flex items-center gap-1">
-                        <Variable className="h-3 w-3" /> Insérer un champ dynamique
-                      </Label>
-                      <Select
-                        value=""
-                        onValueChange={(key) => {
-                          if (!key) return;
-                          const token = `{{${key}}}`;
-                          const input = valueInputRef.current;
-                          const current = selected.value ?? "";
-                          if (input && document.activeElement === input) {
-                            const start = input.selectionStart ?? current.length;
-                            const end = input.selectionEnd ?? current.length;
-                            const next = current.slice(0, start) + token + current.slice(end);
-                            updateField(selected.tempId, { value: next });
-                            requestAnimationFrame(() => {
-                              input.focus();
-                              const pos = start + token.length;
-                              input.setSelectionRange(pos, pos);
-                            });
-                          } else {
-                            updateField(selected.tempId, { value: (current ? current + " " : "") + token });
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Choisir une variable…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DYNAMIC_VARIABLES.map((v) => (
-                            <SelectItem key={v.key} value={v.key}>
-                              <span className="font-medium">{v.label}</span>
-                              <span className="ml-2 text-[10px] text-muted-foreground">{`{{${v.key}}}`}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-[10px] text-muted-foreground">
-                        Les variables sont remplacées par les valeurs du document lors de la génération.
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Taille de police ({selected.font_size}pt)</Label>
-                      <Input
-                        type="number" min={6} max={48}
-                        value={selected.font_size}
-                        onChange={(e) => updateField(selected.tempId, { font_size: Number(e.target.value) })}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {selected.kind === "checkbox" && (
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selected.value === "true"}
-                      onChange={(e) => updateField(selected.tempId, { value: e.target.checked ? "true" : "false" })}
-                    />
-                    Cochée
-                  </label>
-                )}
-
-                {(selected.kind === "signature" || selected.kind === "initials") && (
-                  <div className="grid gap-1.5">
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
-                      <PenLine className="mr-1 h-4 w-4" />
-                      {selected.value ? "Modifier le dessin" : "Dessiner"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        imageTargetRef.current = selected.tempId;
-                        imageInputRef.current?.click();
-                      }}
-                    >
-                      <Upload className="mr-1 h-4 w-4" />
-                      Téléverser une image
-                    </Button>
-                  </div>
-                )}
-
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
-                  <label className="flex items-start gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5"
-                      checked={selected.recipient_fillable}
-                      onChange={(e) =>
-                        updateField(selected.tempId, { recipient_fillable: e.target.checked })
-                      }
-                    />
-                    <span>
-                      <span className="font-medium">À remplir par le destinataire</span>
-                      <span className="block text-[10px] text-muted-foreground">
-                        Cette zone ne sera pas figée dans le PDF final ; le destinataire devra la
-                        remplir lors de la signature (obligatoire).
-                      </span>
-                    </span>
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>x: {Math.round(selected.x)}pt</span>
-                  <span>y: {Math.round(selected.y)}pt</span>
-                  <span>w: {Math.round(selected.width)}pt</span>
-                  <span>h: {Math.round(selected.height)}pt</span>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
 
       {sigOpenFor && (
         <SignatureDrawDialog
