@@ -16,6 +16,7 @@ export type ExtractedField = {
   width: number;
   height: number;
   label: string | null;
+  required: boolean;
 };
 
 export type PdfExportResult = {
