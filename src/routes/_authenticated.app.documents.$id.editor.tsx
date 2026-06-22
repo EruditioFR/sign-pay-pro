@@ -723,7 +723,7 @@ function PdfEditorPage() {
                   const cssW = selected.width * renderScale;
                   const cssH = selected.height * renderScale;
                   return (
-                    <Popover open>
+                    <Popover open onOpenChange={(v) => { if (!v) setConfigOpenId(null); }}>
                       <PopoverAnchor asChild>
                         <div
                           className="pointer-events-none absolute"
@@ -737,8 +737,8 @@ function PdfEditorPage() {
                         collisionPadding={12}
                         className="w-80 max-h-[80vh] overflow-y-auto"
                         onOpenAutoFocus={(e) => e.preventDefault()}
-                        onInteractOutside={(e) => e.preventDefault()}
-                        onEscapeKeyDown={() => setSelectedId(null)}
+                        onInteractOutside={() => setConfigOpenId(null)}
+                        onEscapeKeyDown={() => setConfigOpenId(null)}
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
