@@ -329,14 +329,26 @@ export const getCurrentDocumentPdfUrl = createServerFn({ method: "POST" })
     z.object({ document_id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: doc, error: docErr } = await supabase
+    const { supabase, userId } = context;
+    // Fetch via admin to avoid intermittent RLS visibility issues right
+    // after creation, then validate the caller belongs to the same org.
+    const { data: doc, error: docErr } = await supabaseAdmin
       .from("documents")
       .select("id, organization_id")
       .eq("id", data.document_id)
       .maybeSingle();
     if (docErr) throw new Error(docErr.message);
     if (!doc) throw new Error("Document introuvable");
+
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!me || me.organization_id !== doc.organization_id) {
+      throw new Error("Accès refusé");
+    }
+
 
     // Prefer the latest signed PDF if any signature exists for this document.
     const { data: latestSig } = await supabaseAdmin
