@@ -129,6 +129,7 @@ function PdfEditorPage() {
   const [pageDims, setPageDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [configOpenId, setConfigOpenId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [draft, setDraft] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
