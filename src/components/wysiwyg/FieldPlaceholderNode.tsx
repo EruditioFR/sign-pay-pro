@@ -27,10 +27,12 @@ const KIND_META: Record<
 function FieldView(props: NodeViewProps) {
   const kind = (props.node.attrs.kind as FieldKind) ?? "text";
   const label = (props.node.attrs.label as string) || KIND_META[kind].label;
+  const required = Boolean(props.node.attrs.required);
   const meta = KIND_META[kind];
   const Icon = meta.icon;
   const [open, setOpen] = useState(false);
   const [draftLabel, setDraftLabel] = useState(label);
+  const [draftRequired, setDraftRequired] = useState(required);
 
   return (
     <NodeViewWrapper
@@ -38,10 +40,11 @@ function FieldView(props: NodeViewProps) {
       className="field-placeholder"
       data-field-kind={kind}
       data-field-label={label}
+      data-field-required={required ? 1 : 0}
       contentEditable={false}
       style={{ display: "inline-block", verticalAlign: "middle" }}
     >
-      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) setDraftLabel(label); }}>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) { setDraftLabel(label); setDraftRequired(required); } }}>
         <PopoverTrigger asChild>
           <span
             data-drag-handle
