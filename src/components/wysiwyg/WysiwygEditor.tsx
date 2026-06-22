@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { Rnd } from "react-rnd";
 import { Type, CalendarDays, CheckSquare, PenLine, Signature, Trash2, GripVertical, Bold as BoldIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
