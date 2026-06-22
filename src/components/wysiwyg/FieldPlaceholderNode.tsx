@@ -1,7 +1,14 @@
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
-import { Type, CalendarDays, CheckSquare, PenLine, Signature } from "lucide-react";
+import { Type, CalendarDays, CheckSquare, PenLine, Signature, Trash2 } from "lucide-react";
+import { useState } from "react";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export type FieldKind = "text" | "date" | "checkbox" | "signature" | "initials";
 
@@ -21,6 +28,8 @@ function FieldView(props: NodeViewProps) {
   const label = (props.node.attrs.label as string) || KIND_META[kind].label;
   const meta = KIND_META[kind];
   const Icon = meta.icon;
+  const [open, setOpen] = useState(false);
+  const [draftLabel, setDraftLabel] = useState(label);
 
   return (
     <NodeViewWrapper
@@ -28,31 +37,80 @@ function FieldView(props: NodeViewProps) {
       className="field-placeholder"
       data-field-kind={kind}
       data-field-label={label}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "4px",
-        padding: "2px 8px",
-        margin: "0 2px",
-        borderRadius: "4px",
-        background: "rgba(59,130,246,0.12)",
-        border: "1px dashed rgb(59,130,246)",
-        color: "rgb(37,99,235)",
-        fontSize: "12px",
-        fontWeight: 500,
-        verticalAlign: "middle",
-        minWidth: `${meta.width}px`,
-        minHeight: `${meta.height}px`,
-        cursor: "pointer",
-      }}
       contentEditable={false}
-      onClick={() => {
-        const next = window.prompt("Libellé du champ", label);
-        if (next != null) props.updateAttributes({ label: next });
-      }}
+      style={{ display: "inline-block", verticalAlign: "middle" }}
     >
-      <Icon size={12} />
-      <span>{label}</span>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) setDraftLabel(label); }}>
+        <PopoverTrigger asChild>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "2px 8px",
+              margin: "0 2px",
+              borderRadius: "4px",
+              background: "rgba(59,130,246,0.12)",
+              border: "1px dashed rgb(59,130,246)",
+              color: "rgb(37,99,235)",
+              fontSize: "12px",
+              fontWeight: 500,
+              minWidth: `${meta.width}px`,
+              minHeight: `${meta.height}px`,
+              cursor: "pointer",
+            }}
+          >
+            <Icon size={12} />
+            <span>{label}</span>
+          </span>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          side="bottom"
+          className="w-64 space-y-3"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {meta.label}
+            </p>
+            <Label htmlFor="field-label" className="text-xs">Libellé</Label>
+            <Input
+              id="field-label"
+              value={draftLabel}
+              onChange={(e) => setDraftLabel(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  props.updateAttributes({ label: draftLabel });
+                  setOpen(false);
+                }
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={() => { props.deleteNode(); setOpen(false); }}
+            >
+              <Trash2 className="mr-1 h-3.5 w-3.5" /> Supprimer
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                props.updateAttributes({ label: draftLabel });
+                setOpen(false);
+              }}
+            >
+              Valider
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
     </NodeViewWrapper>
   );
 }
