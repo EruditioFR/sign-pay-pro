@@ -682,6 +682,30 @@ function PdfEditorPage() {
                         onFocus={() => setSelectedId(f.tempId)}
                       />
 
+                      {isSelected && (
+                        <div
+                          className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-md border border-border bg-popover px-1 py-0.5 shadow-md z-30"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent text-foreground"
+                            title="Configurer"
+                            onClick={() => setConfigOpenId(f.tempId)}
+                          >
+                            <Settings2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-destructive/10 text-destructive"
+                            title="Supprimer"
+                            onClick={() => removeField(f.tempId)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </Rnd>
                   );
                 })}
