@@ -54,7 +54,8 @@ function blocksToHtml(blocks: Block[]): string {
     if (b.kind === "paragraph") {
       return `<div data-block="paragraph" data-x="${b.xMm.toFixed(2)}" data-y="${b.yMm.toFixed(2)}" data-w="${b.wMm.toFixed(2)}" data-h="${b.hMm.toFixed(2)}" data-font="${b.fontSizePt ?? 11}" data-align="${b.align ?? "left"}" data-bold="${b.bold ? 1 : 0}">${escapeHtml(b.content)}</div>`;
     }
-    return `<div data-block="field" data-kind="${b.kind}" data-x="${b.xMm.toFixed(2)}" data-y="${b.yMm.toFixed(2)}" data-w="${b.wMm.toFixed(2)}" data-h="${b.hMm.toFixed(2)}" data-field-kind="${b.kind}" data-field-label="${escapeHtml(b.content)}">${escapeHtml(b.content)}</div>`;
+    const req = b.required ? 1 : 0;
+    return `<div data-block="field" data-kind="${b.kind}" data-x="${b.xMm.toFixed(2)}" data-y="${b.yMm.toFixed(2)}" data-w="${b.wMm.toFixed(2)}" data-h="${b.hMm.toFixed(2)}" data-required="${req}" data-field-kind="${b.kind}" data-field-label="${escapeHtml(b.content)}" data-field-required="${req}">${escapeHtml(b.content)}</div>`;
   }).join("");
   return `<div data-wysiwyg-canvas="1">${inner}</div>`;
 }
