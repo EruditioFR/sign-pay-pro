@@ -56,9 +56,9 @@ function FieldView(props: NodeViewProps) {
               padding: "2px 8px",
               margin: "0 2px",
               borderRadius: "4px",
-              background: "rgba(59,130,246,0.12)",
-              border: "1px dashed rgb(59,130,246)",
-              color: "rgb(37,99,235)",
+              background: required ? "rgba(34,197,94,0.12)" : "rgba(59,130,246,0.12)",
+              border: `1px dashed ${required ? "rgb(34,197,94)" : "rgb(59,130,246)"}`,
+              color: required ? "rgb(21,128,61)" : "rgb(37,99,235)",
               fontSize: "12px",
               fontWeight: 500,
               minWidth: `${meta.width}px`,
@@ -67,7 +67,7 @@ function FieldView(props: NodeViewProps) {
             }}
           >
             <Icon size={12} />
-            <span>{label}</span>
+            <span>{label}{required ? " *" : ""}</span>
           </span>
         </PopoverTrigger>
         <PopoverContent
