@@ -142,7 +142,7 @@ function WysiwygNewDocPage() {
       />
 
       <p className="text-xs text-muted-foreground text-center">
-        Astuce : cliquez sur un champ inséré pour modifier son libellé. Les positions des champs seront converties en zones interactives dans le PDF généré.
+        Astuce : glissez un champ depuis la palette vers le document, puis cliquez dessus pour le configurer. Les positions seront converties en zones interactives dans le PDF généré.
       </p>
     </div>
   );
