@@ -116,6 +116,7 @@ const FinalizeSchema = z.object({
         width: z.number().min(5).max(5000),
         height: z.number().min(5).max(5000),
         label: z.string().max(200).nullable().optional(),
+        required: z.boolean().optional().default(false),
       }),
     )
     .max(500),
