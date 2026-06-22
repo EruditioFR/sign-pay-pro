@@ -684,10 +684,168 @@ function PdfEditorPage() {
                     style={{ left: draft.x, top: draft.y, width: draft.w, height: draft.h }}
                   />
                 )}
+
+                {selected && selected.page_index === pageIndex && (() => {
+                  const cssLeft = selected.x * renderScale;
+                  const cssTop = (pageDims.h - selected.y - selected.height) * renderScale;
+                  const cssW = selected.width * renderScale;
+                  const cssH = selected.height * renderScale;
+                  return (
+                    <Popover open onOpenChange={(o) => { if (!o) setSelectedId(null); }}>
+                      <PopoverAnchor asChild>
+                        <div
+                          className="pointer-events-none absolute"
+                          style={{ left: cssLeft + cssW, top: cssTop, width: 0, height: cssH }}
+                        />
+                      </PopoverAnchor>
+                      <PopoverContent
+                        side="right"
+                        align="start"
+                        sideOffset={8}
+                        collisionPadding={12}
+                        className="w-80 max-h-[80vh] overflow-y-auto"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onInteractOutside={(e) => {
+                          const t = e.target as HTMLElement | null;
+                          if (t?.closest?.("[data-radix-popper-content-wrapper], [role='dialog']")) e.preventDefault();
+                        }}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold">{KIND_META[selected.kind].label}</p>
+                            <Button variant="ghost" size="icon" onClick={() => removeField(selected.tempId)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Libellé interne</Label>
+                            <Input
+                              value={selected.label ?? ""}
+                              onChange={(e) => updateField(selected.tempId, { label: e.target.value })}
+                            />
+                          </div>
+
+                          {(selected.kind === "text" || selected.kind === "date") && (
+                            <>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Valeur</Label>
+                                <Input
+                                  ref={valueInputRef}
+                                  type={selected.kind === "date" && !(selected.value ?? "").includes("{{") ? "date" : "text"}
+                                  value={selected.value ?? ""}
+                                  onChange={(e) => updateField(selected.tempId, { value: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs flex items-center gap-1">
+                                  <Variable className="h-3 w-3" /> Insérer un champ dynamique
+                                </Label>
+                                <Select
+                                  value=""
+                                  onValueChange={(key) => {
+                                    if (!key) return;
+                                    const token = `{{${key}}}`;
+                                    const input = valueInputRef.current;
+                                    const current = selected.value ?? "";
+                                    if (input && document.activeElement === input) {
+                                      const start = input.selectionStart ?? current.length;
+                                      const end = input.selectionEnd ?? current.length;
+                                      const next = current.slice(0, start) + token + current.slice(end);
+                                      updateField(selected.tempId, { value: next });
+                                      requestAnimationFrame(() => {
+                                        input.focus();
+                                        const pos = start + token.length;
+                                        input.setSelectionRange(pos, pos);
+                                      });
+                                    } else {
+                                      updateField(selected.tempId, { value: (current ? current + " " : "") + token });
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Choisir une variable…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {DYNAMIC_VARIABLES.map((v) => (
+                                      <SelectItem key={v.key} value={v.key}>
+                                        <span className="font-medium">{v.label}</span>
+                                        <span className="ml-2 text-[10px] text-muted-foreground">{`{{${v.key}}}`}</span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Taille de police ({selected.font_size}pt)</Label>
+                                <Input
+                                  type="number" min={6} max={48}
+                                  value={selected.font_size}
+                                  onChange={(e) => updateField(selected.tempId, { font_size: Number(e.target.value) })}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {selected.kind === "checkbox" && (
+                            <label className="flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={selected.value === "true"}
+                                onChange={(e) => updateField(selected.tempId, { value: e.target.checked ? "true" : "false" })}
+                              />
+                              Cochée
+                            </label>
+                          )}
+
+                          {(selected.kind === "signature" || selected.kind === "initials") && (
+                            <div className="grid gap-1.5">
+                              <Button size="sm" variant="outline" className="w-full" onClick={() => setSigOpenFor(selected.tempId)}>
+                                <PenLine className="mr-1 h-4 w-4" />
+                                {selected.value ? "Modifier le dessin" : "Dessiner"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  imageTargetRef.current = selected.tempId;
+                                  imageInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="mr-1 h-4 w-4" />
+                                Téléverser une image
+                              </Button>
+                            </div>
+                          )}
+
+                          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+                            <label className="flex items-start gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={selected.recipient_fillable}
+                                onChange={(e) =>
+                                  updateField(selected.tempId, { recipient_fillable: e.target.checked })
+                                }
+                              />
+                              <span>
+                                <span className="font-medium">À remplir par le destinataire</span>
+                                <span className="block text-[10px] text-muted-foreground">
+                                  Cette zone ne sera pas figée dans le PDF final ; le destinataire devra la remplir lors de la signature.
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })()}
               </div>
             )}
           </div>
         </div>
+
 
 
 
