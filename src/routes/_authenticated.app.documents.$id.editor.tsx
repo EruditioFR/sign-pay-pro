@@ -268,6 +268,7 @@ function PdfEditorPage() {
     };
     setFields((prev) => [...prev, newField]);
     setSelectedId(newField.tempId);
+    setConfigOpenId(newField.tempId);
   };
   const addField = (kind: PdfFieldKind) => createField(kind);
 
