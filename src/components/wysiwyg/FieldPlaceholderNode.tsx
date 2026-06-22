@@ -43,6 +43,8 @@ function FieldView(props: NodeViewProps) {
       <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) setDraftLabel(label); }}>
         <PopoverTrigger asChild>
           <span
+            data-drag-handle
+            draggable="true"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -57,7 +59,7 @@ function FieldView(props: NodeViewProps) {
               fontWeight: 500,
               minWidth: `${meta.width}px`,
               minHeight: `${meta.height}px`,
-              cursor: "pointer",
+              cursor: "grab",
             }}
           >
             <Icon size={12} />
