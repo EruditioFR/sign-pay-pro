@@ -460,7 +460,7 @@ function PdfEditorPage() {
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[200px_1fr_260px]">
+      <div className="grid gap-3 lg:grid-cols-[200px_1fr]">
         {/* Palette */}
         <Card>
           <CardContent className="space-y-2 p-3">
