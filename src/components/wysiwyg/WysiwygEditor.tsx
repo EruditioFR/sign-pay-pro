@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { A4_DIMS } from "./html-to-pdf";
 import { FIELD_KIND_META, type FieldKind } from "./FieldPlaceholderNode";
 
