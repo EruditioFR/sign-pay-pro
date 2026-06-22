@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { A4_DIMS } from "./html-to-pdf";
 import { FIELD_KIND_META, type FieldKind } from "./FieldPlaceholderNode";
 
@@ -22,6 +23,8 @@ interface Block {
   fontSizePt?: number;
   bold?: boolean;
   align?: "left" | "center" | "right";
+  /** Pour les champs : modifiable par l'utilisateur (sera converti en zone interactive). */
+  required?: boolean;
 }
 
 interface Props {
@@ -51,7 +54,8 @@ function blocksToHtml(blocks: Block[]): string {
     if (b.kind === "paragraph") {
       return `<div data-block="paragraph" data-x="${b.xMm.toFixed(2)}" data-y="${b.yMm.toFixed(2)}" data-w="${b.wMm.toFixed(2)}" data-h="${b.hMm.toFixed(2)}" data-font="${b.fontSizePt ?? 11}" data-align="${b.align ?? "left"}" data-bold="${b.bold ? 1 : 0}">${escapeHtml(b.content)}</div>`;
     }
-    return `<div data-block="field" data-kind="${b.kind}" data-x="${b.xMm.toFixed(2)}" data-y="${b.yMm.toFixed(2)}" data-w="${b.wMm.toFixed(2)}" data-h="${b.hMm.toFixed(2)}" data-field-kind="${b.kind}" data-field-label="${escapeHtml(b.content)}">${escapeHtml(b.content)}</div>`;
+    const req = b.required ? 1 : 0;
+    return `<div data-block="field" data-kind="${b.kind}" data-x="${b.xMm.toFixed(2)}" data-y="${b.yMm.toFixed(2)}" data-w="${b.wMm.toFixed(2)}" data-h="${b.hMm.toFixed(2)}" data-required="${req}" data-field-kind="${b.kind}" data-field-label="${escapeHtml(b.content)}" data-field-required="${req}">${escapeHtml(b.content)}</div>`;
   }).join("");
   return `<div data-wysiwyg-canvas="1">${inner}</div>`;
 }
@@ -71,7 +75,8 @@ function parseHtmlToBlocks(html?: string): Block[] {
       const id = (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
       if (h.dataset.block === "field") {
         const kind = (h.dataset.kind || "text") as FieldKind;
-        out.push({ id, kind, xMm, yMm, wMm, hMm, content: h.dataset.fieldLabel || h.textContent || "" });
+        const required = h.dataset.required === "1" || h.dataset.fieldRequired === "1";
+        out.push({ id, kind, xMm, yMm, wMm, hMm, content: h.dataset.fieldLabel || h.textContent || "", required });
       } else {
         out.push({
           id, kind: "paragraph", xMm, yMm, wMm, hMm,
@@ -133,6 +138,7 @@ export function WysiwygEditor({ initialHtml, onChange, editorRootRef }: Props) {
       wMm, hMm, content,
       fontSizePt: kind === "paragraph" ? 11 : undefined,
       align: kind === "paragraph" ? "left" : undefined,
+      required: kind !== "paragraph" ? true : undefined,
     }]);
     setSelectedId(id);
   }, []);
@@ -275,13 +281,14 @@ function BlockView({
     <div
       data-field-kind={block.kind}
       data-field-label={block.content}
+      data-field-required={block.required ? 1 : 0}
       style={{
         width: "100%", height: "100%",
         display: "flex", alignItems: "center", gap: 4, padding: "2px 8px",
         borderRadius: 4,
-        background: "rgba(59,130,246,0.12)",
-        border: "1px dashed rgb(59,130,246)",
-        color: "rgb(37,99,235)",
+        background: block.required ? "rgba(34,197,94,0.12)" : "rgba(59,130,246,0.12)",
+        border: `1px dashed ${block.required ? "rgb(34,197,94)" : "rgb(59,130,246)"}`,
+        color: block.required ? "rgb(21,128,61)" : "rgb(37,99,235)",
         fontSize: 12, fontWeight: 500,
         boxSizing: "border-box",
         overflow: "hidden",
@@ -292,7 +299,7 @@ function BlockView({
         return <Icon size={12} />;
       })()}
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {block.content}
+        {block.content}{block.required ? " *" : ""}
       </span>
     </div>
   ) : (
@@ -431,14 +438,28 @@ function Inspector({
           </div>
         </>
       ) : (
-        <div className="space-y-1">
-          <Label className="text-xs">Libellé du champ</Label>
-          <Input
-            value={block.content}
-            onChange={(e) => onChange({ content: e.target.value })}
-            autoFocus
-          />
-        </div>
+        <>
+          <div className="space-y-1">
+            <Label className="text-xs">Libellé du champ</Label>
+            <Input
+              value={block.content}
+              onChange={(e) => onChange({ content: e.target.value })}
+              autoFocus
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-2 py-2">
+            <div className="space-y-0.5 pr-2">
+              <Label className="text-xs">Modifiable par l'utilisateur</Label>
+              <p className="text-[10px] leading-tight text-muted-foreground">
+                Le destinataire pourra remplir / signer cette zone.
+              </p>
+            </div>
+            <Switch
+              checked={block.required ?? false}
+              onCheckedChange={(v) => onChange({ required: v })}
+            />
+          </div>
+        </>
       )}
 
       <div className="grid grid-cols-4 gap-1.5 text-[10px]">

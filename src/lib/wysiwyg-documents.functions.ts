@@ -116,6 +116,7 @@ const FinalizeSchema = z.object({
         width: z.number().min(5).max(5000),
         height: z.number().min(5).max(5000),
         label: z.string().max(200).nullable().optional(),
+        required: z.boolean().optional().default(false),
       }),
     )
     .max(500),
@@ -215,7 +216,7 @@ export const finalizeWysiwygDocument = createServerFn({ method: "POST" })
         height: f.height,
         value: null,
         font_size: 11,
-        required: false,
+        required: f.required ?? false,
         label: f.label ?? null,
         position: i,
       }));
