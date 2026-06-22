@@ -553,6 +553,23 @@ function PdfEditorPage() {
               <div
                 className="absolute inset-0"
                 style={{ cursor: activeTool !== "select" ? "crosshair" : "default" }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes("application/x-pdf-field-kind")) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                  }
+                }}
+                onDrop={(e) => {
+                  const kind = e.dataTransfer.getData("application/x-pdf-field-kind") as PdfFieldKind;
+                  if (!kind || !KIND_META[kind]) return;
+                  e.preventDefault();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const meta = KIND_META[kind];
+                  const x = e.clientX - rect.left - (meta.w * renderScale) / 2;
+                  const y = e.clientY - rect.top - (meta.h * renderScale) / 2;
+                  createField(kind, { x: Math.max(0, x), y: Math.max(0, y), w: meta.w, h: meta.h });
+                  setActiveTool("select");
+                }}
                 onMouseDown={(e) => {
                   if (activeTool === "select") {
                     if (e.target === e.currentTarget) setSelectedId(null);
