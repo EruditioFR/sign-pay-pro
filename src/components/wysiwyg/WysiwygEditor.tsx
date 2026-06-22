@@ -281,13 +281,14 @@ function BlockView({
     <div
       data-field-kind={block.kind}
       data-field-label={block.content}
+      data-field-required={block.required ? 1 : 0}
       style={{
         width: "100%", height: "100%",
         display: "flex", alignItems: "center", gap: 4, padding: "2px 8px",
         borderRadius: 4,
-        background: "rgba(59,130,246,0.12)",
-        border: "1px dashed rgb(59,130,246)",
-        color: "rgb(37,99,235)",
+        background: block.required ? "rgba(34,197,94,0.12)" : "rgba(59,130,246,0.12)",
+        border: `1px dashed ${block.required ? "rgb(34,197,94)" : "rgb(59,130,246)"}`,
+        color: block.required ? "rgb(21,128,61)" : "rgb(37,99,235)",
         fontSize: 12, fontWeight: 500,
         boxSizing: "border-box",
         overflow: "hidden",
@@ -298,7 +299,7 @@ function BlockView({
         return <Icon size={12} />;
       })()}
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {block.content}
+        {block.content}{block.required ? " *" : ""}
       </span>
     </div>
   ) : (
