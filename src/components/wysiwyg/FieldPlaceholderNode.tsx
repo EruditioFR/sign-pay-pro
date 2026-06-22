@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 export type FieldKind = "text" | "date" | "checkbox" | "signature" | "initials";
 
@@ -26,10 +27,12 @@ const KIND_META: Record<
 function FieldView(props: NodeViewProps) {
   const kind = (props.node.attrs.kind as FieldKind) ?? "text";
   const label = (props.node.attrs.label as string) || KIND_META[kind].label;
+  const required = Boolean(props.node.attrs.required);
   const meta = KIND_META[kind];
   const Icon = meta.icon;
   const [open, setOpen] = useState(false);
   const [draftLabel, setDraftLabel] = useState(label);
+  const [draftRequired, setDraftRequired] = useState(required);
 
   return (
     <NodeViewWrapper
@@ -37,10 +40,11 @@ function FieldView(props: NodeViewProps) {
       className="field-placeholder"
       data-field-kind={kind}
       data-field-label={label}
+      data-field-required={required ? 1 : 0}
       contentEditable={false}
       style={{ display: "inline-block", verticalAlign: "middle" }}
     >
-      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) setDraftLabel(label); }}>
+      <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) { setDraftLabel(label); setDraftRequired(required); } }}>
         <PopoverTrigger asChild>
           <span
             data-drag-handle
@@ -52,9 +56,9 @@ function FieldView(props: NodeViewProps) {
               padding: "2px 8px",
               margin: "0 2px",
               borderRadius: "4px",
-              background: "rgba(59,130,246,0.12)",
-              border: "1px dashed rgb(59,130,246)",
-              color: "rgb(37,99,235)",
+              background: required ? "rgba(34,197,94,0.12)" : "rgba(59,130,246,0.12)",
+              border: `1px dashed ${required ? "rgb(34,197,94)" : "rgb(59,130,246)"}`,
+              color: required ? "rgb(21,128,61)" : "rgb(37,99,235)",
               fontSize: "12px",
               fontWeight: 500,
               minWidth: `${meta.width}px`,
@@ -63,7 +67,7 @@ function FieldView(props: NodeViewProps) {
             }}
           >
             <Icon size={12} />
-            <span>{label}</span>
+            <span>{label}{required ? " *" : ""}</span>
           </span>
         </PopoverTrigger>
         <PopoverContent
@@ -84,11 +88,20 @@ function FieldView(props: NodeViewProps) {
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  props.updateAttributes({ label: draftLabel });
+                  props.updateAttributes({ label: draftLabel, required: draftRequired });
                   setOpen(false);
                 }
               }}
             />
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-2 py-2">
+            <div className="space-y-0.5 pr-2">
+              <Label className="text-xs">Modifiable par l'utilisateur</Label>
+              <p className="text-[10px] leading-tight text-muted-foreground">
+                Le destinataire pourra remplir / signer.
+              </p>
+            </div>
+            <Switch checked={draftRequired} onCheckedChange={setDraftRequired} />
           </div>
           <div className="flex items-center justify-between gap-2">
             <Button
@@ -104,7 +117,7 @@ function FieldView(props: NodeViewProps) {
               type="button"
               size="sm"
               onClick={() => {
-                props.updateAttributes({ label: draftLabel });
+                props.updateAttributes({ label: draftLabel, required: draftRequired });
                 setOpen(false);
               }}
             >
@@ -128,15 +141,21 @@ export const FieldPlaceholder = Node.create({
     return {
       kind: { default: "text" },
       label: { default: null },
+      required: { default: false, parseHTML: (el) => el.getAttribute("data-field-required") === "1" },
     };
   },
   parseHTML() {
     return [{ tag: "span[data-field-kind]" }];
   },
   renderHTML({ HTMLAttributes }) {
+    const required = HTMLAttributes.required ? 1 : 0;
+    const { required: _r, ...rest } = HTMLAttributes;
     return [
       "span",
-      mergeAttributes(HTMLAttributes, { "data-field-kind": HTMLAttributes.kind ?? "text" }),
+      mergeAttributes(rest, {
+        "data-field-kind": HTMLAttributes.kind ?? "text",
+        "data-field-required": required,
+      }),
     ];
   },
   addNodeView() {
