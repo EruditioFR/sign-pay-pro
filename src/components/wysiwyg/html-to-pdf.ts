@@ -53,6 +53,7 @@ export async function exportEditorToPdf(
       const r = ph.getBoundingClientRect();
       const kind = (ph.dataset.fieldKind || "text") as FieldKind;
       const label = ph.dataset.fieldLabel ?? null;
+      const required = ph.dataset.fieldRequired === "1";
       const xMm = (r.left - pageRect.left) / pxPerMm;
       const yMm = (r.top - pageRect.top) / pxPerMm;
       const wMm = r.width / pxPerMm;
@@ -70,6 +71,7 @@ export async function exportEditorToPdf(
         width: wPt,
         height: hPt,
         label,
+        required,
       });
     }
 
