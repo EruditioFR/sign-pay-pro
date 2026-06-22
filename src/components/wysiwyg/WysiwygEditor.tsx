@@ -467,7 +467,7 @@ function CoordInput({ label, value, onChange }: { label: string; value: number; 
 
 function HorizontalRuler({ widthMm, pxPerMm }: { widthMm: number; pxPerMm: number }) {
   const widthPx = widthMm * pxPerMm;
-  const ticks: JSX.Element[] = [];
+  const ticks: React.ReactNode[] = [];
   for (let mm = 0; mm <= widthMm; mm += 5) {
     const x = mm * pxPerMm;
     const major = mm % 10 === 0;
@@ -492,7 +492,7 @@ function HorizontalRuler({ widthMm, pxPerMm }: { widthMm: number; pxPerMm: numbe
 
 function VerticalRuler({ heightMm, pxPerMm }: { heightMm: number; pxPerMm: number }) {
   const heightPx = heightMm * pxPerMm;
-  const ticks: JSX.Element[] = [];
+  const ticks: React.ReactNode[] = [];
   for (let mm = 0; mm <= heightMm; mm += 5) {
     const y = mm * pxPerMm;
     const major = mm % 10 === 0;
