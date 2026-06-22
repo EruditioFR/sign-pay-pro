@@ -18,7 +18,7 @@ import {
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
   CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
-  RefreshCw, CheckCircle2, Upload, Image as ImageIcon,
+  RefreshCw, CheckCircle2, Upload, Image as ImageIcon, Settings2,
 } from "lucide-react";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
