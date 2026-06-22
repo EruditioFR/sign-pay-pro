@@ -109,6 +109,9 @@ export async function exportEditorToPdf(
       r.el.style.color = r.color;
       r.el.style.border = r.border;
     }
+    for (const h of hiddenRestore) {
+      h.el.style.display = h.display;
+    }
 
     const img = canvas.toDataURL("image/jpeg", 0.92);
     if (i > 0) pdf.addPage();
