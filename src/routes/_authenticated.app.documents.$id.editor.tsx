@@ -1059,24 +1059,47 @@ function FieldPreview({
   }
   const value = field.value || "";
   const fontStyle: React.CSSProperties = { fontSize: field.font_size * scale, lineHeight: 1.1 };
-  // Inline editable for text / date — preserves variable tokens as plain text
+  const placeholder = `« ${KIND_META[field.kind].label} »`;
+  // Inline editable for text / date — placeholder shown only when empty AND not focused
   return (
-    <span
-      contentEditable={!!onValueChange}
-      suppressContentEditableWarning
-      onMouseDown={(e) => e.stopPropagation()}
-      onFocus={onFocus}
-      onBlur={(e) => {
-        const next = e.currentTarget.textContent ?? "";
-        if (next !== value) onValueChange?.(next);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLElement).blur(); }
-      }}
-      className={`block w-full truncate px-1 outline-none focus:bg-white/60 focus:ring-1 focus:ring-primary/40 rounded-sm ${value ? "" : "italic text-muted-foreground"}`}
-      style={fontStyle}
-    >
-      {value || `« ${KIND_META[field.kind].label} »`}
+    <span className="relative block w-full">
+      <span
+        contentEditable={!!onValueChange}
+        suppressContentEditableWarning
+        onMouseDown={(e) => e.stopPropagation()}
+        onFocus={(e) => {
+          onFocus?.();
+          // place caret at end
+          const el = e.currentTarget;
+          requestAnimationFrame(() => {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+          });
+        }}
+        onBlur={(e) => {
+          const next = e.currentTarget.textContent ?? "";
+          if (next !== value) onValueChange?.(next);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLElement).blur(); }
+        }}
+        className="block w-full truncate px-1 outline-none focus:bg-white/60 focus:ring-1 focus:ring-primary/40 rounded-sm peer"
+        style={fontStyle}
+      >
+        {value}
+      </span>
+      {!value && (
+        <span
+          className="pointer-events-none absolute inset-0 truncate px-1 italic text-muted-foreground peer-focus:hidden"
+          style={fontStyle}
+        >
+          {placeholder}
+        </span>
+      )}
     </span>
   );
 }
