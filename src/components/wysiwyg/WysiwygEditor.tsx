@@ -75,7 +75,8 @@ function parseHtmlToBlocks(html?: string): Block[] {
       const id = (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
       if (h.dataset.block === "field") {
         const kind = (h.dataset.kind || "text") as FieldKind;
-        out.push({ id, kind, xMm, yMm, wMm, hMm, content: h.dataset.fieldLabel || h.textContent || "" });
+        const required = h.dataset.required === "1" || h.dataset.fieldRequired === "1";
+        out.push({ id, kind, xMm, yMm, wMm, hMm, content: h.dataset.fieldLabel || h.textContent || "", required });
       } else {
         out.push({
           id, kind: "paragraph", xMm, yMm, wMm, hMm,
