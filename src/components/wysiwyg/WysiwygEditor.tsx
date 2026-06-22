@@ -23,6 +23,8 @@ interface Block {
   fontSizePt?: number;
   bold?: boolean;
   align?: "left" | "center" | "right";
+  /** Pour les champs : modifiable par l'utilisateur (sera converti en zone interactive). */
+  required?: boolean;
 }
 
 interface Props {
