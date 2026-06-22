@@ -717,7 +717,7 @@ function PdfEditorPage() {
                   />
                 )}
 
-                {selected && selected.page_index === pageIndex && (() => {
+                {selected && selected.page_index === pageIndex && configOpenId === selected.tempId && (() => {
                   const cssLeft = selected.x * renderScale;
                   const cssTop = (pageDims.h - selected.y - selected.height) * renderScale;
                   const cssW = selected.width * renderScale;
