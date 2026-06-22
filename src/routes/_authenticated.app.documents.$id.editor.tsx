@@ -999,7 +999,15 @@ function PdfEditorPage() {
   );
 }
 
-function FieldPreview({ field, scale, onSignClick }: { field: Field; scale: number; onSignClick: () => void }) {
+function FieldPreview({
+  field, scale, onSignClick, onValueChange, onFocus,
+}: {
+  field: Field;
+  scale: number;
+  onSignClick: () => void;
+  onValueChange?: (v: string) => void;
+  onFocus?: () => void;
+}) {
   if (field.kind === "signature" || field.kind === "initials") {
     if (field.value?.startsWith("data:image/")) {
       return <img src={field.value} alt="" className="h-full w-full object-contain pointer-events-none" />;
@@ -1011,26 +1019,43 @@ function FieldPreview({ field, scale, onSignClick }: { field: Field; scale: numb
     );
   }
   if (field.kind === "checkbox") {
-    return <span style={{ fontSize: Math.max(8, field.height * scale * 0.8) }}>{field.value === "true" ? "✓" : ""}</span>;
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.stopPropagation(); onValueChange?.(field.value === "true" ? "false" : "true"); }}
+        onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onValueChange?.(field.value === "true" ? "false" : "true"); } }}
+        className="cursor-pointer select-none leading-none"
+        style={{ fontSize: Math.max(8, field.height * scale * 0.8) }}
+      >
+        {field.value === "true" ? "✓" : "☐"}
+      </span>
+    );
   }
   const value = field.value || "";
   const fontStyle: React.CSSProperties = { fontSize: field.font_size * scale, lineHeight: 1.1 };
-  if (!value) {
-    return <span className="truncate px-1 italic text-muted-foreground" style={fontStyle}>{`« ${KIND_META[field.kind].label} »`}</span>;
-  }
-  const parts = value.split(/(\{\{\s*[a-zA-Z0-9_]+\s*\}\})/g);
+  // Inline editable for text / date — preserves variable tokens as plain text
   return (
-    <span className="truncate px-1" style={fontStyle}>
-      {parts.map((p, i) =>
-        /^\{\{\s*[a-zA-Z0-9_]+\s*\}\}$/.test(p) ? (
-          <span key={i} className="rounded bg-primary/20 px-1 text-primary">{p}</span>
-        ) : (
-          <span key={i}>{p}</span>
-        ),
-      )}
+    <span
+      contentEditable={!!onValueChange}
+      suppressContentEditableWarning
+      onMouseDown={(e) => e.stopPropagation()}
+      onFocus={onFocus}
+      onBlur={(e) => {
+        const next = e.currentTarget.textContent ?? "";
+        if (next !== value) onValueChange?.(next);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLElement).blur(); }
+      }}
+      className={`block w-full truncate px-1 outline-none focus:bg-white/60 focus:ring-1 focus:ring-primary/40 rounded-sm ${value ? "" : "italic text-muted-foreground"}`}
+      style={fontStyle}
+    >
+      {value || `« ${KIND_META[field.kind].label} »`}
     </span>
   );
 }
+
 
 function SignatureDrawDialog({
   open, onClose, onSave,
