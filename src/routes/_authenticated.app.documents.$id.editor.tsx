@@ -18,7 +18,7 @@ import {
 import {
   ArrowLeft, Trash2, Save, FileDown, Type, CalendarDays,
   CheckSquare, PenLine, Signature, Loader2, MousePointer2, Variable,
-  RefreshCw, CheckCircle2, Upload, Image as ImageIcon,
+  RefreshCw, CheckCircle2, Upload, Image as ImageIcon, Settings2,
 } from "lucide-react";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
@@ -129,6 +129,7 @@ function PdfEditorPage() {
   const [pageDims, setPageDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [configOpenId, setConfigOpenId] = useState<string | null>(null);
   const [sigOpenFor, setSigOpenFor] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [draft, setDraft] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -681,6 +682,30 @@ function PdfEditorPage() {
                         onFocus={() => setSelectedId(f.tempId)}
                       />
 
+                      {isSelected && (
+                        <div
+                          className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-md border border-border bg-popover px-1 py-0.5 shadow-md z-30"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent text-foreground"
+                            title="Configurer"
+                            onClick={() => setConfigOpenId(f.tempId)}
+                          >
+                            <Settings2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-destructive/10 text-destructive"
+                            title="Supprimer"
+                            onClick={() => removeField(f.tempId)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </Rnd>
                   );
                 })}
@@ -692,13 +717,13 @@ function PdfEditorPage() {
                   />
                 )}
 
-                {selected && selected.page_index === pageIndex && (() => {
+                {selected && selected.page_index === pageIndex && configOpenId === selected.tempId && (() => {
                   const cssLeft = selected.x * renderScale;
                   const cssTop = (pageDims.h - selected.y - selected.height) * renderScale;
                   const cssW = selected.width * renderScale;
                   const cssH = selected.height * renderScale;
                   return (
-                    <Popover open>
+                    <Popover open onOpenChange={(v) => { if (!v) setConfigOpenId(null); }}>
                       <PopoverAnchor asChild>
                         <div
                           className="pointer-events-none absolute"
@@ -712,8 +737,8 @@ function PdfEditorPage() {
                         collisionPadding={12}
                         className="w-80 max-h-[80vh] overflow-y-auto"
                         onOpenAutoFocus={(e) => e.preventDefault()}
-                        onInteractOutside={(e) => e.preventDefault()}
-                        onEscapeKeyDown={() => setSelectedId(null)}
+                        onInteractOutside={() => setConfigOpenId(null)}
+                        onEscapeKeyDown={() => setConfigOpenId(null)}
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
