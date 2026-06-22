@@ -141,15 +141,21 @@ export const FieldPlaceholder = Node.create({
     return {
       kind: { default: "text" },
       label: { default: null },
+      required: { default: false, parseHTML: (el) => el.getAttribute("data-field-required") === "1" },
     };
   },
   parseHTML() {
     return [{ tag: "span[data-field-kind]" }];
   },
   renderHTML({ HTMLAttributes }) {
+    const required = HTMLAttributes.required ? 1 : 0;
+    const { required: _r, ...rest } = HTMLAttributes;
     return [
       "span",
-      mergeAttributes(HTMLAttributes, { "data-field-kind": HTMLAttributes.kind ?? "text" }),
+      mergeAttributes(rest, {
+        "data-field-kind": HTMLAttributes.kind ?? "text",
+        "data-field-required": required,
+      }),
     ];
   },
   addNodeView() {
