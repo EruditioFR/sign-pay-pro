@@ -216,7 +216,7 @@ export const finalizeWysiwygDocument = createServerFn({ method: "POST" })
         height: f.height,
         value: null,
         font_size: 11,
-        required: false,
+        required: f.required ?? false,
         label: f.label ?? null,
         position: i,
       }));
