@@ -21,6 +21,7 @@ import {
   RefreshCw, CheckCircle2, Upload, Image as ImageIcon,
 } from "lucide-react";
 import { ShareLinkDialog } from "@/components/share-link-dialog";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { getCurrentDocumentPdfUrl, listDocumentSignatures } from "@/lib/sharing.functions";
 import {
