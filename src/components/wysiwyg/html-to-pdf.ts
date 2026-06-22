@@ -86,6 +86,16 @@ export async function exportEditorToPdf(
       ph.style.border = "1px solid transparent";
     }
 
+    // Hide decorative overlays (selection rings, dashed outlines, resize handles)
+    const hidden = Array.from(
+      pageEl.querySelectorAll<HTMLElement>("[data-export-hide], .react-resizable-handle"),
+    );
+    const hiddenRestore: { el: HTMLElement; display: string }[] = [];
+    for (const el of hidden) {
+      hiddenRestore.push({ el, display: el.style.display });
+      el.style.display = "none";
+    }
+
     const canvas = await html2canvas(pageEl, {
       scale: 2,
       backgroundColor: "#ffffff",
@@ -98,6 +108,9 @@ export async function exportEditorToPdf(
       r.el.style.background = r.bg;
       r.el.style.color = r.color;
       r.el.style.border = r.border;
+    }
+    for (const h of hiddenRestore) {
+      h.el.style.display = h.display;
     }
 
     const img = canvas.toDataURL("image/jpeg", 0.92);
