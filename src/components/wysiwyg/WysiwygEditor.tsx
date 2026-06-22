@@ -138,6 +138,7 @@ export function WysiwygEditor({ initialHtml, onChange, editorRootRef }: Props) {
       wMm, hMm, content,
       fontSizePt: kind === "paragraph" ? 11 : undefined,
       align: kind === "paragraph" ? "left" : undefined,
+      required: kind !== "paragraph" ? true : undefined,
     }]);
     setSelectedId(id);
   }, []);
