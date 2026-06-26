@@ -322,6 +322,24 @@ export const Route = createFileRoute("/api/public/share/$token")({
             .single();
           if (sigErr) return json({ error: sigErr.message }, { status: 500 });
 
+          // Publish the signed PDF as the new current version in document_files
+          // so it appears in the document's files list immediately.
+          {
+            const { publishSignedPdfAsCurrentFile } = await import(
+              "@/lib/signed-pdf-publish.server"
+            );
+            await publishSignedPdfAsCurrentFile({
+              supabaseAdmin,
+              organizationId: doc.organization_id,
+              documentId: doc.id,
+              documentType: doc.type,
+              documentReference: doc.reference ?? null,
+              signedBytes,
+              signedAt,
+              uploadedBy: null,
+            });
+          }
+
           // Fire-and-forget: notify document creator that a signature was collected.
           try {
             const origin =
