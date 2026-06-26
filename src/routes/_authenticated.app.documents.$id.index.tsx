@@ -1,8 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getDocument, getDocumentFileSignedUrl, isReadOnlyStatus } from "@/lib/documents.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
+
 import { listDocumentSignatures, listDocumentPayments } from "@/lib/sharing.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
