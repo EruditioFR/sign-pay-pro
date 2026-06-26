@@ -95,7 +95,7 @@ export async function notifySignatureCompleted(
       if (!recipients.has(k)) recipients.set(k, "creator");
     }
 
-    const url = origin ? `${origin}/app/documents/${doc.id}` : null;
+    const url = origin ? `${origin}/app/documents/${doc.id}?view=signed` : null;
     const sent: string[] = [];
     const failed: Array<{ to: string; error: string }> = [];
     for (const [to, role] of recipients.entries()) {
@@ -162,7 +162,7 @@ export async function notifyDocumentSigned(
     if (!loaded?.creator?.email) return { sent: false, reason: "no_creator_email" };
     const creatorEmail = loaded.creator.email;
     const { doc, org, creator } = loaded;
-    const url = opts.origin ? `${opts.origin}/app/documents/${doc.id}` : null;
+    const url = opts.origin ? `${opts.origin}/app/documents/${doc.id}?view=signed` : null;
     const html = renderSignatureCompletedEmail({
       recipientName: creator.full_name,
       recipientRole: "creator",

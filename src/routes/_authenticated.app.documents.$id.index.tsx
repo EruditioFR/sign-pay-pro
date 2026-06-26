@@ -1,8 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getDocument, getDocumentFileSignedUrl, isReadOnlyStatus } from "@/lib/documents.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PdfJsViewer } from "@/components/pdf-js-viewer";
+
 import { listDocumentSignatures, listDocumentPayments } from "@/lib/sharing.functions";
 import { getCurrentUser } from "@/lib/auth.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,12 +30,18 @@ import { ExportFacturXButton } from "@/components/export-factur-x-button";
 import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id/")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: typeof s.view === "string" ? s.view : undefined,
+  }),
   component: DocumentDetailPage,
 });
 
 function DocumentDetailPage() {
   const { id } = Route.useParams();
+  const search = useSearch({ from: Route.id });
+  const navigate = useNavigate();
   const { t } = useTranslation();
+
   const fetchDoc = useServerFn(getDocument);
   const fetchMe = useServerFn(getCurrentUser);
   const signFn = useServerFn(getDocumentFileSignedUrl);
@@ -53,6 +63,26 @@ function DocumentDetailPage() {
     queryFn: () => fetchPays({ data: { document_id: id } }),
   });
 
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [signedOpen, setSignedOpen] = useState(false);
+
+  // Auto-open the signed PDF when arriving from the notification email
+  // (`?view=signed`). Closing the dialog stays on the document summary.
+  useEffect(() => {
+    if (search.view !== "signed" || !data) return;
+    const current = data.files.find((f: any) => f.is_current) ?? data.files[0];
+    if (!current) return;
+    (async () => {
+      try {
+        const { url } = await signFn({ data: { fileId: current.id } });
+        setSignedUrl(url);
+        setSignedOpen(true);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [search.view, data, signFn]);
+
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   const { document: doc, files, workflows } = data;
 
@@ -60,6 +90,7 @@ function DocumentDetailPage() {
     const { url } = await signFn({ data: { fileId } });
     window.open(url, "_blank", "noopener");
   };
+
 
   const lastWorkflow = workflows[0];
   const readOnly = isReadOnlyStatus(doc.status);
@@ -85,6 +116,23 @@ function DocumentDetailPage() {
 
   return (
     <div className="space-y-4">
+      <Dialog
+        open={signedOpen}
+        onOpenChange={(o) => {
+          setSignedOpen(o);
+          if (!o && search.view === "signed") {
+            navigate({ to: "/app/documents/$id", params: { id }, search: {} });
+          }
+        }}
+      >
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>{t("documents.signed_preview_title", "Document signé")}</DialogTitle>
+          </DialogHeader>
+          {signedUrl && <PdfJsViewer url={signedUrl} className="h-[75vh]" />}
+        </DialogContent>
+      </Dialog>
+
       <Button asChild variant="ghost" size="sm">
         <Link to="/app/documents"><ArrowLeft className="mr-1 h-4 w-4" />{t("documents.title")}</Link>
       </Button>
