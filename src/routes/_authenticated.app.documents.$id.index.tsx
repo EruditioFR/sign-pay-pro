@@ -116,6 +116,23 @@ function DocumentDetailPage() {
 
   return (
     <div className="space-y-4">
+      <Dialog
+        open={signedOpen}
+        onOpenChange={(o) => {
+          setSignedOpen(o);
+          if (!o && search.view === "signed") {
+            navigate({ to: "/app/documents/$id", params: { id }, search: {} });
+          }
+        }}
+      >
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>{t("documents.signed_preview_title", "Document signé")}</DialogTitle>
+          </DialogHeader>
+          {signedUrl && <PdfJsViewer url={signedUrl} className="h-[75vh]" />}
+        </DialogContent>
+      </Dialog>
+
       <Button asChild variant="ghost" size="sm">
         <Link to="/app/documents"><ArrowLeft className="mr-1 h-4 w-4" />{t("documents.title")}</Link>
       </Button>
