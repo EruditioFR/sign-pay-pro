@@ -30,12 +30,18 @@ import { ExportFacturXButton } from "@/components/export-factur-x-button";
 import { ArrowLeft, Download, Edit3, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/documents/$id/")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: typeof s.view === "string" ? s.view : undefined,
+  }),
   component: DocumentDetailPage,
 });
 
 function DocumentDetailPage() {
   const { id } = Route.useParams();
+  const search = useSearch({ from: Route.id });
+  const navigate = useNavigate();
   const { t } = useTranslation();
+
   const fetchDoc = useServerFn(getDocument);
   const fetchMe = useServerFn(getCurrentUser);
   const signFn = useServerFn(getDocumentFileSignedUrl);
