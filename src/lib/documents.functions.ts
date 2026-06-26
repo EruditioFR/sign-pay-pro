@@ -109,6 +109,18 @@ export const getDocument = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!doc) throw new Error("Document introuvable");
 
+    // Backfill: if signed but the signed PDF was never promoted into
+    // document_files (older code path), do it now so the file shows up.
+    try {
+      if (["signed", "paid", "partially_paid", "archived"].includes(doc.status)) {
+        const { ensureSignedPdfInFiles } = await import("@/lib/signed-pdf-publish.server");
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await ensureSignedPdfInFiles(supabaseAdmin, data.id);
+      }
+    } catch (e) {
+      console.error("getDocument: backfill signed file failed:", e);
+    }
+
     const [{ data: files }, { data: workflows }] = await Promise.all([
       supabase
         .from("document_files")
@@ -126,6 +138,7 @@ export const getDocument = createServerFn({ method: "GET" })
 
     return { document: doc, files: files ?? [], workflows: workflows ?? [] };
   });
+
 
 const CreateDocSchema = z.object({
   type: DocumentTypeEnum,
