@@ -63,6 +63,26 @@ function DocumentDetailPage() {
     queryFn: () => fetchPays({ data: { document_id: id } }),
   });
 
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [signedOpen, setSignedOpen] = useState(false);
+
+  // Auto-open the signed PDF when arriving from the notification email
+  // (`?view=signed`). Closing the dialog stays on the document summary.
+  useEffect(() => {
+    if (search.view !== "signed" || !data) return;
+    const current = data.files.find((f: any) => f.is_current) ?? data.files[0];
+    if (!current) return;
+    (async () => {
+      try {
+        const { url } = await signFn({ data: { fileId: current.id } });
+        setSignedUrl(url);
+        setSignedOpen(true);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [search.view, data, signFn]);
+
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   const { document: doc, files, workflows } = data;
 
@@ -70,6 +90,7 @@ function DocumentDetailPage() {
     const { url } = await signFn({ data: { fileId } });
     window.open(url, "_blank", "noopener");
   };
+
 
   const lastWorkflow = workflows[0];
   const readOnly = isReadOnlyStatus(doc.status);
