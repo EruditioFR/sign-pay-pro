@@ -442,12 +442,12 @@ export function DocumentFiltersBar({
           />
         )}
 
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
           <Select
             value={value.sort}
             onValueChange={(v) => onChange({ sort: v as DocumentSortField })}
           >
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[140px] sm:w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -472,7 +472,7 @@ export function DocumentFiltersBar({
             value={value.dir}
             onValueChange={(v) => onChange({ dir: v as SortDir })}
           >
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-[70px] sm:w-[90px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -488,6 +488,7 @@ export function DocumentFiltersBar({
           </div>
         )}
       </div>
+
 
       <FilterChips
         chips={chips}
