@@ -14,7 +14,7 @@ import {
   Euro,
   CreditCard,
 } from "lucide-react";
-import { QuickStartActions } from "@/components/dashboard/QuickStartActions";
+
 import {
   ResponsiveContainer,
   AreaChart,
@@ -77,8 +77,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* 1. Nouveau document — point d'entrée principal */}
-      <QuickStartActions />
 
       {/* 2. Documents récents et leur état */}
       <Card>
