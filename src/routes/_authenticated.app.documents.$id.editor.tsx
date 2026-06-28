@@ -432,9 +432,9 @@ function PdfEditorPage() {
           <Button variant="outline" size="sm" onClick={() => setTplOpen(true)} disabled={fields.length === 0}>
             <BookmarkPlus className="mr-1 h-4 w-4" /> Enregistrer comme modèle
           </Button>
-          <Button size="sm" onClick={() => flattenMut.mutate()} disabled={flattenMut.isPending || fields.length === 0}>
+          <Button size="sm" onClick={() => flattenMut.mutate()} disabled={flattenMut.isPending || fields.length === 0} className="hidden sm:inline-flex">
             {flattenMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FileDown className="mr-1 h-4 w-4" />}
-            Générer PDF final
+            Valider le document
           </Button>
         </div>
       </div>
@@ -1021,6 +1021,19 @@ function PdfEditorPage() {
           if (!v) navigate({ to: "/app/documents/$id", params: { id } });
         }}
       />
+
+      {/* Mobile sticky CTA */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+        <Button
+          className="w-full"
+          onClick={() => flattenMut.mutate()}
+          disabled={flattenMut.isPending || fields.length === 0}
+        >
+          {flattenMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+          Valider le document
+        </Button>
+      </div>
+      <div className="sm:hidden h-20" aria-hidden />
     </div>
   );
 }
