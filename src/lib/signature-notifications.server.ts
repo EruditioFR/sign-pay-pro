@@ -56,6 +56,76 @@ async function loadDoc(admin: AdminClient, documentId: string) {
 }
 
 /**
+ * Load the latest signed PDF bytes for a document and return it as a base64
+ * attachment suitable for Resend. Returns null on any error or if missing.
+ * Skips attachment if file is larger than ~20 MB (Resend soft limit).
+ */
+async function loadSignedPdfAttachment(
+  admin: AdminClient,
+  documentId: string,
+  filename: string,
+): Promise<{ filename: string; content: string; content_type: string } | null> {
+  try {
+    const { data: sig } = await admin
+      .from("document_signatures")
+      .select("pdf_storage_path")
+      .eq("document_id", documentId)
+      .not("pdf_storage_path", "is", null)
+      .order("signed_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    if (!sig?.pdf_storage_path) return null;
+    const { data: blob } = await admin.storage
+      .from("signed-documents")
+      .download(sig.pdf_storage_path);
+    if (!blob) return null;
+    const ab = await blob.arrayBuffer();
+    if (ab.byteLength > 20 * 1024 * 1024) return null;
+    // Convert to base64 without spreading the whole buffer (V8 stack limit).
+    const bytes = new Uint8Array(ab);
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+    }
+    const content = btoa(binary);
+    return { filename, content, content_type: "application/pdf" };
+  } catch (e) {
+    console.error("loadSignedPdfAttachment failed:", e);
+    return null;
+  }
+}
+
+/**
+ * Insert an in-app notification for the document creator. Best-effort.
+ */
+async function insertCreatorNotification(
+  admin: AdminClient,
+  opts: {
+    documentId: string;
+    organizationId: string;
+    creatorUserId: string;
+    title: string;
+    body: string | null;
+    linkUrl: string | null;
+  },
+): Promise<void> {
+  try {
+    await admin.from("user_notifications").insert({
+      user_id: opts.creatorUserId,
+      organization_id: opts.organizationId,
+      type: "document.signed",
+      title: opts.title,
+      body: opts.body,
+      link_url: opts.linkUrl,
+      document_id: opts.documentId,
+    });
+  } catch (e) {
+    console.error("insertCreatorNotification failed:", e);
+  }
+}
+
+/**
  * Send "document fully signed" emails to creator + every signer.
  */
 export async function notifySignatureCompleted(
