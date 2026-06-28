@@ -20,7 +20,7 @@ export function NotificationBell() {
   const fetchFn = useServerFn(listMyNotifications);
   const markFn = useServerFn(markNotificationRead);
   const markAllFn = useServerFn(markAllNotificationsRead);
-  const navigate = useNavigate();
+
   const qc = useQueryClient();
 
   const { data } = useQuery({
