@@ -1,16 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type SignatureCanvas from "react-signature-canvas";
 import { ResponsiveSignatureCanvas } from "@/components/responsive-signature-canvas";
 import type * as PdfJs from "pdfjs-dist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { FileText, PenLine, CheckCircle2, Clock, Ban, ChevronLeft, ChevronRight, MousePointerClick, CreditCard } from "lucide-react";
+import {
+  FileText,
+  PenLine,
+  CheckCircle2,
+  Clock,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  MousePointerClick,
+  CreditCard,
+} from "lucide-react";
 import { PdfJsViewer } from "@/components/pdf-js-viewer";
 
 let _pdfjs: typeof PdfJs | null = null;
@@ -126,6 +142,7 @@ function PublicSignRequestPage() {
   }
 
   const status = done ?? data.request.status;
+  const isSignedView = status === "signed";
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -135,7 +152,7 @@ function PublicSignRequestPage() {
           <div className="flex-1">
             <div className="text-sm font-semibold">{data.organization?.name}</div>
             <div className="text-xs text-muted-foreground">
-              Invitation à signer · {data.request.signer_name}
+              {isSignedView ? "Document signé" : "Invitation à signer"} · {data.request.signer_name}
             </div>
           </div>
         </div>
@@ -187,7 +204,10 @@ function PublicSignRequestPage() {
                   {data.pay.is_fully_paid ? "Paiement reçu" : "Paiement demandé"}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Montant : <span className="font-medium text-foreground">{(data.pay.amount_ttc ?? 0).toLocaleString()} {data.pay.currency}</span>
+                  Montant :{" "}
+                  <span className="font-medium text-foreground">
+                    {(data.pay.amount_ttc ?? 0).toLocaleString()} {data.pay.currency}
+                  </span>
                 </div>
               </div>
               {!data.pay.is_fully_paid && (
@@ -222,8 +242,17 @@ function PublicSignRequestPage() {
           />
         ) : data.pdfUrl ? (
           <Card>
-            <CardContent className="p-3">
-              <PdfJsViewer url={data.pdfUrl} className="h-[60vh] w-full" />
+            <CardContent className="space-y-3 p-3">
+              <PdfJsViewer url={data.pdfUrl} className="h-[70vh] w-full" />
+              {isSignedView && (
+                <div className="flex justify-end">
+                  <Button asChild>
+                    <a href={data.pdfUrl} download={`${data.document.reference ?? data.document.title}-signe.pdf`}>
+                      Télécharger le PDF signé
+                    </a>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ) : null}
@@ -287,19 +316,22 @@ function SignWithPlacement({
   const [sigWidthPt, setSigWidthPt] = useState(140);
 
   const sigRef = useRef<SignatureCanvas | null>(null);
+  const modalSigRef = useRef<SignatureCanvas | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [showDecline, setShowDecline] = useState(false);
 
-  // Valeurs saisies par le destinataire pour chaque zone "à remplir".
+  // Field values keyed by field id. For signature/initials, the value is the dataURL.
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
-  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  // Currently-open signature modal target.
+  const [signatureModalField, setSignatureModalField] = useState<RecipientField | null>(null);
+
   const hasRecipientFields = recipientFields.length > 0;
   const hasRecipientSignatureField = recipientFields.some(
     (f) => f.kind === "signature" || f.kind === "initials",
   );
-  // Le placement libre est désactivé si l'émetteur a déjà placé des zones signature.
+  // Free placement only when the sender hasn't pre-placed signature zones.
   const [showFreePlacement, setShowFreePlacement] = useState(!hasRecipientSignatureField);
 
   // Load PDF
@@ -356,8 +388,6 @@ function SignWithPlacement({
     };
   };
 
-  const selectedField = recipientFields.find((f) => f.id === selectedFieldId) ?? null;
-
   const getFieldLabel = (f: RecipientField) =>
     f.label ||
     (f.kind === "date"
@@ -370,21 +400,40 @@ function SignWithPlacement({
             ? "Paraphe"
             : "Texte");
 
-  const getFieldFilled = (f: RecipientField) => {
+  const isFieldFilled = (f: RecipientField) => {
     const val = fieldValues[f.id] ?? "";
-    return f.kind === "signature" || f.kind === "initials"
-      ? !!val
-      : f.kind === "checkbox"
-        ? true
-        : !!val.trim();
+    if (f.kind === "signature" || f.kind === "initials") return val.startsWith("data:image/");
+    if (f.kind === "checkbox") return true; // checked or not, valid
+    return !!val.trim();
   };
 
-  const selectRecipientField = (f: RecipientField) => {
-    setSelectedFieldId(f.id);
+  // Pending mandatory fields (anything not filled yet).
+  const missingFields = useMemo(
+    () => recipientFields.filter((f) => !isFieldFilled(f)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [recipientFields, fieldValues],
+  );
+
+  // Focus a text/date input by id and scroll its zone into view.
+  const focusTextField = (f: RecipientField) => {
     if (f.page_index !== pageIndex) setPageIndex(f.page_index);
-    if (f.kind === "signature" || f.kind === "initials") {
-      setFieldValues((s) => ({ ...s, [f.id]: s[f.id] || "__selected__" }));
-    }
+    setTimeout(() => {
+      const el = document.getElementById(`recipient-field-${f.id}`) as HTMLInputElement | null;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus();
+    }, 60);
+  };
+
+  const openSignatureModal = (f: RecipientField) => {
+    if (f.page_index !== pageIndex) setPageIndex(f.page_index);
+    setSignatureModalField(f);
+  };
+
+  const goToField = (f: RecipientField) => {
+    if (f.kind === "signature" || f.kind === "initials") openSignatureModal(f);
+    else if (f.kind === "checkbox") {
+      if (f.page_index !== pageIndex) setPageIndex(f.page_index);
+    } else focusTextField(f);
   };
 
   const placeAtClientPoint = (clientX: number, clientY: number) => {
@@ -450,28 +499,50 @@ function SignWithPlacement({
     }
   };
 
+  const validateModalSignature = () => {
+    if (!signatureModalField) return;
+    const pad = modalSigRef.current;
+    if (!pad || pad.isEmpty()) {
+      toast.error("Veuillez tracer votre signature.");
+      return;
+    }
+    const dataUrl = pad.getCanvas().toDataURL("image/png");
+    setFieldValues((s) => ({ ...s, [signatureModalField.id]: dataUrl }));
+    setSignatureModalField(null);
+  };
+
   const sign = async () => {
     if (!consentAccepted) return toast.error("Vous devez accepter les conditions de signature électronique.");
-    if (!sigRef.current) return toast.error("Le pavé de signature n'est pas prêt. Réessayez dans un instant.");
-    if (sigRef.current.isEmpty()) return toast.error("Veuillez signer dans le cadre.");
+    if (missingFields.length > 0) {
+      const first = missingFields[0];
+      goToField(first);
+      return toast.error(
+        `Veuillez remplir la zone « ${getFieldLabel(first)} » (page ${first.page_index + 1}).`,
+      );
+    }
 
-    // Toutes les zones destinataire sont obligatoires.
-    const canvasDataUrl = sigRef.current.getCanvas().toDataURL("image/png");
+    // Choose the signature image source: either a recipient signature field, or the global pad.
+    let canvasDataUrl: string | null = null;
+    const sigField = recipientFields.find(
+      (f) => (f.kind === "signature" || f.kind === "initials") && (fieldValues[f.id] ?? "").startsWith("data:image/"),
+    );
+    if (sigField) {
+      canvasDataUrl = fieldValues[sigField.id];
+    } else if (sigRef.current && !sigRef.current.isEmpty()) {
+      canvasDataUrl = sigRef.current.getCanvas().toDataURL("image/png");
+    }
+    if (!canvasDataUrl) {
+      return toast.error("Veuillez signer dans le cadre.");
+    }
+
     const builtFieldValues: { id: string; value: string }[] = [];
     for (const f of recipientFields) {
       if (f.kind === "signature" || f.kind === "initials") {
-        // Réutilise la signature tracée dans le cadre.
-        builtFieldValues.push({ id: f.id, value: canvasDataUrl });
+        builtFieldValues.push({ id: f.id, value: fieldValues[f.id] ?? canvasDataUrl });
       } else if (f.kind === "checkbox") {
         builtFieldValues.push({ id: f.id, value: fieldValues[f.id] === "true" ? "true" : "false" });
       } else {
-        const v = (fieldValues[f.id] ?? "").trim();
-        if (!v) {
-          return toast.error(
-            `Veuillez remplir la zone « ${f.label || (f.kind === "date" ? "Date" : "Texte")} » page ${f.page_index + 1}.`,
-          );
-        }
-        builtFieldValues.push({ id: f.id, value: v });
+        builtFieldValues.push({ id: f.id, value: (fieldValues[f.id] ?? "").trim() });
       }
     }
 
@@ -483,8 +554,6 @@ function SignWithPlacement({
         consent: { accepted: true, text: consentText },
       };
       if (showFreePlacement && !hasRecipientSignatureField) {
-        // Si l'utilisateur n'a pas tapé sur le PDF (notamment sur mobile),
-        // place automatiquement la signature en bas à droite de la page courante.
         const finalPlacement =
           placement ??
           clampPlacement({
@@ -625,36 +694,29 @@ function SignWithPlacement({
                   const cssW = f.width * renderScale;
                   const cssH = f.height * renderScale;
                   const val = fieldValues[f.id] ?? "";
-                  const filled = getFieldFilled(f);
-                  const selected = selectedFieldId === f.id;
-                  return (
-                    <div
-                      key={f.id}
-                      data-recipient-field="true"
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        selectRecipientField(f);
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        selectRecipientField(f);
-                      }}
-                      className={`absolute z-10 flex items-center justify-center rounded border-2 touch-manipulation ${
-                        selected
-                          ? "border-primary bg-primary/15 ring-2 ring-primary/40"
-                          : filled
-                            ? "border-emerald-500 bg-emerald-500/10"
-                            : "border-dashed border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/20"
-                      }`}
-                      style={{
-                        left: cssLeft,
-                        top: cssTop,
-                        width: Math.max(cssW, 44),
-                        height: Math.max(cssH, f.kind === "checkbox" ? 44 : 38),
-                      }}
-                      title={f.label || `Zone ${f.kind}`}
-                    >
-                      {(f.kind === "text" || f.kind === "date") && (
+                  const filled = isFieldFilled(f);
+                  const baseClass = `absolute z-10 flex items-center justify-center rounded border-2 touch-manipulation transition-colors ${
+                    filled
+                      ? "border-emerald-500 bg-emerald-500/10"
+                      : "border-dashed border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/20 animate-pulse"
+                  }`;
+                  const baseStyle = {
+                    left: cssLeft,
+                    top: cssTop,
+                    width: Math.max(cssW, 44),
+                    height: Math.max(cssH, f.kind === "checkbox" ? 44 : 38),
+                  } as React.CSSProperties;
+
+                  if (f.kind === "text" || f.kind === "date") {
+                    return (
+                      <div
+                        key={f.id}
+                        data-recipient-field="true"
+                        className={baseClass}
+                        style={baseStyle}
+                        title={f.label || `Zone ${f.kind}`}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <input
                           id={`recipient-field-${f.id}`}
                           type={f.kind === "date" ? "date" : "text"}
@@ -666,8 +728,19 @@ function SignWithPlacement({
                           style={{ fontSize: Math.max(16, f.font_size * renderScale) }}
                           placeholder={f.label || "À remplir"}
                         />
-                      )}
-                      {f.kind === "checkbox" && (
+                      </div>
+                    );
+                  }
+                  if (f.kind === "checkbox") {
+                    return (
+                      <label
+                        key={f.id}
+                        data-recipient-field="true"
+                        className={`${baseClass} cursor-pointer`}
+                        style={baseStyle}
+                        title={f.label || "Case"}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <input
                           type="checkbox"
                           checked={val === "true"}
@@ -677,71 +750,63 @@ function SignWithPlacement({
                               [f.id]: e.target.checked ? "true" : "false",
                             }))
                           }
-                          className="h-4 w-4"
+                          className="h-5 w-5"
                         />
+                      </label>
+                    );
+                  }
+                  // signature / initials
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      data-recipient-field="true"
+                      className={`${baseClass} cursor-pointer overflow-hidden`}
+                      style={baseStyle}
+                      title={f.label || (f.kind === "signature" ? "Signature" : "Paraphe")}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openSignatureModal(f);
+                      }}
+                    >
+                      {val.startsWith("data:image/") ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={val}
+                          alt={f.kind === "signature" ? "Signature" : "Paraphe"}
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <span className="flex items-center gap-1 px-1 text-center text-[10px] text-amber-700 dark:text-amber-300">
+                          <PenLine className="h-3 w-3 shrink-0" />
+                          {f.kind === "signature" ? "Signer ici" : "Parapher ici"}
+                        </span>
                       )}
-                      {(f.kind === "signature" || f.kind === "initials") && (
-                        <div className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-amber-700 dark:text-amber-300">
-                          <PenLine className="mr-1 h-3 w-3 shrink-0" />
-                          <span>
-                            {f.kind === "signature" ? "Signature" : "Paraphe"} — tracez ci-dessous
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    </button>
                   );
                 })}
             </div>
 
-            {hasRecipientFields && (
-              <div className="space-y-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
-                <div className="text-xs text-amber-700 dark:text-amber-300">
-                  {recipientFields.length} zone{recipientFields.length > 1 ? "s" : ""} à compléter.
+            {hasRecipientFields && missingFields.length > 0 && (
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+                <div className="mb-2 font-semibold">
+                  {missingFields.length} zone{missingFields.length > 1 ? "s" : ""} à compléter :
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {recipientFields.map((f) => (
+                <div className="flex flex-wrap gap-2">
+                  {missingFields.map((f) => (
                     <Button
                       key={f.id}
                       type="button"
-                      variant={selectedFieldId === f.id ? "default" : "outline"}
-                      className="h-auto justify-start whitespace-normal px-3 py-2 text-left text-xs"
-                      onClick={() => selectRecipientField(f)}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => goToField(f)}
+                      className="h-7 text-xs"
                     >
-                      <span className="min-w-0 flex-1">
-                        Page {f.page_index + 1} · {getFieldLabel(f)}
-                      </span>
+                      Page {f.page_index + 1} · {getFieldLabel(f)}
                     </Button>
                   ))}
                 </div>
-                {selectedField && (selectedField.kind === "text" || selectedField.kind === "date") && (
-                  <div className="space-y-1">
-                    <Label className="text-xs">{getFieldLabel(selectedField)}</Label>
-                    <Input
-                      type={selectedField.kind === "date" ? "date" : "text"}
-                      value={fieldValues[selectedField.id] ?? ""}
-                      onChange={(e) =>
-                        setFieldValues((s) => ({ ...s, [selectedField.id]: e.target.value }))
-                      }
-                      className="text-base"
-                    />
-                  </div>
-                )}
-                {selectedField && selectedField.kind === "checkbox" && (
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={(fieldValues[selectedField.id] ?? "") === "true"}
-                      onChange={(e) =>
-                        setFieldValues((s) => ({
-                          ...s,
-                          [selectedField.id]: e.target.checked ? "true" : "false",
-                        }))
-                      }
-                      className="h-5 w-5"
-                    />
-                    {getFieldLabel(selectedField)}
-                  </label>
-                )}
               </div>
             )}
 
@@ -765,15 +830,25 @@ function SignWithPlacement({
           <p className="text-sm text-muted-foreground">Aucun PDF disponible.</p>
         )}
 
-        <div>
-          <Label>Tracez votre signature</Label>
-          <div className="mt-1 rounded-md border bg-background">
-            <ResponsiveSignatureCanvas ref={sigRef} height={160} className="block w-full" />
+        {/* Global signature pad: only shown when there is NO signature zone on the document.
+            With pre-placed signature zones, each zone has its own click-to-sign modal. */}
+        {!hasRecipientSignatureField && (
+          <div>
+            <Label>Tracez votre signature</Label>
+            <div className="mt-1 rounded-md border bg-background">
+              <ResponsiveSignatureCanvas ref={sigRef} height={160} className="block w-full" />
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-1"
+              onClick={() => sigRef.current?.clear()}
+            >
+              Effacer
+            </Button>
           </div>
-          <Button type="button" variant="ghost" size="sm" className="mt-1" onClick={() => sigRef.current?.clear()}>
-            Effacer
-          </Button>
-        </div>
+        )}
 
         <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center justify-between gap-2">
@@ -800,14 +875,16 @@ function SignWithPlacement({
 
         <Button
           onClick={sign}
-          disabled={submitting || !consentAccepted}
+          disabled={submitting || !consentAccepted || missingFields.length > 0}
           className="w-full"
         >
           {submitting
             ? "Envoi…"
             : !consentAccepted
               ? "Acceptez le consentement pour signer"
-              : "Signer maintenant"}
+              : missingFields.length > 0
+                ? `Compléter ${missingFields.length} zone${missingFields.length > 1 ? "s" : ""} avant de signer`
+                : "Signer maintenant"}
         </Button>
 
         {!showDecline ? (
@@ -834,6 +911,52 @@ function SignWithPlacement({
           </div>
         )}
       </CardContent>
+
+      {/* Signature modal — opened when the user clicks on a signature/initials zone */}
+      <Dialog
+        open={!!signatureModalField}
+        onOpenChange={(o) => {
+          if (!o) setSignatureModalField(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {signatureModalField?.kind === "initials" ? "Tracez votre paraphe" : "Tracez votre signature"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="rounded-md border bg-background">
+            <ResponsiveSignatureCanvas
+              ref={modalSigRef}
+              height={200}
+              className="block w-full"
+            />
+          </div>
+          <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => modalSigRef.current?.clear()}
+            >
+              Effacer
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSignatureModalField(null)}
+              >
+                Annuler
+              </Button>
+              <Button type="button" size="sm" onClick={validateModalSignature}>
+                Valider
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
