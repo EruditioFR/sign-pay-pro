@@ -454,59 +454,9 @@ export const Route = createFileRoute("/api/public/sign-request/$token")({
             y: Math.max(yPdf - 10, 4),
             size: 7,
           });
-        } else if (
-          !recipientFieldList.some((f) => f.kind === "signature" || f.kind === "initials")
-        ) {
-          // Pas de zone signature destinataire pré-placée : page récapitulative.
-          const page = pdf.addPage([595.28, 320]);
-          const dims = sigImg.scale(0.4);
-          page.drawText("SIGNATURE", { x: 50, y: 270, size: 14 });
-          page.drawText(`Signataire : ${req.signer_name}`, { x: 50, y: 244, size: 11 });
-          page.drawText(`Email : ${req.signer_email}`, { x: 50, y: 228, size: 10 });
-          page.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 212, size: 10 });
-          if (ip) page.drawText(`IP : ${ip}`, { x: 50, y: 196, size: 9 });
-          page.drawImage(sigImg, { x: 50, y: 60, width: dims.width, height: dims.height });
         }
-
-        // Append a summary page with both signatures (client + provider)
-        try {
-          const { data: creator } = doc.created_by
-            ? await supabaseAdmin
-                .from("profiles")
-                .select("signature_image_b64, full_name, email")
-                .eq("id", doc.created_by)
-                .maybeSingle()
-            : { data: null };
-
-          const summary = pdf.addPage([595.28, 400]);
-          const dims = sigImg.scale(0.4);
-          summary.drawText("SIGNATURE CLIENT", { x: 50, y: 340, size: 12 });
-          summary.drawText(`Signataire : ${req.signer_name}`, { x: 50, y: 320, size: 10 });
-          summary.drawText(`Email : ${req.signer_email}`, { x: 50, y: 306, size: 9 });
-          summary.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 292, size: 9 });
-          summary.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
-
-          summary.drawText("SIGNATURE PRESTATAIRE", { x: 320, y: 340, size: 12 });
-          summary.drawText(`${creator?.full_name ?? org?.name ?? "—"}`, { x: 320, y: 320, size: 10 });
-          if (creator?.email) summary.drawText(`Email : ${creator.email}`, { x: 320, y: 306, size: 9 });
-          if (creator?.signature_image_b64) {
-            const pb64 = creator.signature_image_b64.replace(/^data:image\/png;base64,/, "");
-            const provImg = await pdf.embedPng(Uint8Array.from(atob(pb64), (c) => c.charCodeAt(0)));
-            const pdims = provImg.scale(0.4);
-            summary.drawImage(provImg, { x: 320, y: 100, width: pdims.width, height: pdims.height });
-          } else {
-            summary.drawText("(Signature non configurée)", { x: 320, y: 200, size: 9 });
-          }
-        } catch (e) {
-          console.error("provider signature stamp failed:", e);
-          const { reportServerError } = await import("@/lib/observability.server");
-          void reportServerError(e, {
-            source: "sign_request.provider_stamp",
-            category: "technical",
-            organizationId: doc.organization_id,
-            context: { documentId: doc.id, requestId: req.id },
-          });
-        }
+        // NOTE: no appended summary / signature page — the signature appears
+        // directly inside the document via recipient fields or `body.placement`.
 
 
         const signedBytes = await pdf.save();
