@@ -14,7 +14,7 @@ import {
   Euro,
   CreditCard,
 } from "lucide-react";
-import { QuickStartActions } from "@/components/dashboard/QuickStartActions";
+
 import {
   ResponsiveContainer,
   AreaChart,
