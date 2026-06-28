@@ -2,21 +2,14 @@
  * Publishes a signed PDF as the new current version of a document in
  * `document_files`, so the user immediately sees the signed PDF in the
  * document's files list. Best-effort: errors are logged but never thrown.
+ *
+ * Ordering is important: we insert the new "current" row FIRST, and only
+ * then mark previous versions as non-current. If we did it the other way
+ * around (and the insert failed for any reason), the document would end
+ * up with no current file at all.
  */
 export async function publishSignedPdfAsCurrentFile(params: {
-  supabaseAdmin: {
-    storage: {
-      from: (b: string) => {
-        upload: (
-          p: string,
-          d: Uint8Array,
-          o: { contentType: string; upsert?: boolean },
-        ) => Promise<{ error: { message: string } | null }>;
-        download?: (p: string) => Promise<{ data: Blob | null; error: { message: string } | null }>;
-      };
-    };
-    from: (t: string) => any;
-  };
+  supabaseAdmin: any;
   organizationId: string;
   documentId: string;
   documentType: string;
@@ -41,17 +34,23 @@ export async function publishSignedPdfAsCurrentFile(params: {
       .from("documents")
       .upload(docPath, signedBytes, {
         contentType: "application/pdf",
-        upsert: false,
+        upsert: true,
       });
     if (docUpErr) {
       console.error("publishSignedPdfAsCurrentFile upload failed:", docUpErr.message);
       return;
     }
 
-    await supabaseAdmin
-      .from("document_files")
-      .update({ is_current: false })
-      .eq("document_id", documentId);
+    // Resolve a fallback uploader (document creator) when none is provided.
+    let resolvedUploadedBy = uploadedBy;
+    if (!resolvedUploadedBy) {
+      const { data: docRow } = await supabaseAdmin
+        .from("documents")
+        .select("created_by")
+        .eq("id", documentId)
+        .maybeSingle();
+      resolvedUploadedBy = docRow?.created_by ?? null;
+    }
 
     const { data: prev } = await supabaseAdmin
       .from("document_files")
@@ -61,16 +60,31 @@ export async function publishSignedPdfAsCurrentFile(params: {
       .limit(1);
     const nextVersion = (prev?.[0]?.version ?? 0) + 1;
 
-    await supabaseAdmin.from("document_files").insert({
+    // Insert FIRST so we never end up without a current file.
+    const { error: insErr } = await supabaseAdmin.from("document_files").insert({
       document_id: documentId,
       version: nextVersion,
       storage_path: docPath,
       file_name: `${documentType}-${documentReference ?? documentId.slice(0, 8)}-signed.pdf`,
       mime_type: "application/pdf",
       size_bytes: signedBytes.byteLength,
-      uploaded_by: uploadedBy,
+      uploaded_by: resolvedUploadedBy,
       is_current: true,
     });
+    if (insErr) {
+      console.error("publishSignedPdfAsCurrentFile insert failed:", insErr.message);
+      return;
+    }
+
+    // Now flip every other version to non-current.
+    const { error: updErr } = await supabaseAdmin
+      .from("document_files")
+      .update({ is_current: false })
+      .eq("document_id", documentId)
+      .neq("storage_path", docPath);
+    if (updErr) {
+      console.error("publishSignedPdfAsCurrentFile update is_current failed:", updErr.message);
+    }
   } catch (e) {
     console.error("publishSignedPdfAsCurrentFile failed:", e);
   }
@@ -89,7 +103,7 @@ export async function ensureSignedPdfInFiles(
   try {
     const { data: doc } = await supabaseAdmin
       .from("documents")
-      .select("id, organization_id, type, reference, status")
+      .select("id, organization_id, type, reference, status, created_by")
       .eq("id", documentId)
       .maybeSingle();
     if (!doc) return false;
@@ -132,7 +146,7 @@ export async function ensureSignedPdfInFiles(
       documentReference: doc.reference ?? null,
       signedBytes: bytes,
       signedAt,
-      uploadedBy: null,
+      uploadedBy: doc.created_by ?? null,
     });
     return true;
   } catch (e) {
