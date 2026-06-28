@@ -1,64 +1,59 @@
-## Cause racine
+# Refonte UX mobile — zéro scroll horizontal
 
-Pour chaque document signé examiné en base, on trouve la signature (avec `pdf_storage_path` dans le bucket `signed-documents`) mais **aucune ligne `-signed.pdf` dans `document_files`**, et **toutes les lignes existantes ont `is_current = false`**.
+Objectif : sur smartphone (≤ 767px), tout le contenu doit tenir dans la largeur du viewport, rester lisible et atteignable au pouce, sans aucun défilement horizontal.
 
-En traçant `publishSignedPdfAsCurrentFile` (`src/lib/signed-pdf-publish.server.ts`) :
+## 1. Fondations responsive (transverse)
 
-1. Il fait `update document_files set is_current=false` (réussit, d'où l'état observé).
-2. Il fait `insert into document_files (... uploaded_by: null ...)`.
-3. La colonne `document_files.uploaded_by` est **`NOT NULL`** → l'insert échoue silencieusement (`console.error` uniquement, pas d'exception).
+- Ajouter dans `src/styles.css` une garde globale : `html, body { overflow-x: hidden; max-width: 100vw; }` et passer les conteneurs principaux à `min-w-0`.
+- Auditer `AppShell` et `main` : remplacer `p-4 md:p-6` par `px-3 py-4 md:p-6`, garantir `min-w-0` sur le `<main>` pour que les enfants `flex`/`grid` se contractent.
+- Header mobile : compacter (logo + burger + cloche + avatar), masquer le nom utilisateur sous `sm:`.
+- Utilitaire commun : remplacer toutes les `h-screen` par `h-dvh` pour les pleins écrans (notamment page signataire).
 
-Conséquence :
-- Le détail document n'a plus de fichier "courant" → la modale `?view=signed` ouverte depuis le mail ou la cloche de notification n'a rien à afficher.
-- La rubrique "Titre — fichiers" ne montre pas le PDF signé.
-- Le backfill `ensureSignedPdfInFiles` reproduit exactement le même bug (`uploadedBy: null`).
+## 2. Back-office — tableaux & listes
 
-## Correctifs
+Zones concernées : `/app/documents`, `/app/facturation/devis`, `/app/facturation/factures`, `/app/pending-signatures`, `/app/pdf-templates`, listes utilisateurs/audit.
 
-### 1. Migration — rendre `uploaded_by` nullable
+Approche **card-on-mobile, table-on-desktop** :
 
-```sql
-ALTER TABLE public.document_files ALTER COLUMN uploaded_by DROP NOT NULL;
-```
+- Sur `< md` : remplacer chaque ligne de `<table>` par une `Card` empilée avec titre, métadonnées en colonnes de 2, badges de statut et menu d'actions (`DropdownMenu`).
+- Sur `≥ md` : conserver le tableau actuel.
+- Implémentation : composant `<ResponsiveDataList rows columns mobileCard />` ou simplement deux blocs `hidden md:block` / `md:hidden` selon la page.
+- Filtres / recherche : passer en `Sheet` (bottom-sheet) déclenché par un bouton « Filtres » sur mobile au lieu de la barre horizontale qui déborde.
+- Pagination : boutons précédent/suivant pleine largeur empilés sur mobile.
 
-(Les inserts système — PDF signé, factur-X — n'ont pas d'utilisateur authentifié.)
+## 3. Éditeur de document (`/app/documents/$id/editor`)
 
-### 2. `src/lib/signed-pdf-publish.server.ts`
+Problèmes actuels : palette latérale + canvas PDF + panneau propriétés = trop large, scroll horizontal.
 
-- Renseigner `uploaded_by` avec `documents.created_by` quand le caller passe `null`, en fallback de la colonne nullable.
-- **Réordonner** : insérer d'abord la nouvelle version `is_current=true`, puis seulement basculer les autres lignes à `is_current=false`. Évite l'état "aucun fichier courant" si un insert échoue à nouveau.
-- Si l'upload storage échoue avec un conflit `Duplicate`, basculer en `upsert: true` plutôt que d'abandonner.
-- Logguer explicitement les erreurs d'insert (actuellement on ne capture pas le retour de `.insert`).
+Refonte :
 
-### 3. Rétroactif — réparer les documents déjà signés
+- **Layout mobile** : canvas PDF en pleine largeur (zoom auto pour fit width), palette d'outils en **barre flottante en bas** (icônes : texte, date, case, signature, image), réglages d'un champ sélectionné en **bottom-sheet** au lieu du Popover latéral.
+- Pinch-to-zoom + pan natifs sur le canvas (déjà géré par react-rnd, vérifier `touch-action`).
+- Boutons « Enregistrer / Aperçu / Envoyer » dans une barre sticky en haut, condensés en icônes + label court.
+- Sur `≥ md` : conserver l'expérience desktop actuelle.
 
-Une requête de réparation ponctuelle (via `supabase--insert`) pour les documents `status in (signed, paid, partially_paid, archived)` sans ligne `-signed.pdf` : remettre `is_current=true` sur la version la plus récente actuelle. À la prochaine ouverture du document, `ensureSignedPdfInFiles` (corrigé) publiera le vrai PDF signé.
+## 4. Page signataire (`/s/$token`)
 
-Plus simple et suffisant : 
+- Header sticky compact (logo + statut), PDF en pleine largeur avec viewer `PdfJsViewer` qui s'ajuste à `100vw`.
+- Le panneau de saisie déjà ajouté devient **plein écran** (drawer) quand un champ est tapé : clavier visible + un seul champ à remplir à la fois, navigation « Précédent / Suivant ».
+- Canvas de signature : plein écran rotatif (proposer mode paysage) avec bouton « Effacer / Valider ».
+- CTA « Signer maintenant » en barre sticky bas, toujours visible, `min-h-12` pleine largeur.
 
-```sql
-UPDATE document_files f
-SET is_current = true
-WHERE f.id IN (
-  SELECT DISTINCT ON (document_id) id
-  FROM document_files
-  WHERE document_id IN (
-    SELECT id FROM documents WHERE status IN ('signed','paid','partially_paid','archived')
-  )
-  ORDER BY document_id, version DESC
-)
-AND NOT EXISTS (
-  SELECT 1 FROM document_files g
-  WHERE g.document_id = f.document_id AND g.is_current = true
-);
-```
+## 5. Vérification
 
-Puis, à la prochaine ouverture du document détail, le backfill (qui marche désormais) ajoutera la version signée et la marquera courante.
+- Script Playwright (viewport 375×812) parcourant : `/admin`, `/app/documents`, `/app/facturation/factures`, éditeur, `/s/$token` de démo. Screenshot de chaque écran + assertion `document.documentElement.scrollWidth <= window.innerWidth`.
 
-### 4. Vérification
+## Détails techniques
 
-- Lister un document signé existant et confirmer qu'après ouverture une ligne `…-signed.pdf` apparaît avec `is_current=true`.
-- Le lien email (`/app/documents/{id}?view=signed`) et la cloche de notification ouvrent la modale sur le PDF signé.
-- La rubrique "Titre — fichiers" affiche le PDF signé téléchargeable.
+- Tailwind v4, breakpoint mobile = `< md` (767px).
+- Pattern récurrent : `grid grid-cols-[minmax(0,1fr)_auto]` + `min-w-0` + `truncate` + `shrink-0` sur les éléments fixes.
+- Tableaux : utiliser `<div className="md:hidden space-y-2">…cartes…</div>` + `<Table className="hidden md:table">…</Table>`.
+- Bottom-sheets : `Sheet side="bottom"` shadcn.
+- Cibles tactiles ≥ 44×44 (`min-h-11 min-w-11`).
+- Aucun changement de logique métier ; uniquement présentation et composants UI.
 
-Aucun changement nécessaire côté template email ni côté `NotificationBell` : le lien est déjà correct, c'est uniquement la donnée sous-jacente qui manquait.
+## Hors périmètre
+
+- Pas de redesign visuel (couleurs, typo conservées).
+- Pas de modification des server functions ni du schéma DB.
+- Pages super-admin / reseller laissées telles quelles sauf si triviales.

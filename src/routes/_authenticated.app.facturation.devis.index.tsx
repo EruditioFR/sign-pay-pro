@@ -58,11 +58,11 @@ function DevisListPage() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <FileText className="h-6 w-6 text-[color:var(--facturation)]" />
-            Devis
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-xl font-semibold sm:text-2xl">
+            <FileText className="h-6 w-6 shrink-0 text-[color:var(--facturation)]" />
+            <span className="truncate">Devis</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             Gérez vos devis : édition, envoi, conversion en facture.
@@ -70,7 +70,8 @@ function DevisListPage() {
         </div>
         <Button
           asChild
-          className="bg-[color:var(--facturation)] text-[color:var(--facturation-foreground)] hover:bg-[color:var(--facturation)]/90"
+          size="sm"
+          className="w-full bg-[color:var(--facturation)] text-[color:var(--facturation-foreground)] hover:bg-[color:var(--facturation)]/90 sm:w-auto"
         >
           <Link to="/app/facturation/devis/new">
             <Plus className="mr-1 h-4 w-4" /> Nouveau devis
@@ -79,16 +80,16 @@ function DevisListPage() {
       </header>
 
       <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
+        <CardContent className="space-y-3 p-3 sm:p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Input
               placeholder="Rechercher (titre, client, n°)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full sm:w-44">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
@@ -103,88 +104,154 @@ function DevisListPage() {
             </Select>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>N° Devis</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Montant HT</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {q.isLoading && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    Chargement…
-                  </TableCell>
-                </TableRow>
-              )}
-              {!q.isLoading && rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    Aucun devis.
-                  </TableCell>
-                </TableRow>
-              )}
-              {rows.map((r) => {
-                const convertible = r.status === "sent" || r.status === "viewed" || r.status === "issued";
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">
-                      {r.document_number ?? "—"}
-                    </TableCell>
-                    <TableCell>{r.third_party_name ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {r.issue_date ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">{formatEUR(r.amount_ht)}</TableCell>
-                    <TableCell><QuoteStatusBadge status={r.status} /></TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button asChild size="sm" variant="ghost">
-                          <Link
-                            to="/app/facturation/devis/$id/edit"
-                            params={{ id: r.id }}
-                          >
-                            {r.status === "draft" ? (
-                              <Pencil className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Link>
-                        </Button>
-                        {convertible && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={convert.isPending}
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  "Convertir ce devis en facture ? Le devis sera marqué comme accepté.",
-                                )
-                              ) {
-                                convert.mutate(r.id);
-                              }
-                            }}
-                            className="text-[color:var(--facturation)] border-[color:var(--facturation)]/40"
-                          >
-                            <ArrowRightLeft className="mr-1 h-4 w-4" />
-                            Convertir
-                          </Button>
+          {/* Mobile: cards */}
+          <ul className="space-y-2 md:hidden">
+            {q.isLoading && (
+              <li className="rounded-md border border-border p-3 text-center text-sm text-muted-foreground">
+                Chargement…
+              </li>
+            )}
+            {!q.isLoading && rows.length === 0 && (
+              <li className="rounded-md border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+                Aucun devis.
+              </li>
+            )}
+            {rows.map((r) => {
+              const convertible = r.status === "sent" || r.status === "viewed" || r.status === "issued";
+              return (
+                <li key={r.id} className="rounded-md border border-border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{r.third_party_name ?? "—"}</p>
+                      <p className="truncate font-mono text-xs text-muted-foreground">
+                        {r.document_number ?? "—"}
+                      </p>
+                    </div>
+                    <QuoteStatusBadge status={r.status} />
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span>{r.issue_date ?? "—"}</span>
+                    <span className="text-right font-medium text-foreground tabular-nums">
+                      {formatEUR(r.amount_ht)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button asChild size="sm" variant="outline" className="flex-1">
+                      <Link to="/app/facturation/devis/$id/edit" params={{ id: r.id }}>
+                        {r.status === "draft" ? (
+                          <><Pencil className="mr-1 h-4 w-4" /> Éditer</>
+                        ) : (
+                          <><Eye className="mr-1 h-4 w-4" /> Voir</>
                         )}
-                      </div>
+                      </Link>
+                    </Button>
+                    {convertible && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={convert.isPending}
+                        onClick={() => {
+                          if (confirm("Convertir ce devis en facture ?")) {
+                            convert.mutate(r.id);
+                          }
+                        }}
+                        className="flex-1 text-[color:var(--facturation)] border-[color:var(--facturation)]/40"
+                      >
+                        <ArrowRightLeft className="mr-1 h-4 w-4" /> Convertir
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>N° Devis</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Montant HT</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {q.isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                      Chargement…
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                )}
+                {!q.isLoading && rows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                      Aucun devis.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rows.map((r) => {
+                  const convertible = r.status === "sent" || r.status === "viewed" || r.status === "issued";
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-mono text-xs">
+                        {r.document_number ?? "—"}
+                      </TableCell>
+                      <TableCell>{r.third_party_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {r.issue_date ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right">{formatEUR(r.amount_ht)}</TableCell>
+                      <TableCell><QuoteStatusBadge status={r.status} /></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button asChild size="sm" variant="ghost">
+                            <Link
+                              to="/app/facturation/devis/$id/edit"
+                              params={{ id: r.id }}
+                            >
+                              {r.status === "draft" ? (
+                                <Pencil className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Link>
+                          </Button>
+                          {convertible && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={convert.isPending}
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    "Convertir ce devis en facture ? Le devis sera marqué comme accepté.",
+                                  )
+                                ) {
+                                  convert.mutate(r.id);
+                                }
+                              }}
+                              className="text-[color:var(--facturation)] border-[color:var(--facturation)]/40"
+                            >
+                              <ArrowRightLeft className="mr-1 h-4 w-4" />
+                              Convertir
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+

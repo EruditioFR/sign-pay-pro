@@ -328,7 +328,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:px-6">
           <div className="flex items-center gap-2 md:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -389,7 +389,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </DropdownMenu>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="min-w-0 flex-1 px-3 py-4 md:p-6">{children}</main>
       </div>
     </div>
   );

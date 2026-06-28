@@ -194,7 +194,7 @@ export function DocumentFiltersBar({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[240px]">
           <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={value.q}
@@ -203,6 +203,7 @@ export function DocumentFiltersBar({
             className="pl-8"
           />
         </div>
+
 
         <Popover>
           <PopoverTrigger asChild>
@@ -217,8 +218,9 @@ export function DocumentFiltersBar({
           </PopoverTrigger>
           <PopoverContent
             align="end"
-            className="w-[340px] max-h-[70vh] overflow-y-auto"
+            className="w-[min(340px,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto"
           >
+
             <div className="space-y-4 text-sm">
               <FilterGroup title={t("documents.field.type")}>
                 <div className="flex flex-wrap gap-1.5">
@@ -440,12 +442,12 @@ export function DocumentFiltersBar({
           />
         )}
 
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
           <Select
             value={value.sort}
             onValueChange={(v) => onChange({ sort: v as DocumentSortField })}
           >
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[140px] sm:w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -470,7 +472,7 @@ export function DocumentFiltersBar({
             value={value.dir}
             onValueChange={(v) => onChange({ dir: v as SortDir })}
           >
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-[70px] sm:w-[90px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -486,6 +488,7 @@ export function DocumentFiltersBar({
           </div>
         )}
       </div>
+
 
       <FilterChips
         chips={chips}

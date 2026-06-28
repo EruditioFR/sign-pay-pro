@@ -122,24 +122,24 @@ function DocumentsPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="truncate">{t("documents.title")}</CardTitle>
             <p className="text-sm text-muted-foreground">
               Contrats, commandes et autres documents à signer.
             </p>
           </div>
-          <Button asChild className="shrink-0">
+          <Button asChild className="shrink-0" size="sm">
             <Link to="/app/documents/new">
-              <Plus className="mr-1 h-4 w-4" /> {t("documents.new")}
+              <Plus className="mr-1 h-4 w-4" /> <span className="hidden sm:inline">{t("documents.new")}</span><span className="sm:hidden">Nouveau</span>
             </Link>
           </Button>
         </div>
-        <div className="mt-3 rounded-md border border-[color:var(--facturation)]/30 bg-[color:var(--facturation-soft)]/40 px-3 py-2 text-sm flex items-center justify-between gap-2">
-          <span>
+        <div className="mt-3 flex flex-col gap-2 rounded-md border border-[color:var(--facturation)]/30 bg-[color:var(--facturation-soft)]/40 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <span className="min-w-0">
             Les <strong>devis</strong> et <strong>factures</strong> sont gérés dans le module Facturation.
           </span>
-          <Button asChild size="sm" variant="ghost" className="text-[color:var(--facturation)]">
+          <Button asChild size="sm" variant="ghost" className="shrink-0 text-[color:var(--facturation)]">
             <Link to="/app/facturation">Ouvrir Facturation →</Link>
           </Button>
         </div>
@@ -171,7 +171,59 @@ function DocumentsPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
+            {/* Mobile: cards */}
+            <ul className="space-y-2 md:hidden">
+              {rows.map((d) => (
+                <li key={d.id}>
+                  <Link
+                    to="/app/documents/$id"
+                    params={{ id: d.id }}
+                    className="block rounded-md border border-border bg-card p-3 active:bg-muted/50"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{d.title}</p>
+                        {d.reference && (
+                          <p className="truncate text-xs text-muted-foreground">{d.reference}</p>
+                        )}
+                      </div>
+                      <DocumentStatusBadge status={d.status} />
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="truncate">{t(`documents.types.${d.type}`)}</span>
+                      <span className="truncate text-right tabular-nums">
+                        {d.amount_ttc != null ? `${Number(d.amount_ttc).toLocaleString()} ${d.currency}` : "—"}
+                      </span>
+                      <span className="truncate">{d.third_party_name ?? "—"}</span>
+                      <span className="truncate text-right">{d.issue_date ?? "—"}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      {d.signers_total > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <FileSignature className="h-3 w-3" />
+                          {d.signers_signed}/{d.signers_total}
+                        </span>
+                      )}
+                      <PaymentStatusBadge
+                        documentStatus={d.status}
+                        amountTtc={d.amount_ttc}
+                        dueDate={d.due_date}
+                        paidAmount={d.payments_total}
+                        hideWhenNotApplicable
+                      />
+                      {d.archived_at && (
+                        <span className="inline-flex items-center gap-1">
+                          <Archive className="h-3 w-3" /> Archivé
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -233,11 +285,11 @@ function DocumentsPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between gap-2 pt-2">
+            <div className="flex flex-col items-stretch gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs text-muted-foreground">
                 {t("docs_search.page_of", { page: search.page, total: totalPages })}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center justify-end gap-1">
                 <Button
                   variant="outline" size="sm"
                   disabled={search.page <= 1 || isFetching}
@@ -260,3 +312,4 @@ function DocumentsPage() {
     </Card>
   );
 }
+
