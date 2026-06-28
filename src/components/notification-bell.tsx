@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useNavigate } from "@tanstack/react-router";
+
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ export function NotificationBell() {
   const fetchFn = useServerFn(listMyNotifications);
   const markFn = useServerFn(markNotificationRead);
   const markAllFn = useServerFn(markAllNotificationsRead);
-  const navigate = useNavigate();
+
   const qc = useQueryClient();
 
   const { data } = useQuery({
@@ -43,9 +43,10 @@ export function NotificationBell() {
       qc.invalidateQueries({ queryKey: ["my_notifications"] });
     }
     if (n.link_url) {
-      // External or internal — internal links start with /
+      // Internal links start with /. Use window.location to preserve query
+      // strings (e.g. ?view=signed) which navigate({ to }) does not parse.
       if (n.link_url.startsWith("/")) {
-        navigate({ to: n.link_url });
+        window.location.href = n.link_url;
       } else {
         window.location.href = n.link_url;
       }
