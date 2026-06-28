@@ -1,63 +1,64 @@
+## Cause racine
 
-## Objectif
+Pour chaque document signé examiné en base, on trouve la signature (avec `pdf_storage_path` dans le bucket `signed-documents`) mais **aucune ligne `-signed.pdf` dans `document_files`**, et **toutes les lignes existantes ont `is_current = false`**.
 
-Aligner l'expérience signature sur un upload PDF avec zones éditables :
-1. Le signataire **clique directement** sur chaque zone autorisée et l'édite/signe sur place.
-2. Le PDF final ne contient **plus de page récapitulative** ajoutée à la fin.
-3. L'émetteur reçoit le PDF signé **en pièce jointe du mail** + une **notification in-app** (cloche) pointant vers `/app/documents/$id?view=signed`.
+En traçant `publishSignedPdfAsCurrentFile` (`src/lib/signed-pdf-publish.server.ts`) :
 
----
+1. Il fait `update document_files set is_current=false` (réussit, d'où l'état observé).
+2. Il fait `insert into document_files (... uploaded_by: null ...)`.
+3. La colonne `document_files.uploaded_by` est **`NOT NULL`** → l'insert échoue silencieusement (`console.error` uniquement, pas d'exception).
 
-## 1. Page signataire `src/routes/s.$token.tsx` — édition au clic
+Conséquence :
+- Le détail document n'a plus de fichier "courant" → la modale `?view=signed` ouverte depuis le mail ou la cloche de notification n'a rien à afficher.
+- La rubrique "Titre — fichiers" ne montre pas le PDF signé.
+- Le backfill `ensureSignedPdfInFiles` reproduit exactement le même bug (`uploadedBy: null`).
 
-Refonte du composant `SignWithPlacement` :
+## Correctifs
 
-- **Texte / Date** : l'`<input>` est déjà dans la zone overlay → focus auto au clic + scroll-into-view + `font-size:16px` (pas de zoom iOS). Supprimer le panneau d'édition dupliqué sous le PDF (lignes 696-746).
-- **Checkbox** : toggle direct au clic sur la zone (un seul clic = coché/décoché). Pas de panneau séparé.
-- **Signature / Paraphe** : un clic sur la zone ouvre un **mini-modal** (Dialog shadcn) contenant `ResponsiveSignatureCanvas` + boutons « Effacer » / « Valider ». À la validation, la dataURL est stockée dans `fieldValues[id]` et **rendue en aperçu inline** dans la zone (`<img>` au lieu de l'icône « tracez ci-dessous »).
-- Une **seule** signature globale n'est plus nécessaire quand l'émetteur a placé des zones signature : on supprime le pavé « Tracez votre signature » du bas et on n'envoie plus `signature_image_b64` global si toutes les zones signature sont remplies (envoyer la 1ʳᵉ image de signature trouvée pour satisfaire le schéma backend).
-- Bandeau récap des zones restantes (compteur + boutons « Aller à la zone X ») conservé, mais sans champs d'édition dupliqués.
-- Indicateur visuel : zone **non remplie** = bordure dashed ambre + pulse ; **remplie** = bordure verte + ✓.
-- Bouton « Signer maintenant » désactivé tant qu'il reste une zone obligatoire vide (en plus du consentement).
+### 1. Migration — rendre `uploaded_by` nullable
 
-## 2. Suppression des pages annexes ajoutées au PDF
+```sql
+ALTER TABLE public.document_files ALTER COLUMN uploaded_by DROP NOT NULL;
+```
 
-Dans `src/routes/api/public/sign-request.$token.ts` :
-- Supprimer le bloc « page récapitulative » (lignes ~457-469).
-- Supprimer le bloc « SIGNATURE CLIENT / PRESTATAIRE » (lignes ~471-509).
-- Conserver uniquement l'apposition des zones placées par l'émetteur + le `body.placement` libre éventuel.
+(Les inserts système — PDF signé, factur-X — n'ont pas d'utilisateur authentifié.)
 
-Dans `src/routes/api/public/share.$token.ts` :
-- Supprimer le bloc `addPage` (ligne 244) qui ajoute la page « SIGNATURE CLIENT ».
+### 2. `src/lib/signed-pdf-publish.server.ts`
 
-La preuve de conformité (hash, IP, UA, consentement, evidence JSON) reste intégralement enregistrée en base — elle n'a pas besoin d'être imprimée sur le PDF.
+- Renseigner `uploaded_by` avec `documents.created_by` quand le caller passe `null`, en fallback de la colonne nullable.
+- **Réordonner** : insérer d'abord la nouvelle version `is_current=true`, puis seulement basculer les autres lignes à `is_current=false`. Évite l'état "aucun fichier courant" si un insert échoue à nouveau.
+- Si l'upload storage échoue avec un conflit `Duplicate`, basculer en `upsert: true` plutôt que d'abandonner.
+- Logguer explicitement les erreurs d'insert (actuellement on ne capture pas le retour de `.insert`).
 
-## 3. Mail à l'émetteur avec PDF signé en pièce jointe
+### 3. Rétroactif — réparer les documents déjà signés
 
-Dans `src/lib/email-sender.ts` : étendre `sendResendEmail` pour accepter un paramètre optionnel `attachments: [{ filename, content (base64) }]` (Resend supporte nativement le champ `attachments`).
+Une requête de réparation ponctuelle (via `supabase--insert`) pour les documents `status in (signed, paid, partially_paid, archived)` sans ligne `-signed.pdf` : remettre `is_current=true` sur la version la plus récente actuelle. À la prochaine ouverture du document, `ensureSignedPdfInFiles` (corrigé) publiera le vrai PDF signé.
 
-Dans `src/lib/signature-notifications.server.ts` :
-- `notifyDocumentSigned` et `notifySignatureCompleted` téléchargent le PDF signé depuis le bucket `signed-documents` (via `pdf_storage_path` de la signature), le convertissent en base64, et l'ajoutent en `attachments` du mail destiné au **créateur uniquement** (pas aux signataires, ils l'ont déjà à l'écran).
-- Le mail conserve aussi le lien `?view=signed` vers la page de synthèse.
+Plus simple et suffisant : 
 
-## 4. Notification in-app pour l'émetteur
+```sql
+UPDATE document_files f
+SET is_current = true
+WHERE f.id IN (
+  SELECT DISTINCT ON (document_id) id
+  FROM document_files
+  WHERE document_id IN (
+    SELECT id FROM documents WHERE status IN ('signed','paid','partially_paid','archived')
+  )
+  ORDER BY document_id, version DESC
+)
+AND NOT EXISTS (
+  SELECT 1 FROM document_files g
+  WHERE g.document_id = f.document_id AND g.is_current = true
+);
+```
 
-Nouvelle table `public.user_notifications` (id, user_id, organization_id, type, title, body, link_url, document_id, read_at, created_at) avec RLS « le user voit ses notifs ». GRANT authenticated SELECT/UPDATE (pour marquer lu), service_role ALL.
+Puis, à la prochaine ouverture du document détail, le backfill (qui marche désormais) ajoutera la version signée et la marquera courante.
 
-- Insérer une ligne lors de `notifyDocumentSigned` (type = `document.signed`, link = `/app/documents/{id}?view=signed`).
-- Nouveau composant `<NotificationBell />` dans `src/components/app-shell.tsx` (header) : badge avec compteur non-lu, Popover listant les 10 dernières, clic → navigue vers `link_url` et marque comme lue. Polling 60 s via TanStack Query.
-- Server fns `listMyNotifications` / `markNotificationRead` dans `src/lib/notifications.functions.ts` (avec `requireSupabaseAuth`).
+### 4. Vérification
 
----
+- Lister un document signé existant et confirmer qu'après ouverture une ligne `…-signed.pdf` apparaît avec `is_current=true`.
+- Le lien email (`/app/documents/{id}?view=signed`) et la cloche de notification ouvrent la modale sur le PDF signé.
+- La rubrique "Titre — fichiers" affiche le PDF signé téléchargeable.
 
-## Détails techniques
-
-- Aucun changement de schéma signature/évidence ; seul l'apposition visuelle change.
-- Le hash SHA-256 du PDF signé reste calculé après apposition mais sans pages annexes — l'evidence devient plus simple.
-- Pour la pièce jointe Resend : limite 40 Mo ; si > 20 Mo, fallback automatique sur lien seul.
-- Migration SQL : `user_notifications` + index `(user_id, read_at, created_at desc)`.
-
-## Hors scope
-
-- Notifications push web (Service Worker).
-- Refonte des autres parcours (paiement, archive).
+Aucun changement nécessaire côté template email ni côté `NotificationBell` : le lien est déjà correct, c'est uniquement la donnée sous-jacente qui manquait.

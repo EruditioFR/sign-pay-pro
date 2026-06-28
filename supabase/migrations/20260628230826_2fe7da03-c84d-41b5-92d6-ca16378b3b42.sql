@@ -1,0 +1,1 @@
+ALTER TABLE public.document_files ALTER COLUMN uploaded_by DROP NOT NULL;
