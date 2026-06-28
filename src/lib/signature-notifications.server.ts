@@ -267,11 +267,28 @@ export async function notifyDocumentSigned(
       senderOrg: org?.name ?? null,
       url,
     });
+    const attachment = await loadSignedPdfAttachment(
+      admin,
+      opts.documentId,
+      `${doc.reference ?? doc.title.replace(/[^\w-]+/g, "_").slice(0, 60)}-signe.pdf`,
+    );
     await sendResendEmail({
       to: creatorEmail,
       subject: `Document signé — ${doc.reference ?? doc.title}`,
       html,
+      attachments: attachment ? [attachment] : undefined,
     });
+    // In-app notification for the creator.
+    if (doc.created_by) {
+      await insertCreatorNotification(admin, {
+        documentId: doc.id,
+        organizationId: doc.organization_id,
+        creatorUserId: doc.created_by,
+        title: `Document signé — ${doc.reference ?? doc.title}`,
+        body: `${opts.signerName} a signé « ${doc.title} ».`,
+        linkUrl: `/app/documents/${doc.id}?view=signed`,
+      });
+    }
     await admin.from("audit_logs").insert({
       organization_id: doc.organization_id,
       action: "signature.notified_signed",
