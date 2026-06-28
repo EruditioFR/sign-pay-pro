@@ -194,7 +194,7 @@ export function DocumentFiltersBar({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[240px]">
           <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={value.q}
@@ -203,6 +203,7 @@ export function DocumentFiltersBar({
             className="pl-8"
           />
         </div>
+
 
         <Popover>
           <PopoverTrigger asChild>
