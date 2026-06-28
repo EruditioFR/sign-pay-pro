@@ -218,8 +218,9 @@ export function DocumentFiltersBar({
           </PopoverTrigger>
           <PopoverContent
             align="end"
-            className="w-[340px] max-h-[70vh] overflow-y-auto"
+            className="w-[min(340px,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto"
           >
+
             <div className="space-y-4 text-sm">
               <FilterGroup title={t("documents.field.type")}>
                 <div className="flex flex-wrap gap-1.5">
