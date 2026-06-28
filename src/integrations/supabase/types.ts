@@ -62,7 +62,7 @@ export type Database = {
           size_bytes: number | null
           storage_path: string
           uploaded_at: string
-          uploaded_by: string
+          uploaded_by: string | null
           version: number
         }
         Insert: {
@@ -74,7 +74,7 @@ export type Database = {
           size_bytes?: number | null
           storage_path: string
           uploaded_at?: string
-          uploaded_by: string
+          uploaded_by?: string | null
           version?: number
         }
         Update: {
@@ -86,7 +86,7 @@ export type Database = {
           size_bytes?: number | null
           storage_path?: string
           uploaded_at?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
           version?: number
         }
         Relationships: [
