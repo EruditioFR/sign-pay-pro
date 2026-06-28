@@ -241,7 +241,6 @@ export const Route = createFileRoute("/api/public/share/$token")({
           basePdfBytes ??= await buildDocumentPdf(doc, org ?? { name: "—", country: "FR" }, null);
 
           const pdf = await PDFDocument.load(basePdfBytes);
-          const signaturePage = pdf.addPage([595.28, 400]);
           const signedAt = new Date();
 
           const pngB64 = body.signature_image_b64.replace(/^data:image\/png;base64,/, "");
@@ -251,45 +250,28 @@ export const Route = createFileRoute("/api/public/share/$token")({
           } catch {
             return json({ error: "invalid_signature_image" }, { status: 400 });
           }
-          const dims = sigImg.scale(0.4);
-          // Client signature (left)
-          signaturePage.drawText("SIGNATURE CLIENT", { x: 50, y: 340, size: 12 });
-          signaturePage.drawText(`Signé par : ${body.signer_name}`, { x: 50, y: 320, size: 10 });
-          if (body.signer_email) signaturePage.drawText(`Email : ${body.signer_email}`, { x: 50, y: 306, size: 9 });
-          signaturePage.drawText(`Date : ${signedAt.toISOString()}`, { x: 50, y: 292, size: 9 });
-          if (ip) signaturePage.drawText(`IP : ${ip}`, { x: 50, y: 278, size: 8 });
-          signaturePage.drawImage(sigImg, { x: 50, y: 100, width: dims.width, height: dims.height });
 
-          // Provider signature (right) — from document creator's profile
-          try {
-            const { data: creator } = doc.created_by
-              ? await supabaseAdmin
-                  .from("profiles")
-                  .select("signature_image_b64, full_name, email")
-                  .eq("id", doc.created_by)
-                  .maybeSingle()
-              : { data: null };
-            signaturePage.drawText("SIGNATURE PRESTATAIRE", { x: 320, y: 340, size: 12 });
-            signaturePage.drawText(`${creator?.full_name ?? org?.name ?? "—"}`, { x: 320, y: 320, size: 10 });
-            if (creator?.email) signaturePage.drawText(`Email : ${creator.email}`, { x: 320, y: 306, size: 9 });
-            if (creator?.signature_image_b64) {
-              const pb64 = creator.signature_image_b64.replace(/^data:image\/png;base64,/, "");
-              const provImg = await pdf.embedPng(Uint8Array.from(atob(pb64), (c) => c.charCodeAt(0)));
-              const pdims = provImg.scale(0.4);
-              signaturePage.drawImage(provImg, { x: 320, y: 100, width: pdims.width, height: pdims.height });
-            } else {
-              signaturePage.drawText("(Signature non configurée)", { x: 320, y: 200, size: 9 });
-            }
-          } catch (e) {
-            console.error("provider signature stamp failed:", e);
-            const { reportServerError } = await import("@/lib/observability.server");
-            void reportServerError(e, {
-              source: "share.sign.provider_stamp",
-              category: "technical",
-              organizationId: doc.organization_id,
-              context: { documentId: doc.id, shareLinkId: link.id },
+          // Stamp the signature in the bottom-right corner of the last page.
+          // NOTE: no appended summary / signature page — the signature is
+          // visible directly on the contract.
+          {
+            const pages = pdf.getPages();
+            const lastPage = pages[pages.length - 1];
+            const pageW = lastPage.getWidth();
+            const dims = sigImg.scale(0.4);
+            const margin = 36;
+            const w = Math.min(dims.width, 180);
+            const h = (sigImg.height / sigImg.width) * w;
+            const x = pageW - w - margin;
+            const y = margin + 14;
+            lastPage.drawImage(sigImg, { x, y, width: w, height: h });
+            lastPage.drawText(`Signé par ${body.signer_name} — ${signedAt.toISOString()}`, {
+              x,
+              y: Math.max(y - 10, 4),
+              size: 7,
             });
           }
+
 
           const signedBytes = await pdf.save();
 

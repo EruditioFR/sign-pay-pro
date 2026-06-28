@@ -1,103 +1,63 @@
-# Mentions légales obligatoires — Devis & Factures
 
-Objectif : guider l'utilisateur à saisir toutes les mentions exigées par l'art. L441-9 du Code de commerce et le CGI, avec validation, pré-remplissage automatique depuis le profil émetteur, et indicateur de conformité.
+## Objectif
 
-## Lot 1 — Schéma de base (migration)
+Aligner l'expérience signature sur un upload PDF avec zones éditables :
+1. Le signataire **clique directement** sur chaque zone autorisée et l'édite/signe sur place.
+2. Le PDF final ne contient **plus de page récapitulative** ajoutée à la fin.
+3. L'émetteur reçoit le PDF signé **en pièce jointe du mail** + une **notification in-app** (cloche) pointant vers `/app/documents/$id?view=signed`.
 
-Une seule migration ajoute les colonnes manquantes (les colonnes déjà présentes comme `seller_*`, `buyer_*`, `payment_terms`, `delivery_date` sont conservées et réutilisées) :
+---
 
-**`organizations`** (profil émetteur)
-- `legal_form`, `share_capital`, `siret`, `rcs_city`, `rm_number`, `naf_code`
-- `vat_number`, `vat_regime` (default `'debits'`), `is_autoentrepreneur` (default `false`)
-- `iban`, `bic`
-- `late_penalty_rate` (default `12.0`), `recovery_indemnity` (default `40.0`)
-- `default_payment_terms`, `default_early_discount` (default `'Pas d''escompte pour paiement anticipé'`)
+## 1. Page signataire `src/routes/s.$token.tsx` — édition au clic
 
-**`documents`** (champs spécifiques au document, complètent `seller_*`/`buyer_*` déjà présents)
-- `service_date`, `validity_date`, `transaction_type` (default `'B2B'`)
-- `client_delivery_address`, `client_legal_form`, `client_reference`
-- `payment_bank_details`, `late_penalty_rate`, `recovery_indemnity` (default `40.0`)
-- `early_discount_text`, `advance_paid` (default `0`)
-- `header_note`, `footer_note`, `internal_note`, `legal_mentions`
+Refonte du composant `SignWithPlacement` :
 
-Note : `client_siret` et `client_vat_number` sont déjà disponibles via `buyer_siret`/`buyer_vat_number`.
+- **Texte / Date** : l'`<input>` est déjà dans la zone overlay → focus auto au clic + scroll-into-view + `font-size:16px` (pas de zoom iOS). Supprimer le panneau d'édition dupliqué sous le PDF (lignes 696-746).
+- **Checkbox** : toggle direct au clic sur la zone (un seul clic = coché/décoché). Pas de panneau séparé.
+- **Signature / Paraphe** : un clic sur la zone ouvre un **mini-modal** (Dialog shadcn) contenant `ResponsiveSignatureCanvas` + boutons « Effacer » / « Valider ». À la validation, la dataURL est stockée dans `fieldValues[id]` et **rendue en aperçu inline** dans la zone (`<img>` au lieu de l'icône « tracez ci-dessous »).
+- Une **seule** signature globale n'est plus nécessaire quand l'émetteur a placé des zones signature : on supprime le pavé « Tracez votre signature » du bas et on n'envoie plus `signature_image_b64` global si toutes les zones signature sont remplies (envoyer la 1ʳᵉ image de signature trouvée pour satisfaire le schéma backend).
+- Bandeau récap des zones restantes (compteur + boutons « Aller à la zone X ») conservé, mais sans champs d'édition dupliqués.
+- Indicateur visuel : zone **non remplie** = bordure dashed ambre + pulse ; **remplie** = bordure verte + ✓.
+- Bouton « Signer maintenant » désactivé tant qu'il reste une zone obligatoire vide (en plus du consentement).
 
-Politiques RLS : héritées des tables (aucune nouvelle policy nécessaire, seules les colonnes sont ajoutées).
+## 2. Suppression des pages annexes ajoutées au PDF
 
-## Lot 2 — Bibliothèque de conformité
+Dans `src/routes/api/public/sign-request.$token.ts` :
+- Supprimer le bloc « page récapitulative » (lignes ~457-469).
+- Supprimer le bloc « SIGNATURE CLIENT / PRESTATAIRE » (lignes ~471-509).
+- Conserver uniquement l'apposition des zones placées par l'émetteur + le `body.placement` libre éventuel.
 
-Nouveau fichier `src/lib/invoice-compliance.ts` :
+Dans `src/routes/api/public/share.$token.ts` :
+- Supprimer le bloc `addPage` (ligne 244) qui ajoute la page « SIGNATURE CLIENT ».
 
-```ts
-export type ComplianceLevel = 'required' | 'recommended' | 'electronic_2026'
-export interface ComplianceCheck {
-  field: string; label: string; level: ComplianceLevel;
-  satisfied: boolean; message?: string;
-}
-export function checkInvoiceCompliance(doc, org): ComplianceCheck[]
-export function complianceSummary(checks): { status: 'ok'|'partial'|'ko'; required: number; satisfied: number }
-export function buildLegalMentions(org, doc): string
-```
+La preuve de conformité (hash, IP, UA, consentement, evidence JSON) reste intégralement enregistrée en base — elle n'a pas besoin d'être imprimée sur le PDF.
 
-Règles `required`, `recommended` et `electronic_2026` strictement comme spécifié.
-`buildLegalMentions` génère automatiquement le bloc de mentions (forme + capital, RCS/RM, TVA, pénalités, indemnité 40 €, mention auto-entrepreneur art. 293 B).
+## 3. Mail à l'émetteur avec PDF signé en pièce jointe
 
-## Lot 3 — Profil de facturation (Paramètres)
+Dans `src/lib/email-sender.ts` : étendre `sendResendEmail` pour accepter un paramètre optionnel `attachments: [{ filename, content (base64) }]` (Resend supporte nativement le champ `attachments`).
 
-Nouvelle route `/_authenticated/app/settings/billing-profile.tsx` + entrée dans la nav settings :
-- Sections : Identité, Adresse, Identifiants légaux, TVA, Coordonnées bancaires, Conditions de paiement par défaut
-- Champ `is_autoentrepreneur` qui masque dynamiquement capital + RCS + TVA
-- Sauvegarde via une nouvelle server fn `updateOrganizationBilling` (clé `requireSupabaseAuth` + check `is_org_admin`)
-- Indicateur de complétude (réutilise `checkInvoiceCompliance` filtré sur champs émetteur)
-- Aperçu de l'en-tête tel qu'il apparaîtra sur les documents
+Dans `src/lib/signature-notifications.server.ts` :
+- `notifyDocumentSigned` et `notifySignatureCompleted` téléchargent le PDF signé depuis le bucket `signed-documents` (via `pdf_storage_path` de la signature), le convertissent en base64, et l'ajoutent en `attachments` du mail destiné au **créateur uniquement** (pas aux signataires, ils l'ont déjà à l'écran).
+- Le mail conserve aussi le lien `?view=signed` vers la page de synthèse.
 
-## Lot 4 — Stepper 4 étapes (devis & factures)
+## 4. Notification in-app pour l'émetteur
 
-Nouveau composant partagé `src/components/facturation/DocumentStepper.tsx` utilisé par :
-- `_authenticated.app.facturation.devis.$id.edit.tsx`
-- `_authenticated.app.facturation.devis.new.tsx`
-- `_authenticated.app.facturation.factures.$id.tsx` (mode édition pour brouillons)
-- nouvelle route `_authenticated.app.facturation.factures.new.tsx`
+Nouvelle table `public.user_notifications` (id, user_id, organization_id, type, title, body, link_url, document_id, read_at, created_at) avec RLS « le user voit ses notifs ». GRANT authenticated SELECT/UPDATE (pour marquer lu), service_role ALL.
 
-Étapes :
-1. **Émetteur & Destinataire** — bloc émetteur pré-rempli depuis l'org (modifiable, écrit dans `seller_*`), bloc client (`third_party_*`, `buyer_*`, `client_delivery_address`, `client_legal_form`, `client_reference`)
-2. **Informations document** — n° (auto), dates émission/service/échéance/validité, objet, transaction_type, conditions de règlement (modes, IBAN/BIC, taux de pénalité, indemnité 40 €, escompte)
-3. **Lignes & Montants** — table existante `InvoiceLineItems` enrichie : `unit`, `vat_exemption_reason` (si exonéré), drag-and-drop (HTML5 natif comme `SendQuoteDialog`), récap TVA par taux depuis `document_vat_breakdown`, sous-total, total HT net, total TTC, acompte, net à payer. Si `org.is_autoentrepreneur` : tous les `vat_rate` forcés à 0, colonnes TVA masquées, mention auto art. 293 B affichée
-4. **Mentions & Finalisation** — `header_note`, `footer_note`, `internal_note`, `legal_mentions` (auto-générées par `buildLegalMentions`, éditables), sélection template PDF, `InvoiceComplianceIndicator`, actions "Brouillon" / "Émettre" / "Émettre et envoyer"
+- Insérer une ligne lors de `notifyDocumentSigned` (type = `document.signed`, link = `/app/documents/{id}?view=signed`).
+- Nouveau composant `<NotificationBell />` dans `src/components/app-shell.tsx` (header) : badge avec compteur non-lu, Popover listant les 10 dernières, clic → navigue vers `link_url` et marque comme lue. Polling 60 s via TanStack Query.
+- Server fns `listMyNotifications` / `markNotificationRead` dans `src/lib/notifications.functions.ts` (avec `requireSupabaseAuth`).
 
-Navigation entre étapes via bouton précédent/suivant, libre lorsque le doc est en brouillon.
-
-## Lot 5 — Composant `InvoiceComplianceIndicator`
-
-`src/components/facturation/InvoiceComplianceIndicator.tsx` :
-- Badge synthétique 🟢/🟡/🔴 + popover détaillant les checks groupés par niveau
-- Variante compacte (page liste) et complète (formulaire / page détail)
-- Affiché en haut du stepper et sur la page détail facture
-
-## Lot 6 — Mentions automatiques sur les documents existants
-
-- À l'enregistrement d'un devis/facture, si `legal_mentions` est vide, le pré-remplir via `buildLegalMentions`
-- Affichage des mentions calculées dans la page détail (lecture seule si statut ≠ brouillon)
+---
 
 ## Détails techniques
 
-- Pas de table `organization_billing_profile` séparée : toutes les colonnes vivent dans `organizations` (cohérent avec l'existant `seller_*` côté `documents`).
-- Validation côté serveur via Zod dans `updateOrganizationBilling` et `updateDocument` : `siret` regex 14 chiffres, `vat_number` regex `^[A-Z]{2}[A-Z0-9]{2,12}$`, `iban` regex IBAN.
-- Calculs TVA factorisés dans `computeTotals` (déjà présent) ; ajout d'un helper `vatBreakdown(lines)` pour le tableau récap.
-- Auto-entrepreneur : helper `applyAutoEntrepreneurMode(lines)` qui force `vat_rate=0`.
-- Numérotation : conserve `allocate_document_number` existant ; "Émettre" déclenche la transition `draft → issued` puis appel RPC.
-- Tests visuels via `browser--view_preview` après chaque lot.
+- Aucun changement de schéma signature/évidence ; seul l'apposition visuelle change.
+- Le hash SHA-256 du PDF signé reste calculé après apposition mais sans pages annexes — l'evidence devient plus simple.
+- Pour la pièce jointe Resend : limite 40 Mo ; si > 20 Mo, fallback automatique sur lien seul.
+- Migration SQL : `user_notifications` + index `(user_id, read_at, created_at desc)`.
 
-## Ordre d'exécution
+## Hors scope
 
-1. Migration (Lot 1) — attendre approbation
-2. `invoice-compliance.ts` (Lot 2) + composant indicateur (Lot 5)
-3. Page Profil de facturation (Lot 3)
-4. Stepper 4 étapes partagé (Lot 4) — branche devis puis factures
-5. Mentions automatiques (Lot 6)
-
-## Hors périmètre (à valider ensuite si besoin)
-
-- Génération PDF reformatée intégrant header/footer/legal_mentions
-- Migration des organisations existantes pour remplir `legal_form`, `siret` etc. (à faire à la main par l'utilisateur via la nouvelle page Profil)
-- Intégration PDP (facturation électronique 2026) — déjà partiellement présente via `einvoice_*`
+- Notifications push web (Service Worker).
+- Refonte des autres parcours (paiement, archive).

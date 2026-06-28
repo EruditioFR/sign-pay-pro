@@ -9,6 +9,7 @@ import { listMyPendingApprovals } from "@/lib/workflows.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { NotificationBell } from "@/components/notification-bell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -368,6 +369,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-sm font-semibold">{t("app.name")}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
             <LanguageSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

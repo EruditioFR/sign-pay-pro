@@ -56,6 +56,76 @@ async function loadDoc(admin: AdminClient, documentId: string) {
 }
 
 /**
+ * Load the latest signed PDF bytes for a document and return it as a base64
+ * attachment suitable for Resend. Returns null on any error or if missing.
+ * Skips attachment if file is larger than ~20 MB (Resend soft limit).
+ */
+async function loadSignedPdfAttachment(
+  admin: AdminClient,
+  documentId: string,
+  filename: string,
+): Promise<{ filename: string; content: string; content_type: string } | null> {
+  try {
+    const { data: sig } = await admin
+      .from("document_signatures")
+      .select("pdf_storage_path")
+      .eq("document_id", documentId)
+      .not("pdf_storage_path", "is", null)
+      .order("signed_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    if (!sig?.pdf_storage_path) return null;
+    const { data: blob } = await admin.storage
+      .from("signed-documents")
+      .download(sig.pdf_storage_path);
+    if (!blob) return null;
+    const ab = await blob.arrayBuffer();
+    if (ab.byteLength > 20 * 1024 * 1024) return null;
+    // Convert to base64 without spreading the whole buffer (V8 stack limit).
+    const bytes = new Uint8Array(ab);
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+    }
+    const content = btoa(binary);
+    return { filename, content, content_type: "application/pdf" };
+  } catch (e) {
+    console.error("loadSignedPdfAttachment failed:", e);
+    return null;
+  }
+}
+
+/**
+ * Insert an in-app notification for the document creator. Best-effort.
+ */
+async function insertCreatorNotification(
+  admin: AdminClient,
+  opts: {
+    documentId: string;
+    organizationId: string;
+    creatorUserId: string;
+    title: string;
+    body: string | null;
+    linkUrl: string | null;
+  },
+): Promise<void> {
+  try {
+    await admin.from("user_notifications").insert({
+      user_id: opts.creatorUserId,
+      organization_id: opts.organizationId,
+      type: "document.signed",
+      title: opts.title,
+      body: opts.body,
+      link_url: opts.linkUrl,
+      document_id: opts.documentId,
+    });
+  } catch (e) {
+    console.error("insertCreatorNotification failed:", e);
+  }
+}
+
+/**
  * Send "document fully signed" emails to creator + every signer.
  */
 export async function notifySignatureCompleted(
@@ -96,6 +166,11 @@ export async function notifySignatureCompleted(
     }
 
     const url = origin ? `${origin}/app/documents/${doc.id}?view=signed` : null;
+    const attachment = await loadSignedPdfAttachment(
+      admin,
+      documentId,
+      `${doc.reference ?? doc.title.replace(/[^\w-]+/g, "_").slice(0, 60)}-signe.pdf`,
+    );
     const sent: string[] = [];
     const failed: Array<{ to: string; error: string }> = [];
     for (const [to, role] of recipients.entries()) {
@@ -113,11 +188,25 @@ export async function notifySignatureCompleted(
           to,
           subject: `Document signé — ${doc.reference ?? doc.title}`,
           html,
+          // Only attach the PDF to the creator; signers already have it on screen.
+          attachments: role === "creator" && attachment ? [attachment] : undefined,
         });
         sent.push(to);
       } catch (e) {
         failed.push({ to, error: e instanceof Error ? e.message : String(e) });
       }
+    }
+
+    // In-app notification for the creator.
+    if (doc.created_by) {
+      await insertCreatorNotification(admin, {
+        documentId: doc.id,
+        organizationId: doc.organization_id,
+        creatorUserId: doc.created_by,
+        title: `Document signé — ${doc.reference ?? doc.title}`,
+        body: `Tous les signataires ont signé « ${doc.title} ».`,
+        linkUrl: `/app/documents/${doc.id}?view=signed`,
+      });
     }
 
     await admin.from("audit_logs").insert({
@@ -178,11 +267,28 @@ export async function notifyDocumentSigned(
       senderOrg: org?.name ?? null,
       url,
     });
+    const attachment = await loadSignedPdfAttachment(
+      admin,
+      opts.documentId,
+      `${doc.reference ?? doc.title.replace(/[^\w-]+/g, "_").slice(0, 60)}-signe.pdf`,
+    );
     await sendResendEmail({
       to: creatorEmail,
       subject: `Document signé — ${doc.reference ?? doc.title}`,
       html,
+      attachments: attachment ? [attachment] : undefined,
     });
+    // In-app notification for the creator.
+    if (doc.created_by) {
+      await insertCreatorNotification(admin, {
+        documentId: doc.id,
+        organizationId: doc.organization_id,
+        creatorUserId: doc.created_by,
+        title: `Document signé — ${doc.reference ?? doc.title}`,
+        body: `${opts.signerName} a signé « ${doc.title} ».`,
+        linkUrl: `/app/documents/${doc.id}?view=signed`,
+      });
+    }
     await admin.from("audit_logs").insert({
       organization_id: doc.organization_id,
       action: "signature.notified_signed",
