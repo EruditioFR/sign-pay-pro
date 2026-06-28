@@ -43,9 +43,10 @@ export function NotificationBell() {
       qc.invalidateQueries({ queryKey: ["my_notifications"] });
     }
     if (n.link_url) {
-      // External or internal — internal links start with /
+      // Internal links start with /. Use window.location to preserve query
+      // strings (e.g. ?view=signed) which navigate({ to }) does not parse.
       if (n.link_url.startsWith("/")) {
-        navigate({ to: n.link_url });
+        window.location.href = n.link_url;
       } else {
         window.location.href = n.link_url;
       }
