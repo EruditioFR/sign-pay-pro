@@ -166,6 +166,11 @@ export async function notifySignatureCompleted(
     }
 
     const url = origin ? `${origin}/app/documents/${doc.id}?view=signed` : null;
+    const attachment = await loadSignedPdfAttachment(
+      admin,
+      documentId,
+      `${doc.reference ?? doc.title.replace(/[^\w-]+/g, "_").slice(0, 60)}-signe.pdf`,
+    );
     const sent: string[] = [];
     const failed: Array<{ to: string; error: string }> = [];
     for (const [to, role] of recipients.entries()) {
@@ -183,11 +188,25 @@ export async function notifySignatureCompleted(
           to,
           subject: `Document signé — ${doc.reference ?? doc.title}`,
           html,
+          // Only attach the PDF to the creator; signers already have it on screen.
+          attachments: role === "creator" && attachment ? [attachment] : undefined,
         });
         sent.push(to);
       } catch (e) {
         failed.push({ to, error: e instanceof Error ? e.message : String(e) });
       }
+    }
+
+    // In-app notification for the creator.
+    if (doc.created_by) {
+      await insertCreatorNotification(admin, {
+        documentId: doc.id,
+        organizationId: doc.organization_id,
+        creatorUserId: doc.created_by,
+        title: `Document signé — ${doc.reference ?? doc.title}`,
+        body: `Tous les signataires ont signé « ${doc.title} ».`,
+        linkUrl: `/app/documents/${doc.id}?view=signed`,
+      });
     }
 
     await admin.from("audit_logs").insert({
