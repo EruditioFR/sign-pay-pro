@@ -68,7 +68,7 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             {t("dashboard.welcome", { name: me?.fullName ?? "" })}
@@ -77,23 +77,6 @@ function AdminDashboard() {
             {me?.organizationName ?? ""} ·{" "}
             {me ? t(`roles.${me.primaryRole}`) : "—"}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link to="/admin/users">
-              <Users className="mr-1 h-4 w-4" /> {t("nav.users")}
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/admin/settings">
-              <Settings className="mr-1 h-4 w-4" /> {t("nav.settings")}
-            </Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link to="/app/documents/new">
-              <Plus className="mr-1 h-4 w-4" /> Nouveau document
-            </Link>
-          </Button>
         </div>
       </div>
 
