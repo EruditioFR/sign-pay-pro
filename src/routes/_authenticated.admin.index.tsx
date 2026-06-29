@@ -13,8 +13,11 @@ import {
   TrendingUp,
   Euro,
   CreditCard,
+  Plus,
+  Users,
+  Settings,
 } from "lucide-react";
-
+import { QuickStartActions } from "@/components/dashboard/QuickStartActions";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -75,8 +78,29 @@ function AdminDashboard() {
             {me ? t(`roles.${me.primaryRole}`) : "—"}
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link to="/admin/users">
+              <Users className="mr-1 h-4 w-4" /> {t("nav.users")}
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/admin/settings">
+              <Settings className="mr-1 h-4 w-4" /> {t("nav.settings")}
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/app/documents/new">
+              <Plus className="mr-1 h-4 w-4" /> Nouveau document
+            </Link>
+          </Button>
+        </div>
       </div>
 
+      {/* 1. Nouveau document — point d'entrée principal */}
+      <QuickStartActions />
+
+      {/* 2. Documents récents et leur état */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Documents récents</CardTitle>
@@ -108,7 +132,7 @@ function AdminDashboard() {
         </CardContent>
       </Card>
 
-      
+      {/* 3. Statistiques */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={FileText} label="Documents" value={stats?.totals.documents ?? 0} accent="text-primary" />
         <Kpi icon={Clock} label={t("dashboard.documents_in_progress")} value={stats?.totals.inProgress ?? 0} accent="text-amber-500" />
