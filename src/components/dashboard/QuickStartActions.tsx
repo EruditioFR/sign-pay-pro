@@ -11,7 +11,7 @@ export function QuickStartActions() {
         <div>
           <h2 className="text-lg font-semibold">Nouveau document</h2>
           <p className="text-xs text-muted-foreground">
-            Choisissez comment démarrer : modèle existant, import PDF ou éditeur.
+            Choisissez comment démarrer : importer un PDF ou créer un document à partir de notre éditeur en ligne ?
           </p>
         </div>
       </div>
