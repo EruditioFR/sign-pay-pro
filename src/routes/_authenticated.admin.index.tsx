@@ -13,9 +13,6 @@ import {
   TrendingUp,
   Euro,
   CreditCard,
-  Plus,
-  Users,
-  Settings,
 } from "lucide-react";
 import { QuickStartActions } from "@/components/dashboard/QuickStartActions";
 import {
