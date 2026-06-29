@@ -77,10 +77,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* 1. Nouveau document — point d'entrée principal */}
-      <QuickStartActions />
-
-      {/* 2. Documents récents et leur état */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Documents récents</CardTitle>
@@ -112,7 +108,7 @@ function AdminDashboard() {
         </CardContent>
       </Card>
 
-      {/* 3. Statistiques */}
+      
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={FileText} label="Documents" value={stats?.totals.documents ?? 0} accent="text-primary" />
         <Kpi icon={Clock} label={t("dashboard.documents_in_progress")} value={stats?.totals.inProgress ?? 0} accent="text-amber-500" />
