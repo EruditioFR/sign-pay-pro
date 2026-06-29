@@ -7,16 +7,13 @@ import type { ReactNode } from "react";
 export function QuickStartActions() {
   return (
     <section>
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3">
         <div>
           <h2 className="text-lg font-semibold">Nouveau document</h2>
           <p className="text-xs text-muted-foreground">
             Choisissez comment démarrer : modèle existant, import PDF ou éditeur.
           </p>
         </div>
-        <Link to="/app/documents/new" className="text-xs font-medium text-primary hover:underline">
-          Toutes les options →
-        </Link>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {/* Modèles temporairement désactivés
